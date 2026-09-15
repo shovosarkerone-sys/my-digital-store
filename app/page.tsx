@@ -36,30 +36,34 @@ export default function Home() {
   // Fetch categories and products from Supabase
   useEffect(() => {
     const fetchData = async () => {
-      setLoading(true);
+      try {
+        setLoading(true);
 
-      // 1. Fetch categories from Supabase (synced with admin panel)
-      const { data: catData } = await supabase
-        .from("categories")
-        .select("name")
-        .order("name", { ascending: true });
+        // 1. Fetch categories from Supabase
+        const { data: catData, error: catError } = await supabase
+          .from("categories")
+          .select("name")
+          .order("name", { ascending: true });
 
-      if (catData && catData.length > 0) {
-        setCategories(catData.map((c: CategoryItem) => c.name));
+        if (!catError && catData && catData.length > 0) {
+          setCategories(catData.map((c: CategoryItem) => c.name));
+        }
+
+        // 2. Fetch products
+        const { data: prodData, error: prodError } = await supabase
+          .from("products")
+          .select("*")
+          .order("id", { ascending: false });
+
+        if (!prodError && prodData) {
+          setAllProducts(prodData);
+        }
+      } catch (err) {
+        console.error("Error loading data:", err);
+      } finally {
+        // যেকোনো অবস্থাতেই লোডিং শেষ হবে, পেজ কখনোই আটকে থাকবে না
+        setLoading(false);
       }
-
-      // 2. Fetch products sorted by views & recent IDs
-      const { data: prodData } = await supabase
-        .from("products")
-        .select("*")
-        .order("views", { ascending: false })
-        .order("id", { ascending: false });
-
-      if (prodData) {
-        setAllProducts(prodData);
-      }
-
-      setLoading(false);
     };
 
     fetchData();
@@ -82,7 +86,7 @@ export default function Home() {
   // Filter products based on selected category
   const displayedProducts =
     selectedCategory === "ALL"
-      ? allProducts.slice(0, 10) // Show top 10 products when "ALL" is selected
+      ? allProducts.slice(0, 10)
       : allProducts.filter((item) => item.category === selectedCategory);
 
   return (
@@ -188,11 +192,9 @@ export default function Home() {
                           No Image
                         </div>
                       )}
-                      {/* Rank Badge */}
                       <span className="absolute top-2 left-2 bg-slate-950/80 backdrop-blur text-amber-400 font-bold text-xs px-2.5 py-1 rounded-lg border border-amber-400/30">
                         #{index + 1}
                       </span>
-                      {/* View Counter */}
                       <span className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur text-slate-300 text-[10px] px-2 py-1 rounded-lg border border-slate-800">
                         👁️ {item.views || 0}
                       </span>
