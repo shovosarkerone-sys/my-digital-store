@@ -20,6 +20,13 @@ interface Product {
 }
 
 export default function AdminPage() {
+  // পাসওয়ার্ড প্রোটেকশন স্টেট
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [inputPassword, setInputPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
   // সক্রিয় ট্যাব: 'products' অথবা 'categories'
   const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products');
 
@@ -28,7 +35,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-  // প্রোডাক্ট ফর্মের স্টেট (অ্যাড ও এডিটের জন্য)
+  // প্রোডাক্ট ফর্ম স্টেট
   const [productForm, setProductForm] = useState({
     name: '',
     price: '',
@@ -38,7 +45,7 @@ export default function AdminPage() {
   });
   const [editingProductId, setEditingProductId] = useState<number | string | null>(null);
 
-  // ক্যাটাগরি ফর্মের স্টেট
+  // ক্যাটাগরি ফর্ম স্টেট
   const [newCategory, setNewCategory] = useState('');
   const [editingCatId, setEditingCatId] = useState<number | string | null>(null);
   const [editingCatName, setEditingCatName] = useState('');
@@ -47,7 +54,16 @@ export default function AdminPage() {
   const [productSearch, setProductSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
 
-  // ডাটাবেস থেকে সব ডাটা আনা
+  // পেজ লোড হওয়ার সময় লগইন স্ট্যাটাস চেক করা
+  useEffect(() => {
+    const savedAuth = sessionStorage.getItem('admin_session_auth');
+    if (savedAuth === 'true') {
+      setIsAuthenticated(true);
+    }
+    setCheckingAuth(false);
+  }, []);
+
+  // ডাটাবেস থেকে তথ্য লোড করা
   const fetchData = async () => {
     setLoading(true);
 
@@ -69,19 +85,38 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
 
   const showNotification = (msg: string) => {
     setMessage(msg);
     setTimeout(() => setMessage(''), 3500);
   };
 
-  // ----------------------------------------------------
-  // ১. প্রোডাক্ট সম্পর্কিত কাজ (Add, Edit, Delete, Move)
-  // ----------------------------------------------------
+  // পাসওয়ার্ড যাচাইকরণ হ্যান্ডলার
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (inputPassword === 'Illustrator6!') {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('admin_session_auth', 'true');
+      setAuthError('');
+    } else {
+      setAuthError('ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিয়ে আবার চেষ্টা করুন।');
+    }
+  };
 
-  // প্রোডাক্ট সাবমিট (নতুন যোগ অথবা এডিট সেভ)
+  // লগআউট হ্যান্ডলার
+  const handleLogout = () => {
+    sessionStorage.removeItem('admin_session_auth');
+    setIsAuthenticated(false);
+    setInputPassword('');
+  };
+
+  // ----------------------------------------------------
+  // ১. প্রোডাক্ট সম্পর্কিত ফাংশন (Add, Edit, Delete, Move)
+  // ----------------------------------------------------
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { name, price, category, image_url, description } = productForm;
@@ -100,7 +135,6 @@ export default function AdminPage() {
     };
 
     if (editingProductId) {
-      // এডিট আপডেট
       const { error } = await supabase
         .from('products')
         .update(payload)
@@ -114,10 +148,7 @@ export default function AdminPage() {
         fetchData();
       }
     } else {
-      // নতুন প্রোডাক্ট যোগ
-      const { error } = await supabase
-        .from('products')
-        .insert([payload]);
+      const { error } = await supabase.from('products').insert([payload]);
 
       if (error) {
         showNotification('❌ নতুন প্রোডাক্ট যোগ করা যায়নি');
@@ -129,7 +160,6 @@ export default function AdminPage() {
     }
   };
 
-  // প্রোডাক্ট এডিট মোড শুরু করা
   const startEditProduct = (prod: Product) => {
     setEditingProductId(prod.id);
     setProductForm({
@@ -142,7 +172,6 @@ export default function AdminPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // ফর্ম রিসেট
   const resetProductForm = () => {
     setEditingProductId(null);
     setProductForm({
@@ -154,15 +183,11 @@ export default function AdminPage() {
     });
   };
 
-  // প্রোডাক্ট ডিলিট করা
   const handleDeleteProduct = async (id: number | string, name: string) => {
     const confirmDelete = window.confirm(`আপনি কি "${name}" প্রোডাক্টটি মুছে ফেলতে চান?`);
     if (!confirmDelete) return;
 
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('products').delete().eq('id', id);
 
     if (error) {
       showNotification('❌ প্রোডাক্ট মুছে ফেলা যায়নি');
@@ -172,7 +197,6 @@ export default function AdminPage() {
     }
   };
 
-  // সরাসরি ড্রপডাউন থেকে ক্যাটাগরি মুভ করা
   const handleQuickMoveCategory = async (productId: number | string, newCat: string) => {
     const { error } = await supabase
       .from('products')
@@ -190,10 +214,8 @@ export default function AdminPage() {
   };
 
   // ----------------------------------------------------
-  // ২. ক্যাটাগরি সম্পর্কিত কাজ (Add, Rename, Delete)
+  // ২. ক্যাটাগরি সম্পর্কিত ফাংশন (Add, Rename, Delete)
   // ----------------------------------------------------
-
-  // নতুন ক্যাটাগরি যোগ
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = newCategory.trim();
@@ -210,7 +232,6 @@ export default function AdminPage() {
     }
   };
 
-  // ক্যাটাগরি রিনেম সেভ
   const handleSaveEditCategory = async (id: number | string, oldName: string) => {
     const updated = editingCatName.trim();
     if (!updated || updated === oldName) {
@@ -228,7 +249,6 @@ export default function AdminPage() {
       return;
     }
 
-    // প্রোডাক্টগুলোতেও ক্যাটাগরির নাম সিঙ্ক করা
     await supabase
       .from('products')
       .update({ category: updated })
@@ -239,7 +259,6 @@ export default function AdminPage() {
     fetchData();
   };
 
-  // ক্যাটাগরি ডিলিট
   const handleDeleteCategory = async (id: number | string, name: string) => {
     const confirmDelete = window.confirm(
       `আপনি কি "${name}" ক্যাটাগরি মুছে ফেলতে চান? সংশ্লিষ্ট প্রোডাক্টগুলো ক্যাটাগরিহীন হয়ে যাবে।`
@@ -257,7 +276,6 @@ export default function AdminPage() {
     }
   };
 
-  // ফিল্টার করা প্রোডাক্ট লিস্ট
   const filteredProducts = products.filter((p) => {
     const title = (p.name || p.title || '').toLowerCase();
     const matchesSearch = title.includes(productSearch.toLowerCase());
@@ -267,9 +285,69 @@ export default function AdminPage() {
     return matchesSearch && matchesCategory;
   });
 
+  // যদি সেশন লোড হতে থাকে
+  if (checkingAuth) {
+    return null;
+  }
+
+  // ==================== ৩. পাসওয়ার্ড লগইন স্ক্রিন ====================
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-gray-200">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
+              🔒
+            </div>
+            <h1 className="text-2xl font-black text-gray-900">Admin Access</h1>
+            <p className="text-xs font-semibold text-gray-500 mt-1">
+              ড্যাশবোর্ডে প্রবেশ করতে সিকিউরিটি পাসওয়ার্ড লিখুন
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={inputPassword}
+                  onChange={(e) => setInputPassword(e.target.value)}
+                  placeholder="পাসওয়ার্ড লিখুন..."
+                  className="w-full pl-4 pr-12 py-3 text-sm font-semibold border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 shadow-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-3.5 text-xs font-bold text-gray-400 hover:text-gray-700"
+                >
+                  {showPassword ? 'Hide' : 'Show'}
+                </button>
+              </div>
+
+              {authError && (
+                <p className="text-xs font-bold text-red-600 mt-2 text-center bg-red-50 py-1.5 rounded-lg border border-red-100">
+                  {authError}
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-2xl transition-all shadow-md active:scale-95"
+            >
+              প্রবেশ করুন (Unlock)
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // ==================== ৪. মূল অ্যাডমিন ড্যাশবোর্ড ====================
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 bg-gray-50 min-h-screen">
-      {/* ড্যাশবোর্ড হেডার ও নোটিফিকেশন */}
+      {/* ড্যাশবোর্ড হেডার ও লগআউট বাটন */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900">Admin Control Center</h1>
@@ -278,14 +356,25 @@ export default function AdminPage() {
           </p>
         </div>
 
-        {message && (
-          <div className="bg-blue-600 text-white text-xs sm:text-sm px-4 py-2.5 rounded-xl font-bold shadow-md animate-fade-in">
-            {message}
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {message && (
+            <div className="bg-blue-600 text-white text-xs sm:text-sm px-4 py-2 rounded-xl font-bold shadow-md">
+              {message}
+            </div>
+          )}
+
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 border border-gray-200 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5"
+            title="লগআউট করুন"
+          >
+            <span>🔒</span>
+            <span>লগআউট</span>
+          </button>
+        </div>
       </div>
 
-      {/* ট্যাব নেভিগেশন (প্রোডাক্ট বনাম ক্যাটাগরি) */}
+      {/* ট্যাব নেভিগেশন */}
       <div className="flex gap-3 border-b border-gray-200 pb-2">
         <button
           onClick={() => setActiveTab('products')}
@@ -317,10 +406,10 @@ export default function AdminPage() {
           ডাটাবেস থেকে তথ্য লোড হচ্ছে...
         </div>
       ) : activeTab === 'products' ? (
-        /* ==================== ১. প্রোডাক্ট ম্যানেজমেন্ট ট্যাব ==================== */
+        /* প্রোডাক্ট ম্যানেজমেন্ট ট্যাব */
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           
-          {/* প্রোডাক্ট অ্যাড / এডিট ফর্ম (৪ কলাম) */}
+          {/* প্রোডাক্ট অ্যাড / এডিট ফর্ম */}
           <div className="lg:col-span-4">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-24">
               <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center justify-between">
@@ -343,7 +432,7 @@ export default function AdminPage() {
                     required
                     value={productForm.name}
                     onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                    placeholder="যেমন: ওয়ার্ডপ্রেস থিম, প্রিমিয়াম কোর্স"
+                    placeholder="যেমন: ওয়ার্ডপ্রেস থিম, কোর্স"
                     className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 font-medium"
                   />
                 </div>
@@ -411,11 +500,10 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* প্রোডাক্টের তালিকা ও কুইক মুভ (৮ কলাম) */}
+          {/* প্রোডাক্ট তালিকা ও কুইক ক্যাটাগরি মুভ */}
           <div className="lg:col-span-8 space-y-4">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               
-              {/* সার্চ ও ফিল্টার বার */}
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
                 <input
                   type="text"
@@ -440,7 +528,6 @@ export default function AdminPage() {
                 </select>
               </div>
 
-              {/* প্রোডাক্ট রো তালিকা */}
               {filteredProducts.length === 0 ? (
                 <div className="text-center py-12 text-sm text-gray-500 font-medium">
                   কোনো প্রোডাক্ট পাওয়া যায়নি
@@ -456,7 +543,6 @@ export default function AdminPage() {
                         key={product.id}
                         className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/80 p-2.5 rounded-xl transition-colors"
                       >
-                        {/* থাম্বনেইল ও ইনফো */}
                         <div className="flex items-center gap-3.5 min-w-0">
                           {img ? (
                             <img
@@ -470,16 +556,11 @@ export default function AdminPage() {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="text-sm font-black text-gray-900 truncate">
-                              {title}
-                            </p>
-                            <p className="text-xs text-blue-600 font-bold mt-0.5">
-                              ৳ {product.price}
-                            </p>
+                            <p className="text-sm font-black text-gray-900 truncate">{title}</p>
+                            <p className="text-xs text-blue-600 font-bold mt-0.5">৳ {product.price}</p>
                           </div>
                         </div>
 
-                        {/* ক্যাটাগরি পরিবর্তন ড্রপডাউন ও অ্যাকশন বাটন */}
                         <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
                           <select
                             value={product.category || ''}
@@ -519,10 +600,9 @@ export default function AdminPage() {
 
         </div>
       ) : (
-        /* ==================== ২. ক্যাটাগরি ম্যানেজমেন্ট ট্যাব ==================== */
+        /* ক্যাটাগরি ম্যানেজমেন্ট ট্যাব */
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           
-          {/* ক্যাটাগরি যোগ ফর্ম */}
           <div className="md:col-span-5">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <h2 className="text-base font-black text-gray-900 mb-3 flex items-center gap-2">
@@ -546,7 +626,6 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* ক্যাটাগরি লিস্ট (Edit & Delete সহ) */}
           <div className="md:col-span-7">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex items-center justify-between mb-4">
@@ -592,9 +671,7 @@ export default function AdminPage() {
                         ) : (
                           <>
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-sm font-bold text-gray-900 truncate">
-                                {cat.name}
-                              </span>
+                              <span className="text-sm font-bold text-gray-900 truncate">{cat.name}</span>
                               <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-black">
                                 {count}
                               </span>
