@@ -32,6 +32,7 @@ export default function AdminPage() {
   const [submitting, setSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
 
+  // Form States
   const [productForm, setProductForm] = useState({
     title: '',
     price: '',
@@ -39,12 +40,16 @@ export default function AdminPage() {
     image_url: '',
     description: '',
   });
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
   const [editingProductId, setEditingProductId] = useState<number | string | null>(null);
 
+  // Category States
   const [newCategory, setNewCategory] = useState('');
   const [editingCatId, setEditingCatId] = useState<number | string | null>(null);
   const [editingCatName, setEditingCatName] = useState('');
 
+  // Filter States
   const [productSearch, setProductSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
 
@@ -94,7 +99,7 @@ export default function AdminPage() {
       sessionStorage.setItem('admin_session_auth', 'true');
       setAuthError('');
     } else {
-      setAuthError('Incorrect password! Please enter the valid security password.');
+      setAuthError('Incorrect password! Please try again.');
     }
   };
 
@@ -104,27 +109,70 @@ export default function AdminPage() {
     setInputPassword('');
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadImageToStorage = async (file: File): Promise<string | null> => {
+    const fileExt = file.name.split('.').pop();
+    const cleanFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(cleanFileName, file);
+
+    if (uploadError) {
+      console.error('Upload Error:', uploadError);
+      return null;
+    }
+
+    const { data } = supabase.storage
+      .from('products')
+      .getPublicUrl(cleanFileName);
+
+    return data.publicUrl;
+  };
+
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const { title, price, category, image_url, description } = productForm;
 
     if (!title.trim()) {
-      showStatus('❌ Please provide a valid product title.', true);
+      showStatus('❌ Please enter a product title', true);
       return;
     }
 
     setSubmitting(true);
-    const cleanPrice = parseFloat(price);
-    const payload = {
-      title: title.trim(),
-      price: isNaN(cleanPrice) ? 0 : cleanPrice,
-      category: category.trim() || null,
-      image_url: image_url.trim() || null,
-      description: description.trim() || null,
-      views: 0,
-    };
 
     try {
+      let finalImageUrl = image_url.trim() || null;
+
+      // সরাসরি ছবি সিলেক্ট করা থাকলে তা আপলোড করে লিংক তৈরি করা
+      if (selectedFile) {
+        const uploadedUrl = await uploadImageToStorage(selectedFile);
+        if (uploadedUrl) {
+          finalImageUrl = uploadedUrl;
+        } else {
+          showStatus('❌ Image upload failed. Make sure "products" bucket is created and set to Public.', true);
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      const cleanPrice = parseFloat(price);
+      const payload = {
+        title: title.trim(),
+        price: isNaN(cleanPrice) ? 0 : cleanPrice,
+        category: category.trim() || null,
+        image_url: finalImageUrl,
+        description: description.trim() || null,
+        views: 0,
+      };
+
       if (editingProductId) {
         const { error } = await supabase
           .from('products')
@@ -146,7 +194,7 @@ export default function AdminPage() {
         if (error) {
           showStatus(`❌ Insert failed: ${error.message}`, true);
         } else {
-          showStatus('✅ New product added successfully!');
+          showStatus('✅ Product created successfully with photo!');
           resetProductForm();
           fetchData();
         }
@@ -167,11 +215,15 @@ export default function AdminPage() {
       image_url: prod.image_url || '',
       description: prod.description || '',
     });
+    setPreviewUrl(prod.image_url || '');
+    setSelectedFile(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetProductForm = () => {
     setEditingProductId(null);
+    setSelectedFile(null);
+    setPreviewUrl('');
     setProductForm({
       title: '',
       price: '',
@@ -204,7 +256,7 @@ export default function AdminPage() {
     if (error) {
       showStatus(`❌ Category move failed: ${error.message}`, true);
     } else {
-      showStatus('✅ Category updated successfully!');
+      showStatus('✅ Category updated!');
       setProducts((prev) =>
         prev.map((p) => (p.id === productId ? { ...p, category: newCat } : p))
       );
@@ -256,7 +308,7 @@ export default function AdminPage() {
 
   const handleDeleteCategory = async (id: number | string, name: string) => {
     const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${name}"? Linked products will become uncategorized.`
+      `Are you sure you want to delete "${name}"? Products will become uncategorized.`
     );
     if (!confirmDelete) return;
 
@@ -402,7 +454,7 @@ export default function AdminPage() {
         </div>
       ) : activeTab === 'products' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Product Form */}
+          {/* Product Form with Photo Upload */}
           <div className="lg:col-span-4">
             <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800 sticky top-24">
               <h2 className="text-lg font-black text-white mb-4 flex items-center justify-between">
@@ -410,7 +462,7 @@ export default function AdminPage() {
                 {editingProductId && (
                   <button
                     onClick={resetProductForm}
-                    className="text-xs font-semibold text-rose-400 hover:underline"
+                    className="text-xs font-semibold text-rose-400 hover:underline cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -425,7 +477,7 @@ export default function AdminPage() {
                     required
                     value={productForm.title}
                     onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
-                    placeholder="e.g. Windows 11 Professional License"
+                    placeholder="e.g. Windows 11 License"
                     className="w-full px-3.5 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 font-medium"
                   />
                 </div>
@@ -461,13 +513,41 @@ export default function AdminPage() {
                   </div>
                 </div>
 
+                {/* Direct Photo Upload */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Image URL</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Upload Photo from Device
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-white hover:file:bg-sky-600 cursor-pointer bg-slate-950 border border-slate-800 rounded-xl p-1"
+                  />
+
+                  {previewUrl && (
+                    <div className="mt-2 relative inline-block">
+                      <img
+                        src={previewUrl}
+                        alt="Preview"
+                        className="w-20 h-20 object-cover rounded-xl border border-sky-500/50 shadow-md"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Or Image URL (Optional)
+                  </label>
                   <input
                     type="url"
                     value={productForm.image_url}
-                    onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
-                    placeholder="https://example.com/asset-preview.jpg"
+                    onChange={(e) => {
+                      setProductForm({ ...productForm, image_url: e.target.value });
+                      if (!selectedFile) setPreviewUrl(e.target.value);
+                    }}
+                    placeholder="https://example.com/photo.jpg"
                     className="w-full px-3.5 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 font-medium"
                   />
                 </div>
@@ -478,7 +558,7 @@ export default function AdminPage() {
                     rows={3}
                     value={productForm.description}
                     onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                    placeholder="Key specifications, license terms, or instructions..."
+                    placeholder="Key specifications or details..."
                     className="w-full px-3.5 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 font-medium resize-none"
                   />
                 </div>
@@ -488,7 +568,7 @@ export default function AdminPage() {
                   disabled={submitting}
                   className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-400 text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
                 >
-                  {submitting ? 'Saving...' : editingProductId ? 'Save Changes' : 'Add Product'}
+                  {submitting ? 'Uploading & Saving...' : editingProductId ? 'Save Changes' : 'Add Product'}
                 </button>
               </form>
             </div>
@@ -523,7 +603,7 @@ export default function AdminPage() {
 
               {filteredProducts.length === 0 ? (
                 <div className="text-center py-12 text-sm text-slate-500 font-medium">
-                  No products found matching criteria
+                  No products found
                 </div>
               ) : (
                 <div className="divide-y divide-slate-800/80 max-h-[640px] overflow-y-auto pr-1">
@@ -558,7 +638,6 @@ export default function AdminPage() {
                           <select
                             value={product.category || ''}
                             onChange={(e) => handleQuickMoveCategory(product.id, e.target.value)}
-                            title="Quick Category Assignment"
                             className="text-xs font-bold border border-slate-800 rounded-xl px-2.5 py-1.5 bg-slate-950 text-white shadow-sm focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
                           >
                             <option value="">No Category</option>
@@ -604,7 +683,7 @@ export default function AdminPage() {
                   type="text"
                   value={newCategory}
                   onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="e.g. Developer Tools, Templates"
+                  placeholder="e.g. Software, Templates"
                   className="flex-1 px-4 py-2.5 text-sm font-medium border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500"
                 />
                 <button
