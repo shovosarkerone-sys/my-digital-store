@@ -217,7 +217,7 @@ export default function Home() {
 
                       <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
                         <span className="text-base font-bold text-sky-400">
-                          ৳{item.price}
+                          ${item.price}
                         </span>
                         <Link
                           href={`/product/${item.id}`}
