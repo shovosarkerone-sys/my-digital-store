@@ -11,11 +11,9 @@ interface Category {
 interface Product {
   id: number | string;
   title?: string;
-  name?: string;
   price?: number;
   category?: string;
   image_url?: string;
-  image?: string;
   description?: string;
   views?: number;
 }
@@ -31,10 +29,14 @@ export default function AdminPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
+  // নোটিফিকেশন স্টেট
+  const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
+
+  // প্রোডাক্ট ফর্ম স্টেট
   const [productForm, setProductForm] = useState({
-    name: '',
+    title: '',
     price: '',
     category: '',
     image_url: '',
@@ -42,10 +44,12 @@ export default function AdminPage() {
   });
   const [editingProductId, setEditingProductId] = useState<number | string | null>(null);
 
+  // ক্যাটাগরি ফর্ম স্টেট
   const [newCategory, setNewCategory] = useState('');
   const [editingCatId, setEditingCatId] = useState<number | string | null>(null);
   const [editingCatName, setEditingCatName] = useState('');
 
+  // সার্চ ও ফিল্টার
   const [productSearch, setProductSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('ALL');
 
@@ -83,9 +87,9 @@ export default function AdminPage() {
     }
   }, [isAuthenticated]);
 
-  const showNotification = (msg: string) => {
-    setMessage(msg);
-    setTimeout(() => setMessage(''), 5000);
+  const showStatus = (text: string, isError: boolean = false) => {
+    setStatusMessage({ text, isError });
+    setTimeout(() => setStatusMessage(null), 7000);
   };
 
   const handleLogin = (e: React.FormEvent) => {
@@ -105,63 +109,75 @@ export default function AdminPage() {
     setInputPassword('');
   };
 
-  // ১. প্রোডাক্ট সাবমিট হ্যান্ডলার
+  // ----------------------------------------------------
+  // ১. প্রোডাক্ট সাবমিট (সঠিক কলাম: title, price, category, etc.)
+  // ----------------------------------------------------
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { name, price, category, image_url, description } = productForm;
+    const { title, price, category, image_url, description } = productForm;
 
-    if (!name.trim()) {
-      alert('দয়া করে প্রোডাক্টের নাম লিখুন');
+    if (!title.trim()) {
+      showStatus('❌ দয়া করে প্রোডাক্টের নাম লিখুন', true);
       return;
     }
 
+    setSubmitting(true);
+
+    // ডাটাবেসের হুবহু কলাম মিলিয়ে পেলোড
+    const cleanPrice = parseFloat(price);
     const payload = {
-      title: name.trim(),
-      price: price ? parseFloat(price) : 0,
-      category: category || '',
-      image_url: image_url.trim(),
-      description: description.trim(),
+      title: title.trim(),
+      price: isNaN(cleanPrice) ? 0 : cleanPrice,
+      category: category.trim() || null,
+      image_url: image_url.trim() || null,
+      description: description.trim() || null,
       views: 0,
     };
 
-    if (editingProductId) {
-      const { error } = await supabase
-        .from('products')
-        .update(payload)
-        .eq('id', editingProductId);
+    try {
+      if (editingProductId) {
+        const { error } = await supabase
+          .from('products')
+          .update(payload)
+          .eq('id', editingProductId);
 
-      if (error) {
-        alert(`❌ আপডেট করা যায়নি!\nকারণ: ${error.message}`);
-        showNotification(`❌ আপডেট ব্যর্থ: ${error.message}`);
+        if (error) {
+          console.error('Supabase Error:', error);
+          showStatus(`❌ আপডেট ব্যর্থ: ${error.message}`, true);
+        } else {
+          showStatus('✅ প্রোডাক্ট সফলভাবে আপডেট হয়েছে!');
+          resetProductForm();
+          fetchData();
+        }
       } else {
-        showNotification('✅ প্রোডাক্ট সফলভাবে আপডেট হয়েছে!');
-        resetProductForm();
-        fetchData();
-      }
-    } else {
-      const { error } = await supabase
-        .from('products')
-        .insert([payload]);
+        const { error } = await supabase
+          .from('products')
+          .insert([payload]);
 
-      if (error) {
-        // কোনো সমস্যা হলে সরাসরি স্ক্রিনে পপআপ দেখাবে
-        alert(`❌ প্রোডাক্ট যোগ করা যায়নি!\nকারণ: ${error.message}`);
-        showNotification(`❌ যোগ করা যায়নি: ${error.message}`);
-      } else {
-        showNotification('✅ নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে!');
-        resetProductForm();
-        fetchData();
+        if (error) {
+          console.error('Supabase Insert Error:', error);
+          // ডাটাবেসের আসল এরর সরাসরি দেখাবে
+          showStatus(`❌ এরর: ${error.message}`, true);
+        } else {
+          showStatus('✅ নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে!');
+          resetProductForm();
+          fetchData();
+        }
       }
+    } catch (err: any) {
+      showStatus(`❌ সিস্টেম এরর: ${err?.message || 'অজানা সমস্যা'}`, true);
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const startEditProduct = (prod: Product) => {
     setEditingProductId(prod.id);
     setProductForm({
-      name: prod.title || prod.name || '',
+      title: prod.title || '',
       price: prod.price !== undefined ? String(prod.price) : '',
       category: prod.category || '',
-      image_url: prod.image_url || prod.image || '',
+      image_url: prod.image_url || '',
       description: prod.description || '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -170,7 +186,7 @@ export default function AdminPage() {
   const resetProductForm = () => {
     setEditingProductId(null);
     setProductForm({
-      name: '',
+      title: '',
       price: '',
       category: '',
       image_url: '',
@@ -185,9 +201,9 @@ export default function AdminPage() {
     const { error } = await supabase.from('products').delete().eq('id', id);
 
     if (error) {
-      alert(`ডিলিট ব্যর্থ: ${error.message}`);
+      showStatus(`❌ ডিলিট ব্যর্থ: ${error.message}`, true);
     } else {
-      showNotification('🗑️ প্রোডাক্ট ডিলিট করা হয়েছে!');
+      showStatus('🗑️ প্রোডাক্ট ডিলিট করা হয়েছে!');
       fetchData();
     }
   };
@@ -195,19 +211,22 @@ export default function AdminPage() {
   const handleQuickMoveCategory = async (productId: number | string, newCat: string) => {
     const { error } = await supabase
       .from('products')
-      .update({ category: newCat })
+      .update({ category: newCat || null })
       .eq('id', productId);
 
     if (error) {
-      alert(`ক্যাটাগরি পরিবর্তন ব্যর্থ: ${error.message}`);
+      showStatus(`❌ পরিবর্তন ব্যর্থ: ${error.message}`, true);
     } else {
-      showNotification('✅ প্রোডাক্টের ক্যাটাগরি পরিবর্তিত হয়েছে!');
+      showStatus('✅ প্রোডাক্টের ক্যাটাগরি স্থানান্তরিত হয়েছে!');
       setProducts((prev) =>
         prev.map((p) => (p.id === productId ? { ...p, category: newCat } : p))
       );
     }
   };
 
+  // ----------------------------------------------------
+  // ২. ক্যাটাগরি সম্পর্কিত কাজ
+  // ----------------------------------------------------
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = newCategory.trim();
@@ -216,9 +235,9 @@ export default function AdminPage() {
     const { error } = await supabase.from('categories').insert([{ name: cleanName }]);
 
     if (error) {
-      alert(`ক্যাটাগরি যোগ ব্যর্থ: ${error.message}`);
+      showStatus(`❌ ক্যাটাগরি যোগ ব্যর্থ: ${error.message}`, true);
     } else {
-      showNotification(`✅ "${cleanName}" ক্যাটাগরি যোগ হয়েছে!`);
+      showStatus(`✅ "${cleanName}" ক্যাটাগরি যোগ হয়েছে!`);
       setNewCategory('');
       fetchData();
     }
@@ -237,7 +256,7 @@ export default function AdminPage() {
       .eq('id', id);
 
     if (error) {
-      alert(`ক্যাটাগরি নাম পরিবর্তন ব্যর্থ: ${error.message}`);
+      showStatus(`❌ ক্যাটাগরি নাম পরিবর্তন ব্যর্থ: ${error.message}`, true);
       return;
     }
 
@@ -246,7 +265,7 @@ export default function AdminPage() {
       .update({ category: updated })
       .eq('category', oldName);
 
-    showNotification(`✅ ক্যাটাগরি পরিবর্তন হয়ে "${updated}" হয়েছে!`);
+    showStatus(`✅ ক্যাটাগরি পরিবর্তন হয়ে "${updated}" হয়েছে!`);
     setEditingCatId(null);
     fetchData();
   };
@@ -257,19 +276,19 @@ export default function AdminPage() {
     );
     if (!confirmDelete) return;
 
-    await supabase.from('products').update({ category: '' }).eq('category', name);
+    await supabase.from('products').update({ category: null }).eq('category', name);
     const { error } = await supabase.from('categories').delete().eq('id', id);
 
     if (error) {
-      alert(`ক্যাটাগরি ডিলিট ব্যর্থ: ${error.message}`);
+      showStatus(`❌ ক্যাটাগরি ডিলিট ব্যর্থ: ${error.message}`, true);
     } else {
-      showNotification(`🗑️ "${name}" ক্যাটাগরি মুছে ফেলা হয়েছে!`);
+      showStatus(`🗑️ "${name}" ক্যাটাগরি মুছে ফেলা হয়েছে!`);
       fetchData();
     }
   };
 
   const filteredProducts = products.filter((p) => {
-    const title = (p.title || p.name || '').toLowerCase();
+    const title = (p.title || '').toLowerCase();
     const matchesSearch = title.includes(productSearch.toLowerCase());
     const matchesCategory =
       filterCategory === 'ALL' ||
@@ -334,6 +353,7 @@ export default function AdminPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 bg-gray-50 min-h-screen">
+      {/* হেডার ও লগআউট বাটন */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-gray-900">Admin Control Center</h1>
@@ -343,9 +363,15 @@ export default function AdminPage() {
         </div>
 
         <div className="flex items-center gap-3">
-          {message && (
-            <div className="bg-blue-600 text-white text-xs sm:text-sm px-4 py-2 rounded-xl font-bold shadow-md">
-              {message}
+          {statusMessage && (
+            <div
+              className={`text-xs sm:text-sm px-4 py-2 rounded-xl font-bold shadow-md ${
+                statusMessage.isError
+                  ? 'bg-red-600 text-white animate-pulse'
+                  : 'bg-blue-600 text-white'
+              }`}
+            >
+              {statusMessage.text}
             </div>
           )}
 
@@ -359,6 +385,7 @@ export default function AdminPage() {
         </div>
       </div>
 
+      {/* ট্যাব নেভিগেশন */}
       <div className="flex gap-3 border-b border-gray-200 pb-2">
         <button
           onClick={() => setActiveTab('products')}
@@ -391,6 +418,7 @@ export default function AdminPage() {
         </div>
       ) : activeTab === 'products' ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* প্রোডাক্ট ফর্ম */}
           <div className="lg:col-span-4">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-24">
               <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center justify-between">
@@ -411,8 +439,8 @@ export default function AdminPage() {
                   <input
                     type="text"
                     required
-                    value={productForm.name}
-                    onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                    value={productForm.title}
+                    onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
                     placeholder="যেমন: Windows 11 Pro"
                     className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 font-medium"
                   />
@@ -473,14 +501,16 @@ export default function AdminPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                  disabled={submitting}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
                 >
-                  {editingProductId ? 'পরিবর্তন সেভ করুন' : 'প্রোডাক্ট যুক্ত করুন'}
+                  {submitting ? 'যোগ হচ্ছে...' : editingProductId ? 'পরিবর্তন সেভ করুন' : 'প্রোডাক্ট যুক্ত করুন'}
                 </button>
               </form>
             </div>
           </div>
 
+          {/* প্রোডাক্ট তালিকা */}
           <div className="lg:col-span-8 space-y-4">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
@@ -514,8 +544,8 @@ export default function AdminPage() {
               ) : (
                 <div className="divide-y divide-gray-100 max-h-[640px] overflow-y-auto pr-1">
                   {filteredProducts.map((product) => {
-                    const title = product.title || product.name || 'নামহীন প্রোডাক্ট';
-                    const img = product.image_url || product.image;
+                    const title = product.title || 'নামহীন প্রোডাক্ট';
+                    const img = product.image_url;
 
                     return (
                       <div
@@ -578,6 +608,7 @@ export default function AdminPage() {
           </div>
         </div>
       ) : (
+        /* ক্যাটাগরি ম্যানেজমেন্ট ট্যাব */
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           <div className="md:col-span-5">
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
