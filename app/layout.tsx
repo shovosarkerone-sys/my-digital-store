@@ -1,58 +1,52 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import SearchBar from "./components/SearchBar";
 import Link from "next/link";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import SearchBar from "./components/SearchBar";
 
 export const metadata: Metadata = {
-  title: "Digital Store",
-  description: "My Digital Store",
+  title: "ShovoStore — Premium Digital Assets Marketplace",
+  description: "Browse and buy premium digital assets, software licenses, guides, and templates.",
 };
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode;
-}) {
+}>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
-        {/* z-[100] দিয়ে সবার ওপরে রাখা হয়েছে যাতে নিচের কোনো উপাদান একে ব্লার না করতে পারে */}
-        <header className="sticky top-0 z-[100] bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-            <Link href="/" className="font-bold text-xl text-blue-600 shrink-0">
-              Store
+    <html lang="en" className="scroll-smooth">
+      <body className="bg-slate-950 text-white min-h-screen flex flex-col font-sans antialiased">
+        {/* Top Header Bar */}
+        <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-900 px-4 sm:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3">
+          <div className="flex items-center justify-between w-full md:w-auto">
+            <Link href="/" className="text-xl font-black text-sky-400 tracking-tight flex items-center gap-1.5">
+              <span>ShovoStore.</span>
             </Link>
-
-            {/* সার্চবার কম্পোনেন্ট */}
-            <div className="flex-1 max-w-md">
-              <SearchBar />
-            </div>
-
             <Link
               href="/admin"
-              className="text-xs sm:text-sm font-medium text-gray-600 hover:text-blue-600 shrink-0"
+              className="md:hidden text-xs font-bold text-slate-400 hover:text-white px-3 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700"
             >
               Admin
             </Link>
           </div>
+
+          <div className="w-full md:w-96 lg:w-[480px]">
+            <SearchBar />
+          </div>
+
+          <div className="hidden md:flex items-center gap-5 text-xs font-bold text-slate-400">
+            <Link href="/#popular" className="hover:text-white transition">Trending</Link>
+            <Link href="/#categories" className="hover:text-white transition">Categories</Link>
+            <Link
+              href="/admin"
+              className="bg-slate-900 border border-slate-800 hover:border-sky-500/50 text-slate-300 hover:text-white px-3.5 py-1.5 rounded-xl transition shadow-sm"
+            >
+              Admin Access
+            </Link>
+          </div>
         </header>
 
-        {/* মূল পেজের কনটেন্ট */}
-        <main className="flex-1">{children}</main>
+        <main className="flex-grow">{children}</main>
       </body>
     </html>
   );

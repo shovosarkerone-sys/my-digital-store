@@ -1,184 +1,141 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import { supabase } from '@/lib/supabase';
-import Link from 'next/link';
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 interface Product {
-  id: string | number;
-  name?: string;
+  id: number | string;
   title?: string;
-  price?: number;
+  price: number;
+  category?: string;
   image_url?: string;
-  image?: string;
 }
 
 export default function SearchBar() {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  // ডাটাবেস থেকে প্রোডাক্ট খোঁজার মূল ফাংশন
-  const searchProducts = async (searchTerm: string) => {
-    const cleanTerm = searchTerm.trim();
-    if (!cleanTerm) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setIsOpen(true);
-
-    try {
-      // ১. প্রথমে 'name' কলাম দিয়ে খোঁজার চেষ্টা
-      let { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .ilike('name', `%${cleanTerm}%`)
-        .limit(6);
-
-      // ২. যদি 'name' কলাম না থাকে বা রেজাল্ট না আসে, তবে 'title' কলামে খুঁজবে
-      if (error || !data || data.length === 0) {
-        const fallback = await supabase
-          .from('products')
-          .select('*')
-          .ilike('title', `%${cleanTerm}%`)
-          .limit(6);
-
-        if (fallback.data && fallback.data.length > 0) {
-          data = fallback.data;
-        }
-      }
-
-      setResults(data || []);
-    } catch (err) {
-      console.error('Search error:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // টাইপ করার সময় অটোমেটিক সাজেশন (৩০০ms বিরতিতে)
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      setIsOpen(false);
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      searchProducts(query);
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  // সার্চ বাটনে ক্লিক করলে বা Enter চাপলে তাৎক্ষণিক সার্চ
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (query.trim()) {
-      searchProducts(query);
-    }
-  };
-
-  // বাইরে ক্লিক করলে ড্রপডাউন বন্ধ হওয়া
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
       }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const searchProducts = async () => {
+      const clean = query.trim();
+      if (!clean) {
+        setResults([]);
+        setIsOpen(false);
+        return;
+      }
+
+      setLoading(true);
+      const { data } = await supabase
+        .from("products")
+        .select("id, title, price, category, image_url")
+        .ilike("title", `%${clean}%`)
+        .limit(6);
+
+      if (data) {
+        setResults(data);
+        setIsOpen(true);
+      }
+      setLoading(false);
+    };
+
+    const debounceTimer = setTimeout(searchProducts, 250);
+    return () => clearTimeout(debounceTimer);
+  }, [query]);
+
   return (
-    <div ref={searchRef} className="relative w-full max-w-md mx-auto">
-      <form onSubmit={handleSubmit} className="relative flex items-center w-full">
+    <div ref={containerRef} className="relative w-full max-w-lg mx-auto">
+      <div className="relative flex items-center">
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim() && setIsOpen(true)}
-          placeholder="প্রোডাক্টের নাম লিখুন..."
-          className="w-full pl-4 pr-24 py-2 text-sm text-gray-800 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+          placeholder="Search digital assets, software, templates..."
+          className="w-full bg-slate-900/90 border border-slate-800 rounded-full pl-5 pr-28 py-2 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500 transition shadow-inner placeholder:text-slate-500"
         />
 
-        {/* নীল Search বাটন */}
-        <button
-          type="submit"
-          className="absolute right-1 top-1 bottom-1 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-full flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
-        >
-          <svg
-            className="w-3.5 h-3.5 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        {query && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery("");
+              setResults([]);
+              setIsOpen(false);
+            }}
+            className="absolute right-28 text-xs text-slate-500 hover:text-white transition"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
+            ✕
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="absolute right-1 top-1 bottom-1 px-4 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
+        >
+          <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
           <span>Search</span>
         </button>
-      </form>
+      </div>
 
-      {/* ড্রপডাউন সাজেশন লিস্ট */}
+      {/* Live Dropdown Results */}
       {isOpen && (
-        <div className="absolute left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-          {isLoading ? (
-            <div className="p-4 text-center text-xs text-gray-500 flex items-center justify-center gap-2">
-              <span className="w-2 h-2 bg-blue-600 rounded-full animate-ping"></span>
-              খোঁজা হচ্ছে...
+        <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800/60 max-h-80 overflow-y-auto">
+          {loading ? (
+            <div className="p-4 text-center text-xs text-slate-400 font-medium">
+              Searching marketplace...
             </div>
-          ) : results.length > 0 ? (
-            <div className="divide-y divide-gray-100 max-h-72 overflow-y-auto">
-              {results.map((product) => {
-                const displayName = product.name || product.title || 'নামহীন প্রোডাক্ট';
-                const displayImage = product.image_url || product.image;
-
-                return (
-                  <Link
-                    key={product.id}
-                    href={`/product/${product.id}`}
-                    onClick={() => setIsOpen(false)}
-                    className="flex items-center gap-3 p-3 hover:bg-blue-50/60 transition-colors"
-                  >
-                    {displayImage ? (
-                      <img
-                        src={displayImage}
-                        alt={displayName}
-                        className="w-11 h-11 object-cover rounded-lg flex-shrink-0 border border-gray-100"
-                      />
-                    ) : (
-                      <div className="w-11 h-11 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs flex-shrink-0">
-                        ছবি নেই
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {displayName}
-                      </p>
-                      {product.price !== undefined && (
-                        <p className="text-xs text-blue-600 font-bold mt-0.5">
-                          ৳ {product.price}
-                        </p>
-                      )}
-                    </div>
-                  </Link>
-                );
-              })}
+          ) : results.length === 0 ? (
+            <div className="p-4 text-center text-xs text-slate-500 font-medium">
+              No products found for "{query}".
             </div>
           ) : (
-            <div className="p-4 text-center text-xs text-gray-500">
-              "{query}" নামে কোনো প্রোডাক্ট পাওয়া যায়নি
-            </div>
+            results.map((item) => (
+              <Link
+                key={item.id}
+                href={`/product/${item.id}`}
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 p-3 hover:bg-slate-800/80 transition group"
+              >
+                {item.image_url ? (
+                  <img
+                    src={item.image_url}
+                    alt={item.title}
+                    className="w-10 h-10 object-cover rounded-lg border border-slate-800 shrink-0"
+                  />
+                ) : (
+                  <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-[9px] text-slate-500 font-bold shrink-0">
+                    No Img
+                  </div>
+                )}
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="text-xs font-semibold text-white truncate group-hover:text-sky-400 transition">
+                    {item.title}
+                  </p>
+                  <span className="text-[10px] text-slate-400 uppercase font-bold">
+                    {item.category || "Asset"}
+                  </span>
+                </div>
+                <span className="text-xs font-bold text-sky-400 shrink-0">
+                  ${item.price}
+                </span>
+              </Link>
+            ))
           )}
         </div>
       )}

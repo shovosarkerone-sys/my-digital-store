@@ -1,717 +1,284 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-
-interface Category {
-  id: number | string;
-  name: string;
-}
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 
 interface Product {
   id: number | string;
   title?: string;
-  price?: number;
   category?: string;
-  image_url?: string;
+  price: number;
   description?: string;
+  image_url?: string;
   views?: number;
 }
 
-export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [inputPassword, setInputPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+interface CategoryItem {
+  id?: number | string;
+  name: string;
+}
 
-  const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products');
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+export default function Home() {
+  const [categories, setCategories] = useState<string[]>([
+    "E-books & Guides",
+    "Software & Tools",
+    "Web Templates",
+    "Audio & Sound Effects",
+  ]);
+  const [categorySearch, setCategorySearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("ALL");
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-
-  // নোটিফিকেশন স্টেট
-  const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
-
-  // প্রোডাক্ট ফর্ম স্টেট
-  const [productForm, setProductForm] = useState({
-    title: '',
-    price: '',
-    category: '',
-    image_url: '',
-    description: '',
-  });
-  const [editingProductId, setEditingProductId] = useState<number | string | null>(null);
-
-  // ক্যাটাগরি ফর্ম স্টেট
-  const [newCategory, setNewCategory] = useState('');
-  const [editingCatId, setEditingCatId] = useState<number | string | null>(null);
-  const [editingCatName, setEditingCatName] = useState('');
-
-  // সার্চ ও ফিল্টার
-  const [productSearch, setProductSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState('ALL');
 
   useEffect(() => {
-    const savedAuth = sessionStorage.getItem('admin_session_auth');
-    if (savedAuth === 'true') {
-      setIsAuthenticated(true);
-    }
-    setCheckingAuth(false);
-  }, []);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
 
-  const fetchData = async () => {
-    setLoading(true);
+        const { data: catData } = await supabase
+          .from("categories")
+          .select("name")
+          .order("name", { ascending: true });
 
-    const { data: catData } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true });
+        if (catData && catData.length > 0) {
+          setCategories(catData.map((c: CategoryItem) => c.name));
+        }
 
-    if (catData) setCategories(catData);
+        const { data: prodData } = await supabase
+          .from("products")
+          .select("*")
+          .order("views", { ascending: false })
+          .order("id", { ascending: false });
 
-    const { data: prodData } = await supabase
-      .from('products')
-      .select('*')
-      .order('id', { ascending: false });
-
-    if (prodData) setProducts(prodData);
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchData();
-    }
-  }, [isAuthenticated]);
-
-  const showStatus = (text: string, isError: boolean = false) => {
-    setStatusMessage({ text, isError });
-    setTimeout(() => setStatusMessage(null), 7000);
-  };
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputPassword === 'Illustrator6!') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('admin_session_auth', 'true');
-      setAuthError('');
-    } else {
-      setAuthError('ভুল পাসওয়ার্ড! সঠিক পাসওয়ার্ড দিয়ে আবার চেষ্টা করুন।');
-    }
-  };
-
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_session_auth');
-    setIsAuthenticated(false);
-    setInputPassword('');
-  };
-
-  // ----------------------------------------------------
-  // ১. প্রোডাক্ট সাবমিট (সঠিক কলাম: title, price, category, etc.)
-  // ----------------------------------------------------
-  const handleProductSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { title, price, category, image_url, description } = productForm;
-
-    if (!title.trim()) {
-      showStatus('❌ দয়া করে প্রোডাক্টের নাম লিখুন', true);
-      return;
-    }
-
-    setSubmitting(true);
-
-    // ডাটাবেসের হুবহু কলাম মিলিয়ে পেলোড
-    const cleanPrice = parseFloat(price);
-    const payload = {
-      title: title.trim(),
-      price: isNaN(cleanPrice) ? 0 : cleanPrice,
-      category: category.trim() || null,
-      image_url: image_url.trim() || null,
-      description: description.trim() || null,
-      views: 0,
+        if (prodData) {
+          setAllProducts(prodData);
+        }
+      } catch (err) {
+        console.error("Error loading products:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    try {
-      if (editingProductId) {
-        const { error } = await supabase
-          .from('products')
-          .update(payload)
-          .eq('id', editingProductId);
-
-        if (error) {
-          console.error('Supabase Error:', error);
-          showStatus(`❌ আপডেট ব্যর্থ: ${error.message}`, true);
-        } else {
-          showStatus('✅ প্রোডাক্ট সফলভাবে আপডেট হয়েছে!');
-          resetProductForm();
-          fetchData();
-        }
-      } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([payload]);
-
-        if (error) {
-          console.error('Supabase Insert Error:', error);
-          // ডাটাবেসের আসল এরর সরাসরি দেখাবে
-          showStatus(`❌ এরর: ${error.message}`, true);
-        } else {
-          showStatus('✅ নতুন প্রোডাক্ট সফলভাবে যুক্ত হয়েছে!');
-          resetProductForm();
-          fetchData();
-        }
-      }
-    } catch (err: any) {
-      showStatus(`❌ সিস্টেম এরর: ${err?.message || 'অজানা সমস্যা'}`, true);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const startEditProduct = (prod: Product) => {
-    setEditingProductId(prod.id);
-    setProductForm({
-      title: prod.title || '',
-      price: prod.price !== undefined ? String(prod.price) : '',
-      category: prod.category || '',
-      image_url: prod.image_url || '',
-      description: prod.description || '',
-    });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const resetProductForm = () => {
-    setEditingProductId(null);
-    setProductForm({
-      title: '',
-      price: '',
-      category: '',
-      image_url: '',
-      description: '',
-    });
-  };
-
-  const handleDeleteProduct = async (id: number | string, title: string) => {
-    const confirmDelete = window.confirm(`আপনি কি "${title}" প্রোডাক্টটি মুছে ফেলতে চান?`);
-    if (!confirmDelete) return;
-
-    const { error } = await supabase.from('products').delete().eq('id', id);
-
-    if (error) {
-      showStatus(`❌ ডিলিট ব্যর্থ: ${error.message}`, true);
-    } else {
-      showStatus('🗑️ প্রোডাক্ট ডিলিট করা হয়েছে!');
-      fetchData();
-    }
-  };
-
-  const handleQuickMoveCategory = async (productId: number | string, newCat: string) => {
-    const { error } = await supabase
-      .from('products')
-      .update({ category: newCat || null })
-      .eq('id', productId);
-
-    if (error) {
-      showStatus(`❌ পরিবর্তন ব্যর্থ: ${error.message}`, true);
-    } else {
-      showStatus('✅ প্রোডাক্টের ক্যাটাগরি স্থানান্তরিত হয়েছে!');
-      setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, category: newCat } : p))
-      );
-    }
-  };
-
-  // ----------------------------------------------------
-  // ২. ক্যাটাগরি সম্পর্কিত কাজ
-  // ----------------------------------------------------
-  const handleAddCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanName = newCategory.trim();
-    if (!cleanName) return;
-
-    const { error } = await supabase.from('categories').insert([{ name: cleanName }]);
-
-    if (error) {
-      showStatus(`❌ ক্যাটাগরি যোগ ব্যর্থ: ${error.message}`, true);
-    } else {
-      showStatus(`✅ "${cleanName}" ক্যাটাগরি যোগ হয়েছে!`);
-      setNewCategory('');
-      fetchData();
-    }
-  };
-
-  const handleSaveEditCategory = async (id: number | string, oldName: string) => {
-    const updated = editingCatName.trim();
-    if (!updated || updated === oldName) {
-      setEditingCatId(null);
-      return;
-    }
-
-    const { error } = await supabase
-      .from('categories')
-      .update({ name: updated })
-      .eq('id', id);
-
-    if (error) {
-      showStatus(`❌ ক্যাটাগরি নাম পরিবর্তন ব্যর্থ: ${error.message}`, true);
-      return;
-    }
-
-    await supabase
-      .from('products')
-      .update({ category: updated })
-      .eq('category', oldName);
-
-    showStatus(`✅ ক্যাটাগরি পরিবর্তন হয়ে "${updated}" হয়েছে!`);
-    setEditingCatId(null);
     fetchData();
-  };
+  }, []);
 
-  const handleDeleteCategory = async (id: number | string, name: string) => {
-    const confirmDelete = window.confirm(
-      `আপনি কি "${name}" ক্যাটাগরি মুছে ফেলতে চান? সংশ্লিষ্ট প্রোডাক্টগুলো আন-ক্যাটাগোরাইজড হয়ে যাবে।`
-    );
-    if (!confirmDelete) return;
+  const displayedProducts =
+    selectedCategory === "ALL"
+      ? allProducts.slice(0, 12)
+      : allProducts.filter((item) => item.category === selectedCategory);
 
-    await supabase.from('products').update({ category: null }).eq('category', name);
-    const { error } = await supabase.from('categories').delete().eq('id', id);
+  const filteredCategories = categories.filter((cat) =>
+    cat.toLowerCase().includes(categorySearch.toLowerCase().trim())
+  );
 
-    if (error) {
-      showStatus(`❌ ক্যাটাগরি ডিলিট ব্যর্থ: ${error.message}`, true);
-    } else {
-      showStatus(`🗑️ "${name}" ক্যাটাগরি মুছে ফেলা হয়েছে!`);
-      fetchData();
-    }
-  };
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-16 selection:bg-sky-500 selection:text-white">
+      {/* Hero Section */}
+      <section id="hero" className="text-center space-y-4 pt-4 sm:pt-8">
+        <div className="inline-block bg-sky-500/10 border border-sky-500/20 px-4 py-1.5 rounded-full text-xs font-semibold text-sky-400">
+          Verified Digital Assets Marketplace
+        </div>
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
+          Discover Premium Digital Assets <br />
+          <span className="text-sky-400">With Instant Delivery</span>
+        </h1>
+        <p className="text-slate-400 max-w-xl mx-auto text-xs sm:text-sm md:text-base leading-relaxed">
+          Access verified software licenses, expert guides, and high-performance web templates ready for immediate production download.
+        </p>
+      </section>
 
-  const filteredProducts = products.filter((p) => {
-    const title = (p.title || '').toLowerCase();
-    const matchesSearch = title.includes(productSearch.toLowerCase());
-    const matchesCategory =
-      filterCategory === 'ALL' ||
-      (filterCategory === 'UNCATEGORIZED' ? !p.category : p.category === filterCategory);
-    return matchesSearch && matchesCategory;
-  });
-
-  if (checkingAuth) return null;
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-gray-200">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
-              🔒
+      {/* Top 12 Popular Products */}
+      <section id="popular" className="space-y-6">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-900 pb-4">
+          <div>
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full mb-2">
+              🔥 Trending & Most Popular
             </div>
-            <h1 className="text-2xl font-black text-gray-900">Admin Access</h1>
-            <p className="text-xs font-semibold text-gray-500 mt-1">
-              ড্যাশবোর্ডে প্রবেশ করতে পাসওয়ার্ড দিন
+            <h2 className="text-xl sm:text-2xl font-bold text-white">
+              {selectedCategory === "ALL"
+                ? "Top 12 Products"
+                : `Products in "${selectedCategory}"`}
+            </h2>
+            <p className="text-xs text-slate-400 mt-1">
+              Highest rated and most demanded assets by verified visitors
             </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={inputPassword}
-                  onChange={(e) => setInputPassword(e.target.value)}
-                  placeholder="পাসওয়ার্ড লিখুন..."
-                  className="w-full pl-4 pr-12 py-3 text-sm font-semibold border border-gray-300 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 shadow-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3.5 text-xs font-bold text-gray-400 hover:text-gray-700"
-                >
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
-              </div>
-
-              {authError && (
-                <p className="text-xs font-bold text-red-600 mt-2 text-center bg-red-50 py-1.5 rounded-lg border border-red-100">
-                  {authError}
-                </p>
-              )}
-            </div>
-
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
             <button
-              type="submit"
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-2xl transition-all shadow-md active:scale-95 cursor-pointer"
+              onClick={() => setSelectedCategory("ALL")}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                selectedCategory === "ALL"
+                  ? "bg-sky-500 text-white shadow-lg shadow-sky-500/25"
+                  : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+              }`}
             >
-              প্রবেশ করুন
+              All Products
             </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 bg-gray-50 min-h-screen">
-      {/* হেডার ও লগআউট বাটন */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                  selectedCategory === cat
+                    ? "bg-sky-500 text-white shadow-lg shadow-sky-500/25"
+                    : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {loading ? (
+          <p className="text-sm text-slate-500 text-center py-10">Loading catalog...</p>
+        ) : displayedProducts.length === 0 ? (
+          <div className="text-center py-16 bg-slate-900/40 border border-slate-900 rounded-2xl">
+            <p className="text-sm text-slate-400 font-medium">No products found in this category.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
+            {displayedProducts.map((item, index) => {
+              const title = item.title || "Untitled Asset";
+              const img = item.image_url;
+
+              return (
+                <div
+                  key={item.id}
+                  className="bg-slate-900/90 border border-slate-800 rounded-xl sm:rounded-2xl overflow-hidden hover:border-sky-500/50 transition duration-300 flex flex-col justify-between group shadow-md"
+                >
+                  <div className="relative">
+                    {img ? (
+                      <img
+                        src={img}
+                        alt={title}
+                        className="w-full h-32 sm:h-36 md:h-40 object-cover group-hover:scale-105 transition duration-300"
+                      />
+                    ) : (
+                      <div className="w-full h-32 sm:h-36 md:h-40 bg-slate-800 flex items-center justify-center text-[11px] text-slate-500 font-medium">
+                        No Preview Image
+                      </div>
+                    )}
+
+                    <span className="absolute top-2 left-2 bg-slate-950/80 backdrop-blur text-amber-400 font-bold text-[10px] sm:text-xs px-2 py-0.5 rounded-md border border-amber-400/30">
+                      #{index + 1}
+                    </span>
+
+                    <span className="absolute top-2 right-2 bg-slate-950/80 backdrop-blur text-slate-300 text-[9px] sm:text-[10px] px-1.5 py-0.5 rounded-md border border-slate-800">
+                      👁️ {item.views || 0}
+                    </span>
+                  </div>
+
+                  <div className="p-3 sm:p-4 flex flex-col flex-grow justify-between">
+                    <div>
+                      <span className="text-[9px] sm:text-[10px] text-sky-400 uppercase tracking-wider font-bold">
+                        {item.category || "Digital Asset"}
+                      </span>
+                      <h3 className="text-xs sm:text-sm font-bold text-white mt-1 line-clamp-1">
+                        {title}
+                      </h3>
+                      {item.description && (
+                        <p className="text-[11px] sm:text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between">
+                      <span className="text-xs sm:text-sm md:text-base font-extrabold text-sky-400">
+                        ${item.price}
+                      </span>
+                      <Link
+                        href={`/product/${item.id}`}
+                        className="bg-sky-500 hover:bg-sky-600 text-white text-[10px] sm:text-xs font-semibold px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg transition active:scale-95"
+                      >
+                        Buy Now →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Product Categories Section */}
+      <section id="categories" className="text-center space-y-6 pt-4">
         <div>
-          <h1 className="text-2xl font-black text-gray-900">Admin Control Center</h1>
-          <p className="text-sm font-medium text-gray-600 mt-0.5">
-            প্রোডাক্ট এবং ক্যাটাগরি পরিচালনা করার মূল প্যানেল
+          <h2 className="text-xl sm:text-2xl font-bold">Product Categories</h2>
+          <p className="text-xs text-slate-400 mt-1">
+            Search and select a category to browse targeted products
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          {statusMessage && (
-            <div
-              className={`text-xs sm:text-sm px-4 py-2 rounded-xl font-bold shadow-md ${
-                statusMessage.isError
-                  ? 'bg-red-600 text-white animate-pulse'
-                  : 'bg-blue-600 text-white'
-              }`}
+        <div className="max-w-md mx-auto relative flex items-center px-2 sm:px-0">
+          <input
+            type="text"
+            value={categorySearch}
+            onChange={(e) => setCategorySearch(e.target.value)}
+            placeholder="Search categories..."
+            className="w-full bg-slate-900 border border-slate-800 rounded-full pl-5 pr-36 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500 shadow-inner placeholder:text-slate-500"
+          />
+
+          {categorySearch && (
+            <button
+              type="button"
+              onClick={() => setCategorySearch("")}
+              className="absolute right-36 text-xs text-slate-500 hover:text-white transition"
             >
-              {statusMessage.text}
-            </div>
+              ✕
+            </button>
           )}
 
           <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-gray-100 hover:bg-red-50 text-gray-700 hover:text-red-600 border border-gray-200 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+            type="button"
+            className="absolute right-3 sm:right-1 top-1 bottom-1 px-4 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
           >
-            <span>🔒</span>
-            <span>লগআউট</span>
+            <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span>Search Category</span>
           </button>
         </div>
-      </div>
 
-      {/* ট্যাব নেভিগেশন */}
-      <div className="flex gap-3 border-b border-gray-200 pb-2">
-        <button
-          onClick={() => setActiveTab('products')}
-          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'products'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <span>📦</span>
-          <span>প্রোডাক্ট ম্যানেজমেন্ট ({products.length})</span>
-        </button>
+        {filteredCategories.length === 0 ? (
+          <p className="text-xs text-slate-500 py-6">
+            No categories found matching "{categorySearch}".
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 pt-2">
+            {filteredCategories.map((cat) => (
+              <Link
+                key={cat}
+                href={`/category/${encodeURIComponent(cat)}`}
+                className="bg-slate-900 border border-slate-800 hover:border-sky-500/50 p-3 sm:p-4 rounded-xl text-center text-xs sm:text-sm font-medium transition group flex items-center justify-between px-4"
+              >
+                <span className="truncate">{cat}</span>
+                <span className="text-slate-500 group-hover:text-sky-400 transition ml-2">→</span>
+              </Link>
+            ))}
+          </div>
+        )}
+      </section>
 
-        <button
-          onClick={() => setActiveTab('categories')}
-          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'categories'
-              ? 'bg-blue-600 text-white shadow-md'
-              : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-          }`}
-        >
-          <span>🏷️</span>
-          <span>ক্যাটাগরি ম্যানেজমেন্ট ({categories.length})</span>
-        </button>
-      </div>
-
-      {loading ? (
-        <div className="text-center py-20 text-gray-600 font-bold text-sm">
-          ডাটাবেস থেকে তথ্য লোড হচ্ছে...
+      {/* About Us Section */}
+      <section id="about" className="text-center pt-8 border-t border-slate-900">
+        <h3 className="text-sm font-semibold text-slate-400 mb-2">About Us</h3>
+        <div className="inline-block bg-slate-900/60 border border-slate-800 px-6 py-3 rounded-xl text-xs text-slate-400">
+          <span className="text-sky-400 font-semibold">ShovoStore</span> is a high-speed, cloud-powered digital asset marketplace built for reliable automated deliveries.
         </div>
-      ) : activeTab === 'products' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* প্রোডাক্ট ফর্ম */}
-          <div className="lg:col-span-4">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200 sticky top-24">
-              <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center justify-between">
-                <span>{editingProductId ? '✏️ প্রোডাক্ট এডিট করুন' : '➕ নতুন প্রোডাক্ট যোগ করুন'}</span>
-                {editingProductId && (
-                  <button
-                    onClick={resetProductForm}
-                    className="text-xs font-semibold text-red-600 hover:underline"
-                  >
-                    বাতিল
-                  </button>
-                )}
-              </h2>
+      </section>
 
-              <form onSubmit={handleProductSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-1">প্রোডাক্টের নাম *</label>
-                  <input
-                    type="text"
-                    required
-                    value={productForm.title}
-                    onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
-                    placeholder="যেমন: Windows 11 Pro"
-                    className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 font-medium"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-800 mb-1">মূল্য ($) *</label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={productForm.price}
-                      onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-800 mb-1">ক্যাটাগরি</label>
-                    <select
-                      value={productForm.category}
-                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 font-medium"
-                    >
-                      <option value="">নির্বাচন করুন</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-1">ছবির লিংক (Image URL)</label>
-                  <input
-                    type="url"
-                    value={productForm.image_url}
-                    onChange={(e) => setProductForm({ ...productForm, image_url: e.target.value })}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-gray-800 mb-1">বিবরণ (Description)</label>
-                  <textarea
-                    rows={3}
-                    value={productForm.description}
-                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                    placeholder="প্রোডাক্টের বিবরণ..."
-                    className="w-full px-3.5 py-2 text-sm border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400 font-medium resize-none"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
-                >
-                  {submitting ? 'যোগ হচ্ছে...' : editingProductId ? 'পরিবর্তন সেভ করুন' : 'প্রোডাক্ট যুক্ত করুন'}
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* প্রোডাক্ট তালিকা */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
-                <input
-                  type="text"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="প্রোডাক্ট খুঁজুন..."
-                  className="w-full sm:w-64 px-4 py-2 text-xs border border-gray-300 rounded-xl bg-white text-gray-900 placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:outline-none font-medium"
-                />
-
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full sm:w-auto text-xs border border-gray-300 rounded-xl px-3 py-2 bg-white text-gray-900 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  <option value="ALL">সকল প্রোডাক্ট ({products.length})</option>
-                  <option value="UNCATEGORIZED">ক্যাটাগরি ছাড়া</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {filteredProducts.length === 0 ? (
-                <div className="text-center py-12 text-sm text-gray-500 font-medium">
-                  কোনো প্রোডাক্ট পাওয়া যায়নি
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100 max-h-[640px] overflow-y-auto pr-1">
-                  {filteredProducts.map((product) => {
-                    const title = product.title || 'নামহীন প্রোডাক্ট';
-                    const img = product.image_url;
-
-                    return (
-                      <div
-                        key={product.id}
-                        className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-gray-50/80 p-2.5 rounded-xl transition-colors"
-                      >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          {img ? (
-                            <img
-                              src={img}
-                              alt={title}
-                              className="w-14 h-14 object-cover rounded-xl border border-gray-200 shrink-0 shadow-sm"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 bg-gray-100 rounded-xl flex items-center justify-center text-[10px] text-gray-400 font-bold shrink-0">
-                              ছবি নেই
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-black text-gray-900 truncate">{title}</p>
-                            <p className="text-xs text-blue-600 font-bold mt-0.5">${product.price}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
-                          <select
-                            value={product.category || ''}
-                            onChange={(e) => handleQuickMoveCategory(product.id, e.target.value)}
-                            title="ক্যাটাগরি পরিবর্তন"
-                            className="text-xs font-bold border border-gray-300 rounded-xl px-2.5 py-1.5 bg-white text-gray-900 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none cursor-pointer"
-                          >
-                            <option value="">ক্যাটাগরি নেই</option>
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.name}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-
-                          <button
-                            onClick={() => startEditProduct(product)}
-                            className="px-3 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors cursor-pointer"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteProduct(product.id, title)}
-                            className="px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : (
-        /* ক্যাটাগরি ম্যানেজমেন্ট ট্যাব */
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          <div className="md:col-span-5">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              <h2 className="text-base font-black text-gray-900 mb-3 flex items-center gap-2">
-                <span>➕</span> নতুন ক্যাটাগরি যোগ করুন
-              </h2>
-              <form onSubmit={handleAddCategory} className="flex gap-2">
-                <input
-                  type="text"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="যেমন: Software, Templates"
-                  className="flex-1 px-4 py-2.5 text-sm font-medium border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900 placeholder:text-gray-400"
-                />
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
-                >
-                  যোগ করুন
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <div className="md:col-span-7">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-black text-gray-900">
-                  বর্তমান ক্যাটাগরিসমূহ ({categories.length})
-                </h2>
-                <span className="text-xs text-gray-500 font-bold">প্রোডাক্ট সংখ্যা</span>
-              </div>
-
-              {categories.length === 0 ? (
-                <div className="text-center py-10 text-sm text-gray-500 font-medium">
-                  কোনো ক্যাটাগরি পাওয়া যায়নি
-                </div>
-              ) : (
-                <div className="divide-y divide-gray-100 max-h-[500px] overflow-y-auto pr-1">
-                  {categories.map((cat) => {
-                    const count = products.filter((p) => p.category === cat.name).length;
-
-                    return (
-                      <div key={cat.id} className="py-3.5 flex items-center justify-between gap-3">
-                        {editingCatId === cat.id ? (
-                          <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="text"
-                              value={editingCatName}
-                              onChange={(e) => setEditingCatName(e.target.value)}
-                              className="flex-1 px-3 py-1.5 text-sm font-bold border border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-gray-900"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleSaveEditCategory(cat.id, cat.name)}
-                              className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-bold rounded-lg shadow-sm cursor-pointer"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => setEditingCatId(null)}
-                              className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs font-bold rounded-lg cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-sm font-bold text-gray-900 truncate">{cat.name}</span>
-                              <span className="px-2.5 py-0.5 bg-gray-100 text-gray-700 rounded-full text-xs font-black">
-                                {count}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <button
-                                onClick={() => {
-                                  setEditingCatId(cat.id);
-                                  setEditingCatName(cat.name);
-                                }}
-                                className="px-3 py-1 text-xs font-bold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                                className="px-3 py-1 text-xs font-bold text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Footer */}
+      <footer className="text-center py-6 border-t border-slate-900 text-xs text-slate-600">
+        © 2026 ShovoStore — All rights reserved.
+      </footer>
     </div>
   );
 }
