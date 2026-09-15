@@ -28,18 +28,18 @@ export default function Home() {
     "Web Templates",
     "Audio & Sound Effects",
   ]);
+  const [categorySearch, setCategorySearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("ALL");
-  const [newCat, setNewCat] = useState("");
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch categories and products from Supabase
+  // Supabase থেকে ক্যাটাগরি ও প্রোডাক্ট আনা
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
 
-        // 1. Fetch categories from Supabase
+        // ১. ক্যাটাগরি লোড করা
         const { data: catData, error: catError } = await supabase
           .from("categories")
           .select("name")
@@ -49,7 +49,7 @@ export default function Home() {
           setCategories(catData.map((c: CategoryItem) => c.name));
         }
 
-        // 2. Fetch products
+        // ২. প্রোডাক্ট লোড করা
         const { data: prodData, error: prodError } = await supabase
           .from("products")
           .select("*")
@@ -61,7 +61,6 @@ export default function Home() {
       } catch (err) {
         console.error("Error loading data:", err);
       } finally {
-        // যেকোনো অবস্থাতেই লোডিং শেষ হবে, পেজ কখনোই আটকে থাকবে না
         setLoading(false);
       }
     };
@@ -69,25 +68,16 @@ export default function Home() {
     fetchData();
   }, []);
 
-  // Add a new category
-  const handleAddCategory = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCat = newCat.trim();
-    if (!cleanCat) return;
-
-    await supabase.from("categories").insert([{ name: cleanCat }]);
-
-    if (!categories.includes(cleanCat)) {
-      setCategories([...categories, cleanCat]);
-    }
-    setNewCat("");
-  };
-
-  // Filter products based on selected category
+  // নির্বাচিত ক্যাটাগরি অনুযায়ী প্রোডাক্ট ফিল্টার
   const displayedProducts =
     selectedCategory === "ALL"
       ? allProducts.slice(0, 10)
       : allProducts.filter((item) => item.category === selectedCategory);
+
+  // ক্যাটাগরি সার্চ ফিল্টারিং
+  const filteredCategories = categories.filter((cat) =>
+    cat.toLowerCase().includes(categorySearch.toLowerCase().trim())
+  );
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
@@ -117,7 +107,7 @@ export default function Home() {
           </p>
         </section>
 
-        {/* 🔥 Popular Products & Category Filter Section 🔥 */}
+        {/* 🔥 Popular Products & Top Category Filter Section 🔥 */}
         <section id="popular" className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-900 pb-4">
             <div>
@@ -134,7 +124,7 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Category Filter Buttons */}
+            {/* Category Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
               <button
                 onClick={() => setSelectedCategory("ALL")}
@@ -234,43 +224,68 @@ export default function Home() {
           )}
         </section>
 
-        {/* Categories Section */}
+        {/* Product Categories Section with Search Bar */}
         <section id="categories" className="text-center space-y-6 pt-6">
           <div>
             <h2 className="text-2xl font-bold">Product Categories</h2>
             <p className="text-xs text-slate-400 mt-1">
-              Click on a category to explore or create a new category below
+              Search and select a category to browse products
             </p>
           </div>
 
-          <form onSubmit={handleAddCategory} className="flex justify-center gap-2 max-w-md mx-auto">
+          {/* 🔍 লাইভ ক্যাটাগরি সার্চবার */}
+          <div className="max-w-md mx-auto relative">
             <input
               type="text"
-              value={newCat}
-              onChange={(e) => setNewCat(e.target.value)}
-              placeholder="Enter new category name..."
-              className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-500 flex-grow"
+              value={categorySearch}
+              onChange={(e) => setCategorySearch(e.target.value)}
+              placeholder="Search categories (e.g. Tools, Templates)..."
+              className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white focus:outline-none focus:border-sky-500 transition shadow-inner placeholder:text-slate-500"
             />
-            <button
-              type="submit"
-              className="bg-sky-500 hover:bg-sky-600 text-white text-xs px-4 py-2 rounded-lg font-semibold transition cursor-pointer"
+            {/* সার্চ আইকন */}
+            <svg
+              className="w-4 h-4 text-slate-500 absolute left-3.5 top-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              + Add Category
-            </button>
-          </form>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
-            {categories.map((cat) => (
-              <Link
-                key={cat}
-                href={`/category/${encodeURIComponent(cat)}`}
-                className="bg-slate-900 border border-slate-800 hover:border-sky-500/50 p-4 rounded-xl text-center text-sm font-medium transition group flex items-center justify-between px-5"
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            {/* ক্লিয়ার বাটন */}
+            {categorySearch && (
+              <button
+                onClick={() => setCategorySearch("")}
+                className="absolute right-3.5 top-2.5 text-xs text-slate-500 hover:text-white"
               >
-                <span>{cat}</span>
-                <span className="text-slate-500 group-hover:text-sky-400 transition">→</span>
-              </Link>
-            ))}
+                ✕
+              </button>
+            )}
           </div>
+
+          {/* ফিল্টার করা ক্যাটাগরি গ্রিড */}
+          {filteredCategories.length === 0 ? (
+            <p className="text-xs text-slate-500 py-6">
+              No categories found matching "{categorySearch}".
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+              {filteredCategories.map((cat) => (
+                <Link
+                  key={cat}
+                  href={`/category/${encodeURIComponent(cat)}`}
+                  className="bg-slate-900 border border-slate-800 hover:border-sky-500/50 p-4 rounded-xl text-center text-sm font-medium transition group flex items-center justify-between px-5"
+                >
+                  <span>{cat}</span>
+                  <span className="text-slate-500 group-hover:text-sky-400 transition">→</span>
+                </Link>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* About Us Section */}
