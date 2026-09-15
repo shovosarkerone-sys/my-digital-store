@@ -30,8 +30,8 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-gray-50 text-gray-900">
-        {/* ওপরে ফিক্সড হেডার ও লাইভ সার্চবার */}
-        <header className="sticky top-0 z-40 bg-white border-b border-gray-200 shadow-sm">
+        {/* z-[100] দিয়ে সবার ওপরে রাখা হয়েছে যাতে নিচের কোনো উপাদান একে ব্লার না করতে পারে */}
+        <header className="sticky top-0 z-[100] bg-white border-b border-gray-200 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
             <Link href="/" className="font-bold text-xl text-blue-600 shrink-0">
               Store
