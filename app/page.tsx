@@ -33,7 +33,7 @@ export default function Home() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Supabase থেকে ক্যাটাগরি ও প্রোডাক্ট আনা
+  // Supabase থেকে ক্যাটাগরি ও প্রোডাক্ট ডাটা লোড করা
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -53,6 +53,7 @@ export default function Home() {
         const { data: prodData, error: prodError } = await supabase
           .from("products")
           .select("*")
+          .order("views", { ascending: false })
           .order("id", { ascending: false });
 
         if (!prodError && prodData) {
@@ -74,7 +75,7 @@ export default function Home() {
       ? allProducts.slice(0, 10)
       : allProducts.filter((item) => item.category === selectedCategory);
 
-  // ক্যাটাগরি সার্চ ফিল্টারিং
+  // লাইভ ক্যাটাগরি সার্চ ফিল্টার
   const filteredCategories = categories.filter((cat) =>
     cat.toLowerCase().includes(categorySearch.toLowerCase().trim())
   );
@@ -107,7 +108,7 @@ export default function Home() {
           </p>
         </section>
 
-        {/* 🔥 Popular Products & Top Category Filter Section 🔥 */}
+        {/* 🔥 Popular Products & Category Filter Section 🔥 */}
         <section id="popular" className="space-y-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-900 pb-4">
             <div>
@@ -224,7 +225,7 @@ export default function Home() {
           )}
         </section>
 
-        {/* Product Categories Section with Search Bar */}
+        {/* Product Categories Section with Blue Styled Search Button */}
         <section id="categories" className="text-center space-y-6 pt-6">
           <div>
             <h2 className="text-2xl font-bold">Product Categories</h2>
@@ -233,41 +234,50 @@ export default function Home() {
             </p>
           </div>
 
-          {/* 🔍 লাইভ ক্যাটাগরি সার্চবার */}
-          <div className="max-w-md mx-auto relative">
+          {/* 🔍 ওপরের মতো নীল বাটনসহ ক্যাটাগরি সার্চবার */}
+          <div className="max-w-md mx-auto relative flex items-center">
             <input
               type="text"
               value={categorySearch}
               onChange={(e) => setCategorySearch(e.target.value)}
               placeholder="Search categories (e.g. Tools, Templates)..."
-              className="w-full bg-slate-900/90 border border-slate-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white focus:outline-none focus:border-sky-500 transition shadow-inner placeholder:text-slate-500"
+              className="w-full bg-slate-900 border border-slate-800 rounded-full pl-5 pr-36 py-2.5 text-xs text-white focus:outline-none focus:border-sky-500 shadow-inner placeholder:text-slate-500"
             />
-            {/* সার্চ আইকন */}
-            <svg
-              className="w-4 h-4 text-slate-500 absolute left-3.5 top-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            {/* ক্লিয়ার বাটন */}
+
+            {/* ক্লিয়ার (X) বাটন */}
             {categorySearch && (
               <button
+                type="button"
                 onClick={() => setCategorySearch("")}
-                className="absolute right-3.5 top-2.5 text-xs text-slate-500 hover:text-white"
+                className="absolute right-36 text-xs text-slate-500 hover:text-white transition"
               >
                 ✕
               </button>
             )}
+
+            {/* নীল সার্চ বাটন (Search Category) */}
+            <button
+              type="button"
+              className="absolute right-1 top-1 bottom-1 px-4 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-md transition-all active:scale-95 cursor-pointer"
+            >
+              <svg
+                className="w-3.5 h-3.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.5"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <span>Search Category</span>
+            </button>
           </div>
 
-          {/* ফিল্টার করা ক্যাটাগরি গ্রিড */}
+          {/* ফিল্টার হওয়া ক্যাটাগরি কার্ডসমূহ */}
           {filteredCategories.length === 0 ? (
             <p className="text-xs text-slate-500 py-6">
               No categories found matching "{categorySearch}".
