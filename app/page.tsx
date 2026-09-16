@@ -31,7 +31,6 @@ export default function Home() {
       try {
         setLoading(true);
 
-        // Fetch Categories
         const { data: catData } = await supabase
           .from("categories")
           .select("name")
@@ -41,7 +40,6 @@ export default function Home() {
           setCategories(catData.map((c: { name: string }) => c.name));
         }
 
-        // Fetch Products
         const { data: prodData, error } = await supabase
           .from("products")
           .select("*")
@@ -60,51 +58,48 @@ export default function Home() {
     fetchCatalog();
   }, []);
 
-  // Filter products by Category and Search query
   const filteredProducts = products.filter((item) => {
     const matchesCategory =
       selectedCategory === "ALL" || item.category === selectedCategory;
     const matchesSearch =
-      (item.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+      (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
-      {/* Top Store Navigation */}
-      <header className="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-900 px-4 sm:px-8 py-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link href="/" className="text-2xl font-black text-sky-400 tracking-tight">
+      {/* Top Header */}
+      <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur border-b border-slate-900 px-4 sm:px-8 py-3.5">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <Link href="/" className="text-xl font-black text-sky-400 tracking-tight">
             ShovoStore.
           </Link>
 
-          {/* Search Bar */}
+          {/* Search Box */}
           <div className="relative w-full sm:w-96">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products, tools, guides..."
-              className="w-full bg-slate-900 border border-slate-800 rounded-full pl-4 pr-10 py-2 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500 transition placeholder:text-slate-500"
+              placeholder="Search products, tools, gift cards..."
+              className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-3.5 pr-9 py-2 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500 transition placeholder:text-slate-500"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-white"
+                className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-white cursor-pointer"
               >
                 ✕
               </button>
             )}
           </div>
 
-          {/* Nav Links */}
-          <nav className="flex items-center gap-5 text-xs sm:text-sm font-semibold text-slate-400">
+          <nav className="flex items-center gap-4 text-xs font-semibold text-slate-400">
             <a href="#products" className="hover:text-white transition">Products</a>
             <a href="#categories" className="hover:text-white transition">Categories</a>
             <Link
               href="/admin"
-              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white px-3.5 py-1.5 rounded-xl transition text-xs font-bold"
+              className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg transition text-xs font-bold"
             >
               Admin Access
             </Link>
@@ -112,39 +107,24 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-10 space-y-16">
-        {/* Hero Section */}
-        <section className="text-center space-y-4 pt-6">
-          <div className="inline-block bg-sky-500/10 border border-sky-500/20 px-4 py-1 rounded-full text-xs font-semibold text-sky-400">
-            Verified Digital Assets Platform
-          </div>
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight">
-            Explore Premium Digital Assets <br />
-            <span className="text-sky-400">With Instant Download</span>
-          </h1>
-          <p className="text-slate-400 max-w-xl mx-auto text-xs sm:text-sm md:text-base leading-relaxed">
-            Get instant access to authentic licenses, web templates, and technical resources with zero waiting time.
-          </p>
-        </section>
-
-        {/* Product Catalog Section */}
-        <section id="products" className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-4">
+      {/* Main Catalog */}
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-6 space-y-8">
+        <section id="products" className="space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-900 pb-3">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">Marketplace Catalog</h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <h1 className="text-lg sm:text-xl font-black text-white">Marketplace Catalog</h1>
+              <p className="text-xs text-slate-400">
                 Showing {filteredProducts.length} verified products
               </p>
             </div>
 
             {/* Category Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-none">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
               <button
                 onClick={() => setSelectedCategory("ALL")}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 cursor-pointer ${
                   selectedCategory === "ALL"
-                    ? "bg-sky-500 text-white shadow-lg shadow-sky-500/25"
+                    ? "bg-sky-500 text-white shadow"
                     : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
                 }`}
               >
@@ -155,9 +135,9 @@ export default function Home() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition shrink-0 cursor-pointer ${
                     selectedCategory === cat
-                      ? "bg-sky-500 text-white shadow-lg shadow-sky-500/25"
+                      ? "bg-sky-500 text-white shadow"
                       : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
                   }`}
                 >
@@ -167,90 +147,134 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Products Grid */}
           {loading ? (
             <div className="text-center py-20 text-slate-500 text-sm font-medium">
-              Loading marketplace inventory...
+              Loading catalog inventory...
             </div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-16 bg-slate-900/30 border border-slate-900 rounded-2xl">
+            <div className="text-center py-16 bg-slate-900/40 border border-slate-900 rounded-lg">
               <p className="text-sm text-slate-400">No products found matching your criteria.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-              {filteredProducts.map((item) => (
-                <div
-                  key={item.id}
-                  className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden hover:border-sky-500/50 transition duration-300 flex flex-col justify-between group shadow-md"
-                >
-                  {/* Image Container */}
-                  <div className="relative">
-                    {item.image_url ? (
-                      <img
-                        src={item.image_url}
-                        alt={item.title}
-                        className="w-full h-36 sm:h-44 object-cover group-hover:scale-105 transition duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-36 sm:h-44 bg-slate-800 flex items-center justify-center text-xs text-slate-500 font-bold">
-                        No Preview Image
-                      </div>
-                    )}
-                    <span className="absolute top-2.5 right-2.5 bg-slate-950/80 backdrop-blur text-slate-300 text-[10px] px-2 py-0.5 rounded-md border border-slate-800">
-                      👁️ {item.views || 0}
-                    </span>
-                  </div>
-
-                  {/* Body */}
-                  <div className="p-4 flex flex-col flex-grow justify-between">
-                    <div>
-                      <span className="text-[10px] text-sky-400 uppercase tracking-wider font-bold">
-                        {item.category || "Digital Asset"}
-                      </span>
-                      <h3 className="text-sm font-bold text-white mt-1 line-clamp-1">
-                        {item.title}
-                      </h3>
-                      {item.description && (
-                        <p className="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                          {item.description}
-                        </p>
+            <>
+              {/* ১. DESKTOP VIEW: কার্ডের যেকোনো জায়গায় (ছবি, নাম, বাটন) ক্লিক করলেই প্রোডাক্ট পেজ খুলবে */}
+              <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 items-stretch">
+                {filteredProducts.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/product/${item.id}`}
+                    className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden hover:border-sky-500 transition duration-200 flex flex-col justify-between group shadow-sm cursor-pointer block"
+                  >
+                    {/* কার্ডের ছবি */}
+                    <div className="relative bg-slate-950 border-b border-slate-800/80">
+                      {item.image_url ? (
+                        <img
+                          src={item.image_url}
+                          alt={item.title}
+                          className="w-full h-28 object-cover group-hover:scale-105 transition duration-200"
+                        />
+                      ) : (
+                        <div className="w-full h-28 bg-slate-800 flex items-center justify-center text-[10px] text-slate-500 font-bold">
+                          No Image
+                        </div>
                       )}
+                      <span className="absolute top-1.5 right-1.5 bg-slate-950/80 backdrop-blur text-slate-300 text-[9px] px-1.5 py-0.5 rounded border border-slate-800">
+                        👁️ {item.views || 0}
+                      </span>
                     </div>
 
-                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      <span className="text-base font-extrabold text-sky-400">
+                    {/* কার্ডের নাম (ডেসক্রিপশন নেই, পুরো নাম একাধিক লাইনে শো করবে) */}
+                    <div className="p-2.5 flex flex-col flex-grow justify-between">
+                      <div>
+                        <span className="text-[9px] text-sky-400 uppercase tracking-wider font-bold block mb-1">
+                          {item.category || "Digital Asset"}
+                        </span>
+                        <h2 className="text-xs font-bold text-white leading-snug whitespace-normal break-words">
+                          {item.title}
+                        </h2>
+                      </div>
+
+                      <div className="mt-3 pt-2 border-t border-slate-800 flex items-center justify-between gap-1">
+                        <span className="text-sm font-black text-sky-400">
+                          ${item.price}
+                        </span>
+                        <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition whitespace-nowrap">
+                          Buy Now
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* ২. MOBILE VIEW: পুরো রো-তে ক্লিক করলেই প্রোডাক্ট পেজ খুলবে */}
+              <div className="flex flex-col gap-2.5 sm:hidden">
+                {filteredProducts.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/product/${item.id}`}
+                    className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between gap-3 hover:border-slate-700 active:bg-slate-800/60 transition shadow-sm cursor-pointer block"
+                  >
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* ছবি */}
+                      <div className="w-16 h-16 bg-slate-950 rounded border border-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-[9px] text-slate-500 font-bold">No Image</span>
+                        )}
+                      </div>
+
+                      {/* নাম */}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wider block">
+                          {item.category || "Digital Asset"}
+                        </span>
+                        <h2 className="text-xs font-bold text-white leading-snug mt-0.5 whitespace-normal break-words">
+                          {item.title}
+                        </h2>
+                        <span className="text-[9px] text-slate-500 mt-1 block">
+                          👁️ {item.views || 0} views
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* দাম ও বাটন */}
+                    <div className="flex flex-col items-end justify-center shrink-0 pl-1">
+                      <span className="text-sm font-black text-sky-400 mb-1.5">
                         ${item.price}
                       </span>
-                      <Link
-                        href={`/product/${item.id}`}
-                        className="bg-sky-500 hover:bg-sky-600 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition active:scale-95"
-                      >
-                        Buy Now →
-                      </Link>
+                      <span className="bg-sky-500 text-white text-xs font-bold px-3 py-1.5 rounded transition text-center shadow whitespace-nowrap">
+                        Buy Now
+                      </span>
                     </div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                  </Link>
+                ))}
+              </div>
+            </>
           )}
         </section>
 
         {/* Categories Section */}
-        <section id="categories" className="space-y-4 pt-4 border-t border-slate-900">
-          <div className="text-center">
-            <h2 className="text-xl sm:text-2xl font-bold">Browse Categories</h2>
-            <p className="text-xs text-slate-400 mt-1">Select a category to filter the store</p>
+        <section id="categories" className="space-y-3 pt-4 border-t border-slate-900">
+          <div>
+            <h2 className="text-base font-bold text-white">Categories</h2>
+            <p className="text-xs text-slate-400">Filter inventory by department</p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => {
                   setSelectedCategory(cat);
-                  window.scrollTo({ top: 400, behavior: "smooth" });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
-                className="bg-slate-900 border border-slate-800 hover:border-sky-500/50 p-4 rounded-xl text-center text-xs sm:text-sm font-semibold text-slate-300 hover:text-white transition cursor-pointer"
+                className="bg-slate-900 border border-slate-800 hover:border-sky-500/50 p-3 rounded-lg text-center text-xs font-semibold text-slate-300 hover:text-white transition cursor-pointer"
               >
                 {cat}
               </button>
@@ -259,8 +283,7 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="text-center py-8 border-t border-slate-900 text-xs text-slate-600 mt-16">
+      <footer className="text-center py-6 border-t border-slate-900 text-xs text-slate-600 mt-12">
         © 2026 ShovoStore — All rights reserved.
       </footer>
     </div>
