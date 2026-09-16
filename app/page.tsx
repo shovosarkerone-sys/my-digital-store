@@ -26,6 +26,7 @@ export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   // Pagination State (প্রতি পেজে ৩০টি প্রোডাক্ট)
@@ -33,6 +34,11 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
+    // Check logged in user
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) setUser(data.user);
+    });
+
     const fetchCatalog = async () => {
       try {
         setLoading(true);
@@ -195,9 +201,18 @@ export default function Home() {
             )}
           </div>
 
-          <nav className="flex items-center gap-4 text-xs font-semibold text-slate-400">
+          <nav className="flex items-center gap-3 text-xs font-semibold text-slate-400">
             <a href="#products" className="hover:text-white transition">Products</a>
             <a href="#categories" className="hover:text-white transition">Categories</a>
+            
+            {/* Sign In / Sign Up বাটন */}
+            <Link
+              href="/auth"
+              className="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg transition text-xs font-bold shadow-sm"
+            >
+              {user ? (user.user_metadata?.full_name ? user.user_metadata.full_name.split(" ")[0] : "Account") : "Sign In / Up"}
+            </Link>
+
             <Link
               href="/admin"
               className="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg transition text-xs font-bold"
@@ -260,7 +275,7 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {/* ১. DESKTOP VIEW: এক পেজে ৩০টি প্রোডাক্ট (৬ কলাম × ৫ সারি) */}
+              {/* ১. DESKTOP VIEW */}
               <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 items-stretch">
                 {paginatedProducts.map((item) => (
                   <Link
@@ -308,7 +323,7 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ২. MOBILE VIEW: ৩০টি করে অনুভূমিক রো */}
+              {/* ২. MOBILE VIEW */}
               <div className="flex flex-col gap-2.5 sm:hidden">
                 {paginatedProducts.map((item) => (
                   <Link
@@ -354,7 +369,7 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ৩. PAGINATION CONTROLS (৩০টি প্রোডাক্টের বেশি হলে পেজ বাটন দেখাবে) */}
+              {/* ৩. PAGINATION CONTROLS */}
               {totalPages > 1 && (
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-900 mt-6">
                   <p className="text-xs text-slate-400">
