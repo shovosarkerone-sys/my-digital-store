@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -24,7 +24,9 @@ export default function Home() {
   ]);
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCatalog = async () => {
@@ -58,12 +60,38 @@ export default function Home() {
     fetchCatalog();
   }, []);
 
+  // সার্চ ড্রপডাউনের বাইরে ক্লিক করলে সাজেশন বন্ধ হওয়া
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ড্রপডাউনের জন্য ইনস্ট্যান্ট সাজেশন (পুরো স্টোর থেকে শীর্ষ ৬টি)
+  const searchSuggestions = products.filter((item) =>
+    (item.title || "").toLowerCase().includes(searchQuery.toLowerCase())
+  ).slice(0, 6);
+
+  // ক্যাটালগ গ্রিড ফিল্টার (সার্চ দিলে পুরো স্টোরে খুঁজবে, সার্চ না থাকলে ক্যাটাগরি অনুযায়ী)
   const filteredProducts = products.filter((item) => {
+    const matchesSearch = (item.title || "")
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    if (searchQuery.trim() !== "") {
+      return matchesSearch;
+    }
+
     const matchesCategory =
       selectedCategory === "ALL" || item.category === selectedCategory;
-    const matchesSearch =
-      (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
+    return matchesCategory;
   });
 
   return (
@@ -75,22 +103,72 @@ export default function Home() {
             ShovoStore.
           </Link>
 
-          {/* Search Box */}
-          <div className="relative w-full sm:w-96">
+          {/* Search Box With Live Suggestions */}
+          <div ref={searchContainerRef} className="relative w-full sm:w-96">
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onFocus={() => setIsSearchOpen(true)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setIsSearchOpen(true);
+              }}
               placeholder="Search products, tools, gift cards..."
               className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-3.5 pr-9 py-2 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500 transition placeholder:text-slate-500"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                onClick={() => {
+                  setSearchQuery("");
+                  setIsSearchOpen(false);
+                }}
                 className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-white cursor-pointer"
               >
                 ✕
               </button>
+            )}
+
+            {/* লাইভ ড্রপডাউন সাজেশন পপআপ */}
+            {isSearchOpen && searchQuery.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-800/70">
+                {searchSuggestions.length > 0 ? (
+                  searchSuggestions.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/product/${item.id}`}
+                      onClick={() => setIsSearchOpen(false)}
+                      className="flex items-center gap-3 p-2.5 hover:bg-slate-800/80 transition cursor-pointer group"
+                    >
+                      <div className="w-10 h-10 bg-slate-950 rounded border border-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition"
+                          />
+                        ) : (
+                          <span className="text-[8px] text-slate-500 font-bold">No Img</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-white leading-snug truncate group-hover:text-sky-400 transition">
+                          {item.title}
+                        </p>
+                        <span className="text-[10px] text-slate-400 font-semibold">
+                          {item.category || "Digital Asset"}
+                        </span>
+                      </div>
+                      <span className="text-xs font-black text-sky-400 shrink-0">
+                        ${item.price}
+                      </span>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="p-3 text-center text-xs text-slate-500 font-medium">
+                    No products found matching "{searchQuery}"
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -157,7 +235,7 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {/* ১. DESKTOP VIEW: কার্ডের যেকোনো জায়গায় (ছবি, নাম, বাটন) ক্লিক করলেই প্রোডাক্ট পেজ খুলবে */}
+              {/* ১. DESKTOP VIEW */}
               <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 items-stretch">
                 {filteredProducts.map((item) => (
                   <Link
@@ -165,7 +243,6 @@ export default function Home() {
                     href={`/product/${item.id}`}
                     className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden hover:border-sky-500 transition duration-200 flex flex-col justify-between group shadow-sm cursor-pointer block"
                   >
-                    {/* কার্ডের ছবি */}
                     <div className="relative bg-slate-950 border-b border-slate-800/80">
                       {item.image_url ? (
                         <img
@@ -183,7 +260,6 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* কার্ডের নাম (ডেসক্রিপশন নেই, পুরো নাম একাধিক লাইনে শো করবে) */}
                     <div className="p-2.5 flex flex-col flex-grow justify-between">
                       <div>
                         <span className="text-[9px] text-sky-400 uppercase tracking-wider font-bold block mb-1">
@@ -207,7 +283,7 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ২. MOBILE VIEW: পুরো রো-তে ক্লিক করলেই প্রোডাক্ট পেজ খুলবে */}
+              {/* ২. MOBILE VIEW */}
               <div className="flex flex-col gap-2.5 sm:hidden">
                 {filteredProducts.map((item) => (
                   <Link
@@ -216,7 +292,6 @@ export default function Home() {
                     className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between gap-3 hover:border-slate-700 active:bg-slate-800/60 transition shadow-sm cursor-pointer block"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {/* ছবি */}
                       <div className="w-16 h-16 bg-slate-950 rounded border border-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
                         {item.image_url ? (
                           <img
@@ -229,7 +304,6 @@ export default function Home() {
                         )}
                       </div>
 
-                      {/* নাম */}
                       <div className="flex-1 min-w-0">
                         <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wider block">
                           {item.category || "Digital Asset"}
@@ -243,7 +317,6 @@ export default function Home() {
                       </div>
                     </div>
 
-                    {/* দাম ও বাটন */}
                     <div className="flex flex-col items-end justify-center shrink-0 pl-1">
                       <span className="text-sm font-black text-sky-400 mb-1.5">
                         ${item.price}
