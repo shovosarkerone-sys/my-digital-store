@@ -28,6 +28,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
+  // Pagination State (প্রতি পেজে ৩০টি প্রোডাক্ট)
+  const ITEMS_PER_PAGE = 30;
+  const [currentPage, setCurrentPage] = useState(1);
+
   useEffect(() => {
     const fetchCatalog = async () => {
       try {
@@ -60,7 +64,12 @@ export default function Home() {
     fetchCatalog();
   }, []);
 
-  // সার্চ ড্রপডাউনের বাইরে ক্লিক করলে সাজেশন বন্ধ হওয়া
+  // ক্যাটাগরি বা সার্চ বদলালে প্রথম পেজে ফিরে যাওয়া
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchQuery]);
+
+  // সার্চ ড্রপডাউনের বাইরে ক্লিক করলে বন্ধ হওয়া
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -74,12 +83,14 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ড্রপডাউনের জন্য ইনস্ট্যান্ট সাজেশন (পুরো স্টোর থেকে শীর্ষ ৬টি)
-  const searchSuggestions = products.filter((item) =>
-    (item.title || "").toLowerCase().includes(searchQuery.toLowerCase())
-  ).slice(0, 6);
+  // ড্রপডাউন সাজেশন (সর্বোচ্চ ৬টি)
+  const searchSuggestions = products
+    .filter((item) =>
+      (item.title || "").toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .slice(0, 6);
 
-  // ক্যাটালগ গ্রিড ফিল্টার (সার্চ দিলে পুরো স্টোরে খুঁজবে, সার্চ না থাকলে ক্যাটাগরি অনুযায়ী)
+  // সম্পূর্ণ ফিল্টার করা প্রোডাক্ট
   const filteredProducts = products.filter((item) => {
     const matchesSearch = (item.title || "")
       .toLowerCase()
@@ -93,6 +104,19 @@ export default function Home() {
       selectedCategory === "ALL" || item.category === selectedCategory;
     return matchesCategory;
   });
+
+  // পেজিনেশন হিসাব-নিকাশ
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE) || 1;
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProducts = filteredProducts.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    document.getElementById("products")?.scrollIntoView({ behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
@@ -128,7 +152,6 @@ export default function Home() {
               </button>
             )}
 
-            {/* লাইভ ড্রপডাউন সাজেশন পপআপ */}
             {isSearchOpen && searchQuery.trim().length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-1.5 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-slate-800/70">
                 {searchSuggestions.length > 0 ? (
@@ -192,7 +215,9 @@ export default function Home() {
             <div>
               <h1 className="text-lg sm:text-xl font-black text-white">Marketplace Catalog</h1>
               <p className="text-xs text-slate-400">
-                Showing {filteredProducts.length} verified products
+                Showing {filteredProducts.length === 0 ? 0 : startIndex + 1}–
+                {Math.min(startIndex + ITEMS_PER_PAGE, filteredProducts.length)} of{" "}
+                {filteredProducts.length} verified products
               </p>
             </div>
 
@@ -235,9 +260,9 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {/* ১. DESKTOP VIEW */}
+              {/* ১. DESKTOP VIEW: এক পেজে ৩০টি প্রোডাক্ট (৬ কলাম × ৫ সারি) */}
               <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 items-stretch">
-                {filteredProducts.map((item) => (
+                {paginatedProducts.map((item) => (
                   <Link
                     key={item.id}
                     href={`/product/${item.id}`}
@@ -283,9 +308,9 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ২. MOBILE VIEW */}
+              {/* ২. MOBILE VIEW: ৩০টি করে অনুভূমিক রো */}
               <div className="flex flex-col gap-2.5 sm:hidden">
-                {filteredProducts.map((item) => (
+                {paginatedProducts.map((item) => (
                   <Link
                     key={item.id}
                     href={`/product/${item.id}`}
@@ -328,6 +353,50 @@ export default function Home() {
                   </Link>
                 ))}
               </div>
+
+              {/* ৩. PAGINATION CONTROLS (৩০টি প্রোডাক্টের বেশি হলে পেজ বাটন দেখাবে) */}
+              {totalPages > 1 && (
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-900 mt-6">
+                  <p className="text-xs text-slate-400">
+                    Page <span className="text-white font-bold">{currentPage}</span> of{" "}
+                    <span className="text-white font-bold">{totalPages}</span>
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="px-3.5 py-2 text-xs font-bold rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-sky-500 disabled:opacity-40 disabled:hover:border-slate-800 disabled:hover:text-slate-300 transition cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      ← Previous
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center ${
+                            currentPage === pageNum
+                              ? "bg-sky-500 text-white shadow"
+                              : "bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:border-slate-700"
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="px-3.5 py-2 text-xs font-bold rounded-lg border border-slate-800 bg-slate-900 text-slate-300 hover:text-white hover:border-sky-500 disabled:opacity-40 disabled:hover:border-slate-800 disabled:hover:text-slate-300 transition cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      Next →
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </section>
