@@ -31,7 +31,6 @@ export default function Home() {
       try {
         setLoading(true);
 
-        // Fetch Categories
         const { data: catData } = await supabase
           .from("categories")
           .select("name")
@@ -41,7 +40,6 @@ export default function Home() {
           setCategories(catData.map((c: { name: string }) => c.name));
         }
 
-        // Fetch Products
         const { data: prodData, error } = await supabase
           .from("products")
           .select("*")
@@ -60,7 +58,6 @@ export default function Home() {
     fetchCatalog();
   }, []);
 
-  // Filter products by Category and Search query
   const filteredProducts = products.filter((item) => {
     const matchesCategory =
       selectedCategory === "ALL" || item.category === selectedCategory;
@@ -71,14 +68,14 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
-      {/* Top Navigation */}
+      {/* Top Header */}
       <header className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur border-b border-slate-900 px-4 sm:px-8 py-3.5">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <Link href="/" className="text-xl font-black text-sky-400 tracking-tight">
             ShovoStore.
           </Link>
 
-          {/* Search Bar */}
+          {/* Search Box */}
           <div className="relative w-full sm:w-96">
             <input
               type="text"
@@ -90,14 +87,13 @@ export default function Home() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-white"
+                className="absolute right-3 top-2.5 text-xs text-slate-500 hover:text-white cursor-pointer"
               >
                 ✕
               </button>
             )}
           </div>
 
-          {/* Nav Links */}
           <nav className="flex items-center gap-4 text-xs font-semibold text-slate-400">
             <a href="#products" className="hover:text-white transition">Products</a>
             <a href="#categories" className="hover:text-white transition">Categories</a>
@@ -111,9 +107,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Main Container */}
+      {/* Main Catalog */}
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-6 space-y-8">
-        {/* Marketplace Section */}
         <section id="products" className="space-y-4">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-900 pb-3">
             <div>
@@ -123,7 +118,7 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Category Filter Tabs */}
+            {/* Category Filter Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
               <button
                 onClick={() => setSelectedCategory("ALL")}
@@ -152,7 +147,6 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Catalog Content */}
           {loading ? (
             <div className="text-center py-20 text-slate-500 text-sm font-medium">
               Loading catalog inventory...
@@ -163,14 +157,15 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {/* ১. DESKTOP VIEW: ডেসক্রিপশন ছাড়া, টাইটেল যত লাইনে খুশি ভাঙবে কিন্তু পুরো নাম দেখাবে */}
+              {/* ১. DESKTOP VIEW: কার্ডের যেকোনো জায়গায় (ছবি, নাম, বাটন) ক্লিক করলেই প্রোডাক্ট পেজ খুলবে */}
               <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 items-stretch">
                 {filteredProducts.map((item) => (
-                  <div
+                  <Link
                     key={item.id}
-                    className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden hover:border-sky-500/60 transition duration-200 flex flex-col justify-between group shadow-sm"
+                    href={`/product/${item.id}`}
+                    className="bg-slate-900 border border-slate-800 rounded-lg overflow-hidden hover:border-sky-500 transition duration-200 flex flex-col justify-between group shadow-sm cursor-pointer block"
                   >
-                    {/* Image Banner */}
+                    {/* কার্ডের ছবি */}
                     <div className="relative bg-slate-950 border-b border-slate-800/80">
                       {item.image_url ? (
                         <img
@@ -188,7 +183,7 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* Content: নো ডেসক্রিপশন, সম্পূর্ণ টাইটেল দৃশ্যমান */}
+                    {/* কার্ডের নাম (ডেসক্রিপশন নেই, পুরো নাম একাধিক লাইনে শো করবে) */}
                     <div className="p-2.5 flex flex-col flex-grow justify-between">
                       <div>
                         <span className="text-[9px] text-sky-400 uppercase tracking-wider font-bold block mb-1">
@@ -203,71 +198,68 @@ export default function Home() {
                         <span className="text-sm font-black text-sky-400">
                           ${item.price}
                         </span>
-                        <Link
-                          href={`/product/${item.id}`}
-                          className="bg-sky-500 hover:bg-sky-600 text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition active:scale-95 whitespace-nowrap"
-                        >
+                        <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[11px] font-bold px-2.5 py-1.5 rounded transition whitespace-nowrap">
                           Buy Now
-                        </Link>
+                        </span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
 
-              {/* ২. MOBILE VIEW: সোজা অনুভূমিক রো — কোনো ডেসক্রিপশন নেই, সম্পূর্ণ টাইটেল দৃশ্যমান */}
+              {/* ২. MOBILE VIEW: পুরো রো-তে ক্লিক করলেই প্রোডাক্ট পেজ খুলবে */}
               <div className="flex flex-col gap-2.5 sm:hidden">
                 {filteredProducts.map((item) => (
-                  <div
+                  <Link
                     key={item.id}
-                    className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between gap-3 hover:border-slate-700 transition shadow-sm"
+                    href={`/product/${item.id}`}
+                    className="bg-slate-900 border border-slate-800 rounded-lg p-2.5 flex items-center justify-between gap-3 hover:border-slate-700 active:bg-slate-800/60 transition shadow-sm cursor-pointer block"
                   >
-                    {/* বাঁয়ে ছবি */}
-                    <div className="w-16 h-16 bg-slate-950 rounded border border-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
-                      {item.image_url ? (
-                        <img
-                          src={item.image_url}
-                          alt={item.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span className="text-[9px] text-slate-500 font-bold">No Image</span>
-                      )}
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* ছবি */}
+                      <div className="w-16 h-16 bg-slate-950 rounded border border-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
+                        {item.image_url ? (
+                          <img
+                            src={item.image_url}
+                            alt={item.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-[9px] text-slate-500 font-bold">No Image</span>
+                        )}
+                      </div>
+
+                      {/* নাম */}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wider block">
+                          {item.category || "Digital Asset"}
+                        </span>
+                        <h2 className="text-xs font-bold text-white leading-snug mt-0.5 whitespace-normal break-words">
+                          {item.title}
+                        </h2>
+                        <span className="text-[9px] text-slate-500 mt-1 block">
+                          👁️ {item.views || 0} views
+                        </span>
+                      </div>
                     </div>
 
-                    {/* মাঝে পুরো লম্বা নাম (যত লাইনে হোক) */}
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wider block">
-                        {item.category || "Digital Asset"}
-                      </span>
-                      <h2 className="text-xs font-bold text-white leading-snug mt-0.5 whitespace-normal break-words">
-                        {item.title}
-                      </h2>
-                      <span className="text-[9px] text-slate-500 mt-1 block">
-                        👁️ {item.views || 0} views
-                      </span>
-                    </div>
-
-                    {/* ডান পাশে দাম এবং Buy Now বাটন */}
+                    {/* দাম ও বাটন */}
                     <div className="flex flex-col items-end justify-center shrink-0 pl-1">
                       <span className="text-sm font-black text-sky-400 mb-1.5">
                         ${item.price}
                       </span>
-                      <Link
-                        href={`/product/${item.id}`}
-                        className="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded transition text-center shadow whitespace-nowrap"
-                      >
+                      <span className="bg-sky-500 text-white text-xs font-bold px-3 py-1.5 rounded transition text-center shadow whitespace-nowrap">
                         Buy Now
-                      </Link>
+                      </span>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </>
           )}
         </section>
 
-        {/* Categories Grid */}
+        {/* Categories Section */}
         <section id="categories" className="space-y-3 pt-4 border-t border-slate-900">
           <div>
             <h2 className="text-base font-bold text-white">Categories</h2>
@@ -291,7 +283,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="text-center py-6 border-t border-slate-900 text-xs text-slate-600 mt-12">
         © 2026 ShovoStore — All rights reserved.
       </footer>
