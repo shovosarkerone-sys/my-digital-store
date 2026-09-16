@@ -65,8 +65,7 @@ export default function Home() {
     const matchesCategory =
       selectedCategory === "ALL" || item.category === selectedCategory;
     const matchesSearch =
-      (item.title || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description || "").toLowerCase().includes(searchQuery.toLowerCase());
+      (item.title || "").toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -164,8 +163,8 @@ export default function Home() {
             </div>
           ) : (
             <>
-              {/* ১. DESKTOP VIEW: buysellvouchers স্টাইলে এক লাইনে ৫ থেকে ৬টি কম্প্যাক্ট প্রোডাক্ট */}
-              <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+              {/* ১. DESKTOP VIEW: ডেসক্রিপশন ছাড়া, টাইটেল যত লাইনে খুশি ভাঙবে কিন্তু পুরো নাম দেখাবে */}
+              <div className="hidden sm:grid sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 items-stretch">
                 {filteredProducts.map((item) => (
                   <div
                     key={item.id}
@@ -189,13 +188,13 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* Content: সম্পূর্ণ নাম দৃশ্যমান (No Truncation) */}
+                    {/* Content: নো ডেসক্রিপশন, সম্পূর্ণ টাইটেল দৃশ্যমান */}
                     <div className="p-2.5 flex flex-col flex-grow justify-between">
                       <div>
-                        <span className="text-[9px] text-sky-400 uppercase tracking-wider font-bold block">
+                        <span className="text-[9px] text-sky-400 uppercase tracking-wider font-bold block mb-1">
                           {item.category || "Digital Asset"}
                         </span>
-                        <h2 className="text-xs font-bold text-white mt-1 leading-snug break-words">
+                        <h2 className="text-xs font-bold text-white leading-snug whitespace-normal break-words">
                           {item.title}
                         </h2>
                       </div>
@@ -216,7 +215,7 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* ২. MOBILE VIEW: সোজা লম্বালম্বি রো (Horizontal List) — বাঁয়ে ছবি, মাঝে সম্পূর্ণ নাম, ডানে বাই নাও */}
+              {/* ২. MOBILE VIEW: সোজা অনুভূমিক রো — কোনো ডেসক্রিপশন নেই, সম্পূর্ণ টাইটেল দৃশ্যমান */}
               <div className="flex flex-col gap-2.5 sm:hidden">
                 {filteredProducts.map((item) => (
                   <div
@@ -236,12 +235,12 @@ export default function Home() {
                       )}
                     </div>
 
-                    {/* মাঝে পুরো লম্বা নাম ও ক্যাটাগরি */}
+                    {/* মাঝে পুরো লম্বা নাম (যত লাইনে হোক) */}
                     <div className="flex-1 min-w-0">
                       <span className="text-[9px] text-sky-400 font-bold uppercase tracking-wider block">
                         {item.category || "Digital Asset"}
                       </span>
-                      <h2 className="text-xs font-bold text-white leading-snug mt-0.5 break-words">
+                      <h2 className="text-xs font-bold text-white leading-snug mt-0.5 whitespace-normal break-words">
                         {item.title}
                       </h2>
                       <span className="text-[9px] text-slate-500 mt-1 block">
