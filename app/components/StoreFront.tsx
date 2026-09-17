@@ -26,28 +26,25 @@ export default function StoreFront({
   initialProducts: Product[];
   categories: Category[];
 }) {
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [showAllCategories, setShowAllCategories] = useState<boolean>(false);
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
-  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false); // মেনু ওপেন/ক্লোজ স্টেট
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 30;
 
-  // ইনস্ট্যান্ট সার্চ ও ক্যাটাগরি অনুযায়ী প্রোডাক্ট ফিল্টার
+  // ইনস্ট্যান্ট সার্চ ফিল্টারিং
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
-      const matchesCategory =
-        selectedCategory === "all" ||
-        product.category.toLowerCase() === selectedCategory.toLowerCase();
-      const matchesSearch =
-        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
+      const query = searchQuery.toLowerCase();
+      return (
+        product.title.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query)
+      );
     });
-  }, [initialProducts, selectedCategory, searchQuery]);
+  }, [initialProducts, searchQuery]);
 
-  // সার্চবারে লাইভ ইনস্ট্যান্ট সাজেশন (শীর্ষ ৬টি প্রোডাক্ট)
+  // সার্চ ড্রপডাউন সাজেশন (শীর্ষ ৬টি)
   const instantSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return initialProducts
@@ -65,17 +62,16 @@ export default function StoreFront({
     currentPage * itemsPerPage
   );
 
-  // ১ লাইনে ৬টি করে ক্যাটাগরি অথবা শো মোর
+  // ১ লাইনে ৬টি করে ক্যাটাগরি
   const visibleCategories = showAllCategories
     ? categories
     : categories.slice(0, 12);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
-      {/* টপ হেডার বার: ৩ লাইনের মেনু বাটন ও লোগো */}
+      {/* টপ হেডার বার: ৩ লাইনের মেনু বাটন ও ব্র্যান্ডিং */}
       <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {/* ৩ লাইনের হ্যামবার্গার মেনু বাটন */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 hover:border-sky-500/50 flex flex-col items-center justify-center gap-1.5 transition cursor-pointer"
@@ -92,14 +88,14 @@ export default function StoreFront({
             )}
           </button>
 
-          <div className="flex items-center gap-2">
+          <Link href="/" className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center font-black text-sm text-white shadow-md shadow-sky-500/20">
               S
             </div>
             <span className="font-black text-base tracking-tight text-white">
               Shovo<span className="text-sky-400">Store</span>
             </span>
-          </div>
+          </Link>
         </div>
 
         <span className="text-[11px] font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full hidden sm:inline-block">
@@ -107,7 +103,7 @@ export default function StoreFront({
         </span>
       </header>
 
-      {/* ব্যাকড্রপ ওভারলে (মেনু খোলা থাকলে বাইরে ক্লিক করলে বন্ধ হবে) */}
+      {/* ব্যাকড্রপ ওভারলে */}
       {isMenuOpen && (
         <div
           onClick={() => setIsMenuOpen(false)}
@@ -115,13 +111,12 @@ export default function StoreFront({
         />
       )}
 
-      {/* ৩ লাইনে ক্লিক করলে স্লাইড হয়ে খুলে যাওয়া মেনু ড্রয়ার */}
+      {/* সাইডবার মেনু ড্রয়ার */}
       <aside
         className={`fixed top-0 left-0 bottom-0 z-50 w-72 bg-slate-900 border-r border-slate-800 p-5 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* মেনুর ভেতরের হেডার এবং ক্রস (✕) বাটন */}
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center font-black text-lg text-white shadow-lg shadow-sky-500/20">
@@ -137,7 +132,6 @@ export default function StoreFront({
             </div>
           </div>
 
-          {/* মেনু বন্ধ করার ক্রস (✕) বাটন */}
           <button
             onClick={() => setIsMenuOpen(false)}
             className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition cursor-pointer"
@@ -146,29 +140,21 @@ export default function StoreFront({
           </button>
         </div>
 
-        {/* মেনুর অপশন তালিকা */}
         <nav className="space-y-6 flex-1 overflow-y-auto pr-1">
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-2">
               Browse Menu
             </span>
-            <button
-              onClick={() => {
-                setSelectedCategory("all");
-                setCurrentPage(1);
-                setIsMenuOpen(false);
-              }}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition duration-200 cursor-pointer ${
-                selectedCategory === "all"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-500/30"
-                  : "text-slate-300 hover:bg-slate-800"
-              }`}
+            <Link
+              href="/"
+              onClick={() => setIsMenuOpen(false)}
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 text-white shadow-lg shadow-sky-500/30 transition cursor-pointer"
             >
               <span className="flex items-center gap-2">🛍️ All Products</span>
-              <span className="text-[11px] bg-slate-800 px-2 py-0.5 rounded-full font-mono">
+              <span className="text-[11px] bg-sky-600/80 px-2 py-0.5 rounded-full font-mono">
                 {initialProducts.length}
               </span>
-            </button>
+            </Link>
           </div>
 
           <div>
@@ -182,24 +168,17 @@ export default function StoreFront({
                 ).length;
 
                 return (
-                  <button
+                  <Link
                     key={cat.id}
-                    onClick={() => {
-                      setSelectedCategory(cat.name);
-                      setCurrentPage(1);
-                      setIsMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                      selectedCategory.toLowerCase() === cat.name.toLowerCase()
-                        ? "bg-sky-500/10 text-sky-400 border border-sky-500/30"
-                        : "text-slate-400 hover:bg-slate-800/60 hover:text-white"
-                    }`}
+                    href={`/category/${encodeURIComponent(cat.name)}`}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:bg-slate-800/60 hover:text-white transition cursor-pointer"
                   >
                     <span className="truncate">{cat.name}</span>
                     <span className="text-[10px] text-slate-500 font-mono">
                       {count}
                     </span>
-                  </button>
+                  </Link>
                 );
               })}
             </div>
@@ -208,7 +187,7 @@ export default function StoreFront({
       </aside>
 
       {/* মূল কনটেন্ট এরিয়া */}
-      <main className="p-5 md:p-10 max-w-7xl mx-auto w-full space-y-10">
+      <main className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto w-full space-y-10">
         {/* মাঝখান বরাবর হেডার ও ইনস্ট্যান্ট সার্চবার */}
         <div className="flex flex-col items-center justify-center text-center space-y-4 pt-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
@@ -227,7 +206,7 @@ export default function StoreFront({
             </p>
           </div>
 
-          {/* মাঝখান বরাবর ইনস্ট্যান্ট সার্চবার (উইথ লাইভ ড্রপডাউন সাজেশন) */}
+          {/* মাঝখান বরাবর লাইভ সার্চবার */}
           <div className="relative w-full max-w-2xl text-left mt-2">
             <div className="relative">
               <input
@@ -310,7 +289,7 @@ export default function StoreFront({
           </div>
         </div>
 
-        {/* সার্চবারের নিচে ১ লাইনে ৬টি করে ক্যাটাগরি গ্রিড (ছবিসহ) */}
+        {/* ক্যাটাগরি অপশন: ক্লিক করলে সরাসরি সেই ক্যাটাগরি পেজে ঢুকবে */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -330,17 +309,10 @@ export default function StoreFront({
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
             {visibleCategories.map((cat) => (
-              <button
+              <Link
                 key={cat.id}
-                onClick={() => {
-                  setSelectedCategory(cat.name);
-                  setCurrentPage(1);
-                }}
-                className={`group flex flex-col items-center p-3.5 rounded-2xl border text-center transition duration-200 cursor-pointer ${
-                  selectedCategory.toLowerCase() === cat.name.toLowerCase()
-                    ? "bg-sky-500/10 border-sky-500 text-sky-400 shadow-lg shadow-sky-500/10"
-                    : "bg-slate-900/90 border-slate-800 hover:border-slate-700 text-slate-200"
-                }`}
+                href={`/category/${encodeURIComponent(cat.name)}`}
+                className="group flex flex-col items-center p-3 rounded-2xl border border-slate-800 bg-slate-900/90 hover:border-sky-500/50 hover:bg-slate-800/50 text-center transition duration-200 cursor-pointer shadow-md"
               >
                 <div className="w-14 h-14 mb-2 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center group-hover:scale-105 transition duration-200">
                   {cat.image_url ? (
@@ -353,23 +325,19 @@ export default function StoreFront({
                     <span className="text-xl">🎮</span>
                   )}
                 </div>
-                <span className="text-xs font-semibold truncate w-full">
+                <span className="text-xs font-semibold truncate w-full text-slate-200 group-hover:text-sky-400">
                   {cat.name}
                 </span>
-              </button>
+              </Link>
             ))}
           </div>
         </section>
 
-        {/* প্রোডাক্ট লিস্ট সেকশন (সর্বোচ্চ ৩০টি) */}
+        {/* প্রোডাক্ট লিস্ট: মোবাইল ও ডেস্কটপে লাইন-বাই-লাইন কম্প্যাক্ট ভিউ */}
         <section className="space-y-4">
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
             <div>
-              <h2 className="text-lg font-bold text-white capitalize">
-                {selectedCategory === "all"
-                  ? "All Products"
-                  : `${selectedCategory} Products`}
-              </h2>
+              <h2 className="text-lg font-bold text-white">All Available Products</h2>
               <p className="text-xs text-slate-500">
                 Showing {displayedProducts.length} of {filteredProducts.length} items
               </p>
@@ -381,61 +349,62 @@ export default function StoreFront({
               No products found matching your search.
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            <div className="space-y-2.5 sm:space-y-3">
               {displayedProducts.map((product) => (
                 <Link
                   key={product.id}
                   href={`/product/${product.id}`}
-                  className="bg-slate-900 border border-slate-800 hover:border-sky-500/50 rounded-2xl overflow-hidden flex flex-col group transition duration-300 shadow-xl"
+                  className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                 >
-                  {/* প্রোডাক্ট ইমেজ ও ভিউ কাউন্টার */}
-                  <div className="h-40 bg-slate-800 relative overflow-hidden flex items-center justify-center">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                      />
-                    ) : (
-                      <span className="text-slate-600 text-xs">No Image</span>
-                    )}
-
-                    {/* অরিজিনাল ভিউ কাউন্টার */}
-                    <div className="absolute top-2.5 left-2.5 bg-slate-950/80 backdrop-blur-md border border-slate-800/80 text-[11px] text-slate-300 px-2 py-0.5 rounded-lg flex items-center gap-1">
-                      <span>👁️</span>
-                      <span>{product.views || 0} views</span>
+                  {/* বাঁয়ে: প্রোডাক্ট ইমেজ ও ভিউজ */}
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                        />
+                      ) : (
+                        <span className="text-slate-600 text-[10px]">No Image</span>
+                      )}
                     </div>
-                  </div>
 
-                  {/* প্রোডাক্ট বিবরণ ও অরিজিনাল প্রাইস */}
-                  <div className="p-3.5 flex-1 flex flex-col justify-between space-y-3">
-                    <div>
+                    {/* মাঝখানে: ক্যাটাগরি, টাইটেল (২-৩ লাইনে সুন্দর ফিট) এবং ভিউজ */}
+                    <div className="min-w-0 flex-1 space-y-1">
                       <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
                         {product.category}
                       </span>
-                      <h3 className="text-xs font-bold text-white line-clamp-2 mt-1 group-hover:text-sky-300 transition">
+                      <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-2 sm:line-clamp-3 leading-snug group-hover:text-sky-300 transition">
                         {product.title}
                       </h3>
-                    </div>
-
-                    <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-500 block leading-none">Price</span>
-                        <span className="text-sm font-black text-sky-400">
-                          ${product.price} <span className="text-[10px] text-slate-400 font-normal">USD</span>
+                      <div className="flex items-center gap-2 text-[10px] text-slate-400 pt-0.5">
+                        <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
+                          👁️ {product.views || 0} views
                         </span>
+                        <span className="text-slate-500 hidden sm:inline">⚡ Instant Auto-Delivery</span>
                       </div>
-                      <span className="text-[11px] bg-sky-500/10 text-sky-400 group-hover:bg-sky-500 group-hover:text-white px-2.5 py-1 rounded-lg font-bold transition">
-                        Buy Now →
+                    </div>
+                  </div>
+
+                  {/* ডানে: প্রাইস ও বাই নাও বাটন */}
+                  <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
+                    <div className="text-right">
+                      <span className="text-[9px] text-slate-500 block leading-none">Price</span>
+                      <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
+                        ${product.price}
                       </span>
                     </div>
+                    <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 rounded-xl transition whitespace-nowrap shadow-md shadow-sky-950">
+                      Buy Now →
+                    </span>
                   </div>
                 </Link>
               ))}
             </div>
           )}
 
-          {/* পেজিনেশন কন্ট্রোল (৩০টির বেশি প্রোডাক্টের জন্য) */}
+          {/* পেজিনেশন কন্ট্রোল (৩০টির বেশি হলে) */}
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 pt-8">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
