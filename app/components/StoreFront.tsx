@@ -44,7 +44,7 @@ export default function StoreFront({
     });
   }, [initialProducts, searchQuery]);
 
-  // সার্চবারে লাইভ ইনস্ট্যান্ট সাজেশন ড্রপডাউন (শীর্ষ ৬টি প্রোডাক্ট)
+  // সার্চ ড্রপডাউন সাজেশন
   const instantSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return initialProducts
@@ -55,21 +55,21 @@ export default function StoreFront({
       .slice(0, 6);
   }, [initialProducts, searchQuery]);
 
-  // পেজিনেশন (সর্বোচ্চ ৩০টি প্রতি পেজে)
+  // পেজিনেশন
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const displayedProducts = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
-  // ১ লাইনে ৬টি করে ক্যাটাগরি কার্ড
+  // ১ লাইনে ৬টি করে ক্যাটাগরি
   const visibleCategories = showAllCategories
     ? categories
     : categories.slice(0, 12);
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
-      {/* টপ হেডার বার: ৩ লাইনের মেনু বাটন ও ব্র্যান্ডিং */}
+      {/* টপ হেডার বার: ৩ লাইনের মেনু, ব্র্যান্ডিং এবং লগইন বাটন */}
       <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -98,9 +98,19 @@ export default function StoreFront({
           </Link>
         </div>
 
-        <span className="text-[11px] font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full hidden sm:inline-block">
-          ⚡ 100% Automated Delivery
-        </span>
+        {/* ডানপাশের সেকশন: অটোমেটেড ডেলিভারি ট্যাগ এবং লগইন বাটন */}
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full hidden sm:inline-block">
+            ⚡ 100% Automated Delivery
+          </span>
+          <Link
+            href="/auth"
+            className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/50 text-white px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+          >
+            <span>👤</span>
+            <span>Login</span>
+          </Link>
+        </div>
       </header>
 
       {/* ব্যাকড্রপ ওভারলে */}
@@ -145,7 +155,6 @@ export default function StoreFront({
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-2">
               Browse Menu
             </span>
-            {/* অল প্রোডাক্টস পেজের ডিরেক্ট লিংক */}
             <Link
               href="/products"
               onClick={() => setIsMenuOpen(false)}
@@ -184,6 +193,18 @@ export default function StoreFront({
               })}
             </div>
           </div>
+
+          {/* মেনুর ভেতরেও মোবাইল ইউজারদের জন্য লগইন বাটন */}
+          <div className="pt-4 border-t border-slate-800">
+            <Link
+              href="/auth"
+              onClick={() => setIsMenuOpen(false)}
+              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition cursor-pointer border border-slate-700"
+            >
+              <span>👤</span>
+              <span>Login / Account</span>
+            </Link>
+          </div>
         </nav>
       </aside>
 
@@ -207,7 +228,7 @@ export default function StoreFront({
             </p>
           </div>
 
-          {/* মাঝখান বরাবর লাইভ সার্চবার */}
+          {/* সার্চবার ও ইনস্ট্যান্ট ড্রপডাউন */}
           <div className="relative w-full max-w-2xl text-left mt-2">
             <div className="relative">
               <input
@@ -235,7 +256,6 @@ export default function StoreFront({
               )}
             </div>
 
-            {/* ইনস্ট্যান্ট লাইভ সাজেশন ড্রপডাউন */}
             {isSearchFocused && searchQuery.trim().length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-40 divide-y divide-slate-800/70">
                 {instantSuggestions.length > 0 ? (
@@ -334,7 +354,7 @@ export default function StoreFront({
           </div>
         </section>
 
-        {/* প্রোডাক্ট লিস্ট: মোবাইল ও ডেস্কটপে লাইন-বাই-লাইন কম্প্যাক্ট ভিউ */}
+        {/* প্রোডাক্ট লিস্ট: লাইন-বাই-লাইন কম্প্যাক্ট ভিউ */}
         <section className="space-y-4">
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
             <div>
@@ -357,7 +377,6 @@ export default function StoreFront({
                   href={`/product/${product.id}`}
                   className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                 >
-                  {/* থাম্বনেইল ছবি */}
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
                       {product.image_url ? (
@@ -371,7 +390,6 @@ export default function StoreFront({
                       )}
                     </div>
 
-                    {/* টাইটেল, ক্যাটাগরি ও ভিউজ */}
                     <div className="min-w-0 flex-1 space-y-1">
                       <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
                         {product.category}
@@ -388,7 +406,6 @@ export default function StoreFront({
                     </div>
                   </div>
 
-                  {/* প্রাইস ও বাটন */}
                   <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
                     <div className="text-right">
                       <span className="text-[9px] text-slate-500 block leading-none">Price</span>
@@ -405,7 +422,7 @@ export default function StoreFront({
             </div>
           )}
 
-          {/* পেজিনেশন কন্ট্রোল (৩০টির বেশি হলে) */}
+          {/* পেজিনেশন কন্ট্রোল */}
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 pt-8">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
