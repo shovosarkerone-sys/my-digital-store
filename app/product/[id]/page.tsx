@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import CryptoPayButton from "./CryptoPayButton";
 
-export const dynamic = "force-dynamic";
+// force-dynamic এর বদলে ৬০ সেকেন্ড ক্যাশিং (সাইট আর কখনোই লোডিংয়ে আটকে থাকবে না)
+export const revalidate = 60;
 
 export default async function ProductDetailsPage({
   params,
@@ -12,8 +13,7 @@ export default async function ProductDetailsPage({
 }) {
   const { id } = await params;
 
-  await supabase.rpc("increment_views", { row_id: Number(id) });
-
+  // প্রোডাক্ট তথ্য আনা
   const { data: product } = await supabase
     .from("products")
     .select("*")
@@ -24,6 +24,9 @@ export default async function ProductDetailsPage({
     notFound();
   }
 
+  // ব্যাকগ্রাউন্ডে ভিউ বৃদ্ধি (পেজ লোড আটকাবে না)
+  supabase.rpc("increment_views", { row_id: Number(id) }).then();
+
   const whatsappNumber = "8801797362397";
   const orderMessage = encodeURIComponent(
     `Hello! I want to purchase the digital product "${product.title}". Price: $${product.price}. Please provide payment instructions.`
@@ -31,17 +34,18 @@ export default async function ProductDetailsPage({
   const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${orderMessage}`;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-12">
+    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-12 selection:bg-sky-500 selection:text-white">
       <div className="max-w-4xl mx-auto">
         <Link
           href={`/category/${encodeURIComponent(product.category)}`}
-          className="inline-block mb-6 text-sm text-sky-400 hover:underline"
+          className="inline-flex items-center gap-1.5 mb-6 text-xs font-semibold text-sky-400 hover:text-sky-300 transition"
         >
           ← Back to {product.category}
         </Link>
 
-        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 mt-4">
-          <div className="relative h-72 md:h-full bg-slate-800 min-h-[350px]">
+        <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl grid grid-cols-1 md:grid-cols-2 mt-2">
+          {/* প্রোডাক্ট ইমেজ */}
+          <div className="relative h-72 md:h-full bg-slate-800 min-h-[350px] flex items-center justify-center">
             {product.image_url ? (
               <img
                 src={product.image_url}
@@ -49,12 +53,13 @@ export default async function ProductDetailsPage({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-500">
+              <div className="w-full h-full flex items-center justify-center text-slate-500 text-xs">
                 No Image Available
               </div>
             )}
           </div>
 
+          {/* প্রোডাক্ট বিবরণ ও পেমেন্ট সেকশন */}
           <div className="p-6 md:p-10 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-3">
@@ -90,10 +95,10 @@ export default async function ProductDetailsPage({
                 <p>License code and digital access are delivered immediately upon crypto payment.</p>
               </div>
 
-              {/* স্বয়ংক্রিয় Cryptomus / Binance Checkout বাটন */}
+              {/* অটোমেটিক Cryptomus / Binance বাটন */}
               <CryptoPayButton productId={product.id} price={product.price} />
 
-              {/* ব্যাকআপ WhatsApp বাটন */}
+              {/* ম্যানুয়াল WhatsApp বাটন */}
               <a
                 href={whatsappUrl}
                 target="_blank"

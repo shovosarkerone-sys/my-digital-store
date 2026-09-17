@@ -44,7 +44,7 @@ export default function StoreFront({
     });
   }, [initialProducts, searchQuery]);
 
-  // সার্চ ড্রপডাউন সাজেশন (শীর্ষ ৬টি)
+  // সার্চবারে লাইভ ইনস্ট্যান্ট সাজেশন ড্রপডাউন (শীর্ষ ৬টি প্রোডাক্ট)
   const instantSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return initialProducts
@@ -62,7 +62,7 @@ export default function StoreFront({
     currentPage * itemsPerPage
   );
 
-  // ১ লাইনে ৬টি করে ক্যাটাগরি
+  // ১ লাইনে ৬টি করে ক্যাটাগরি কার্ড
   const visibleCategories = showAllCategories
     ? categories
     : categories.slice(0, 12);
@@ -145,8 +145,9 @@ export default function StoreFront({
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-2">
               Browse Menu
             </span>
+            {/* অল প্রোডাক্টস পেজের ডিরেক্ট লিংক */}
             <Link
-              href="/"
+              href="/products"
               onClick={() => setIsMenuOpen(false)}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 text-white shadow-lg shadow-sky-500/30 transition cursor-pointer"
             >
@@ -289,7 +290,7 @@ export default function StoreFront({
           </div>
         </div>
 
-        {/* ক্যাটাগরি অপশন: ক্লিক করলে সরাসরি সেই ক্যাটাগরি পেজে ঢুকবে */}
+        {/* ক্যাটাগরি অপশন (১ লাইনে ৬টি করে কার্ড) */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -356,7 +357,7 @@ export default function StoreFront({
                   href={`/product/${product.id}`}
                   className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                 >
-                  {/* বাঁয়ে: প্রোডাক্ট ইমেজ ও ভিউজ */}
+                  {/* থাম্বনেইল ছবি */}
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
                       {product.image_url ? (
@@ -370,7 +371,7 @@ export default function StoreFront({
                       )}
                     </div>
 
-                    {/* মাঝখানে: ক্যাটাগরি, টাইটেল (২-৩ লাইনে সুন্দর ফিট) এবং ভিউজ */}
+                    {/* টাইটেল, ক্যাটাগরি ও ভিউজ */}
                     <div className="min-w-0 flex-1 space-y-1">
                       <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
                         {product.category}
@@ -387,7 +388,7 @@ export default function StoreFront({
                     </div>
                   </div>
 
-                  {/* ডানে: প্রাইস ও বাই নাও বাটন */}
+                  {/* প্রাইস ও বাটন */}
                   <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
                     <div className="text-right">
                       <span className="text-[9px] text-slate-500 block leading-none">Price</span>
