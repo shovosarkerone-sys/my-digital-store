@@ -4,6 +4,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "ShovoStore — Premium Digital Assets Marketplace",
   description: "Browse and buy premium digital assets, software licenses, guides, and templates.",
+  other: {
+    cryptomus: "6682367c",
+  },
 };
 
 export default function RootLayout({
