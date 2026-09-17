@@ -1,8 +1,8 @@
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import CryptoPayButton from "./CryptoPayButton";
 
-// Ensure real-time view count by disabling caching
 export const dynamic = "force-dynamic";
 
 export default async function ProductDetailsPage({
@@ -12,10 +12,8 @@ export default async function ProductDetailsPage({
 }) {
   const { id } = await params;
 
-  // Increment view count on product visit
   await supabase.rpc("increment_views", { row_id: Number(id) });
 
-  // Fetch product details from database
   const { data: product } = await supabase
     .from("products")
     .select("*")
@@ -86,19 +84,23 @@ export default async function ProductDetailsPage({
               </div>
             </div>
 
-            <div className="border-t border-slate-800 pt-6 space-y-4">
+            <div className="border-t border-slate-800 pt-6 space-y-3">
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
-                <p className="font-semibold text-white">⚡ Instant Delivery:</p>
-                <p>Download link and access will be provided instantly upon payment confirmation.</p>
+                <p className="font-semibold text-white">⚡ Instant Auto-Delivery:</p>
+                <p>License code and digital access are delivered immediately upon crypto payment.</p>
               </div>
 
+              {/* স্বয়ংক্রিয় Cryptomus / Binance Checkout বাটন */}
+              <CryptoPayButton productId={product.id} price={product.price} />
+
+              {/* ব্যাকআপ WhatsApp বাটন */}
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 px-6 rounded-xl transition duration-200 text-center shadow-lg shadow-emerald-950"
+                className="w-full flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-6 rounded-xl transition duration-200 text-center text-xs border border-slate-700 cursor-pointer"
               >
-                <span>💬 Order via WhatsApp</span>
+                <span>💬 Order via WhatsApp (Manual)</span>
               </a>
             </div>
           </div>
