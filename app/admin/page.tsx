@@ -1,776 +1,604 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-
-interface Category {
-  id: number | string;
-  name: string;
-}
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 interface Product {
-  id: number | string;
-  title?: string;
-  price?: number;
-  category?: string;
-  image_url?: string;
-  description?: string;
-  views?: number;
+  id: number;
+  title: string;
+  category: string;
+  price: number;
+  description: string;
+  image_url: string | null;
+  voucher_codes?: string | null;
+  sold_count?: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  image_url?: string | null;
 }
 
 export default function AdminPage() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [inputPassword, setInputPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [activeTab, setActiveTab] = useState<"products" | "categories">("products");
 
-  const [activeTab, setActiveTab] = useState<'products' | 'categories'>('products');
-  const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  // প্রোডাক্ট ফর্ম স্টেট
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [price, setPrice] = useState("");
+  const [description, setDescription] = useState("");
+  const [voucherCodes, setVoucherCodes] = useState("");
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
+
+  // প্রোডাক্ট ইমেজ স্টেট
+  const [productImageFile, setProductImageFile] = useState<File | null>(null);
+  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
+  const [existingProductImageUrl, setExistingProductImageUrl] = useState<string | null>(null);
+
+  // ক্যাটাগরি ফর্ম স্টেট
+  const [categoryName, setCategoryName] = useState("");
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
+  const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(null);
+  const [existingCategoryImageUrl, setExistingCategoryImageUrl] = useState<string | null>(null);
+
+  const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ text: string; isError: boolean } | null>(null);
-
-  // Form States
-  const [productForm, setProductForm] = useState({
-    title: '',
-    price: '',
-    category: '',
-    image_url: '',
-    description: '',
-  });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
-  const [editingProductId, setEditingProductId] = useState<number | string | null>(null);
-
-  // Category States
-  const [newCategory, setNewCategory] = useState('');
-  const [editingCatId, setEditingCatId] = useState<number | string | null>(null);
-  const [editingCatName, setEditingCatName] = useState('');
-
-  // Filter States
-  const [productSearch, setProductSearch] = useState('');
-  const [filterCategory, setFilterCategory] = useState('ALL');
 
   useEffect(() => {
-    const savedAuth = sessionStorage.getItem('admin_session_auth');
-    if (savedAuth === 'true') {
-      setIsAuthenticated(true);
-    }
-    setCheckingAuth(false);
+    fetchCategories();
+    fetchProducts();
   }, []);
 
-  const fetchData = async () => {
-    setLoading(true);
-
-    const { data: catData } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (catData) setCategories(catData);
-
-    const { data: prodData } = await supabase
-      .from('products')
-      .select('*')
-      .order('id', { ascending: false });
-
-    if (prodData) setProducts(prodData);
-
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchData();
-    }
-  }, [isAuthenticated]);
-
-  const showStatus = (text: string, isError: boolean = false) => {
-    setStatusMessage({ text, isError });
-    setTimeout(() => setStatusMessage(null), 6000);
-  };
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (inputPassword === 'Illustrator6!') {
-      setIsAuthenticated(true);
-      sessionStorage.setItem('admin_session_auth', 'true');
-      setAuthError('');
-    } else {
-      setAuthError('Incorrect password! Please try again.');
+  const fetchCategories = async () => {
+    const { data } = await supabase.from("categories").select("*").order("name");
+    if (data) {
+      setCategories(data);
+      if (data.length > 0 && !category) setCategory(data[0].name);
     }
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_session_auth');
-    setIsAuthenticated(false);
-    setInputPassword('');
+  const fetchProducts = async () => {
+    const { data } = await supabase.from("products").select("*").order("id", { ascending: false });
+    if (data) setProducts(data);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // ডিভাইস থেকে প্রোডাক্ট ইমেজ সিলেক্ট
+  const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      setProductImageFile(file);
+      setProductImagePreview(URL.createObjectURL(file));
     }
   };
 
-  const uploadImageToStorage = async (file: File): Promise<string | null> => {
-    const fileExt = file.name.split('.').pop();
-    const cleanFileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from('products')
-      .upload(cleanFileName, file);
-
-    if (uploadError) {
-      console.error('Upload Error:', uploadError);
-      return null;
+  // ডিভাইস থেকে ক্যাটাগরি ইমেজ সিলেক্ট
+  const handleCategoryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCategoryImageFile(file);
+      setCategoryImagePreview(URL.createObjectURL(file));
     }
+  };
 
-    const { data } = supabase.storage
-      .from('products')
-      .getPublicUrl(cleanFileName);
+  // ইমেজ আপলোড হেল্পার ফাংশন
+  const uploadImageToStorage = async (file: File, folder: string) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${folder}/${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(fileName, file, { cacheControl: "3600", upsert: false });
 
+    if (error) throw error;
+
+    const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
     return data.publicUrl;
   };
 
+  // প্রোডাক্ট অ্যাড বা এডিট সাবমিট
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { title, price, category, image_url, description } = productForm;
-
-    if (!title.trim()) {
-      showStatus('❌ Please enter a product title', true);
-      return;
-    }
-
     setSubmitting(true);
+    setMessage("");
 
     try {
-      let finalImageUrl = image_url.trim() || null;
+      let finalImageUrl = existingProductImageUrl;
 
-      // সরাসরি ছবি সিলেক্ট করা থাকলে তা আপলোড করে লিংক তৈরি করা
-      if (selectedFile) {
-        const uploadedUrl = await uploadImageToStorage(selectedFile);
-        if (uploadedUrl) {
-          finalImageUrl = uploadedUrl;
-        } else {
-          showStatus('❌ Image upload failed. Make sure "products" bucket is created and set to Public.', true);
-          setSubmitting(false);
-          return;
-        }
+      if (productImageFile) {
+        finalImageUrl = await uploadImageToStorage(productImageFile, "admin-products");
       }
 
-      const cleanPrice = parseFloat(price);
       const payload = {
         title: title.trim(),
-        price: isNaN(cleanPrice) ? 0 : cleanPrice,
-        category: category.trim() || null,
+        category,
+        price: parseFloat(price),
         image_url: finalImageUrl,
-        description: description.trim() || null,
-        views: 0,
+        description: description.trim(),
+        voucher_codes: voucherCodes.trim(),
+        seller_name: "Official Store",
       };
 
       if (editingProductId) {
-        const { error } = await supabase
-          .from('products')
-          .update(payload)
-          .eq('id', editingProductId);
-
-        if (error) {
-          showStatus(`❌ Update failed: ${error.message}`, true);
-        } else {
-          showStatus('✅ Product updated successfully!');
-          resetProductForm();
-          fetchData();
-        }
+        const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
+        if (error) throw error;
+        setMessage("✅ Official Product updated successfully!");
       } else {
-        const { error } = await supabase
-          .from('products')
-          .insert([payload]);
-
-        if (error) {
-          showStatus(`❌ Insert failed: ${error.message}`, true);
-        } else {
-          showStatus('✅ Product created successfully with photo!');
-          resetProductForm();
-          fetchData();
-        }
+        const { error } = await supabase.from("products").insert([{ ...payload, views: 0, sold_count: 0 }]);
+        if (error) throw error;
+        setMessage("✅ Official Product published successfully!");
       }
+
+      resetProductForm();
+      await fetchProducts();
     } catch (err: any) {
-      showStatus(`❌ System error: ${err?.message || 'Unknown error'}`, true);
+      setMessage(`❌ Error: ${err.message}`);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const startEditProduct = (prod: Product) => {
-    setEditingProductId(prod.id);
-    setProductForm({
-      title: prod.title || '',
-      price: prod.price !== undefined ? String(prod.price) : '',
-      category: prod.category || '',
-      image_url: prod.image_url || '',
-      description: prod.description || '',
-    });
-    setPreviewUrl(prod.image_url || '');
-    setSelectedFile(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const resetProductForm = () => {
     setEditingProductId(null);
-    setSelectedFile(null);
-    setPreviewUrl('');
-    setProductForm({
-      title: '',
-      price: '',
-      category: '',
-      image_url: '',
-      description: '',
-    });
+    setTitle("");
+    setPrice("");
+    setDescription("");
+    setVoucherCodes("");
+    setProductImageFile(null);
+    setProductImagePreview(null);
+    setExistingProductImageUrl(null);
   };
 
-  const handleDeleteProduct = async (id: number | string, title: string) => {
-    const confirmDelete = window.confirm(`Are you sure you want to delete "${title}"?`);
-    if (!confirmDelete) return;
-
-    const { error } = await supabase.from('products').delete().eq('id', id);
-
-    if (error) {
-      showStatus(`❌ Delete failed: ${error.message}`, true);
-    } else {
-      showStatus('🗑️ Product deleted successfully!');
-      fetchData();
-    }
+  const startEditProduct = (p: Product) => {
+    setEditingProductId(p.id);
+    setTitle(p.title);
+    setCategory(p.category);
+    setPrice(p.price.toString());
+    setDescription(p.description);
+    setVoucherCodes(p.voucher_codes || "");
+    setExistingProductImageUrl(p.image_url);
+    setProductImagePreview(p.image_url);
+    setProductImageFile(null);
+    setActiveTab("products");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleQuickMoveCategory = async (productId: number | string, newCat: string) => {
-    const { error } = await supabase
-      .from('products')
-      .update({ category: newCat || null })
-      .eq('id', productId);
-
-    if (error) {
-      showStatus(`❌ Category move failed: ${error.message}`, true);
-    } else {
-      showStatus('✅ Category updated!');
-      setProducts((prev) =>
-        prev.map((p) => (p.id === productId ? { ...p, category: newCat } : p))
-      );
-    }
+  const handleDeleteProduct = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (!error) fetchProducts();
   };
 
-  const handleAddCategory = async (e: React.FormEvent) => {
+  // ক্যাটাগরি অ্যাড বা এডিট সাবমিট
+  const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = newCategory.trim();
-    if (!cleanName) return;
+    if (!categoryName.trim()) return;
+    setSubmitting(true);
+    setMessage("");
 
-    const { error } = await supabase.from('categories').insert([{ name: cleanName }]);
+    try {
+      let finalCatImageUrl = existingCategoryImageUrl;
 
-    if (error) {
-      showStatus(`❌ Category creation failed: ${error.message}`, true);
-    } else {
-      showStatus(`✅ Category "${cleanName}" created!`);
-      setNewCategory('');
-      fetchData();
+      if (categoryImageFile) {
+        finalCatImageUrl = await uploadImageToStorage(categoryImageFile, "categories");
+      }
+
+      const payload = {
+        name: categoryName.trim(),
+        image_url: finalCatImageUrl,
+      };
+
+      if (editingCategoryId) {
+        const { error } = await supabase.from("categories").update(payload).eq("id", editingCategoryId);
+        if (error) throw error;
+        setMessage("✅ Category updated successfully!");
+      } else {
+        const { error } = await supabase.from("categories").insert([payload]);
+        if (error) throw error;
+        setMessage("✅ Category added successfully!");
+      }
+
+      resetCategoryForm();
+      await fetchCategories();
+    } catch (err: any) {
+      setMessage(`❌ Error: ${err.message}`);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const handleSaveEditCategory = async (id: number | string, oldName: string) => {
-    const updated = editingCatName.trim();
-    if (!updated || updated === oldName) {
-      setEditingCatId(null);
-      return;
-    }
-
-    const { error } = await supabase
-      .from('categories')
-      .update({ name: updated })
-      .eq('id', id);
-
-    if (error) {
-      showStatus(`❌ Renaming failed: ${error.message}`, true);
-      return;
-    }
-
-    await supabase
-      .from('products')
-      .update({ category: updated })
-      .eq('category', oldName);
-
-    showStatus(`✅ Category renamed to "${updated}"!`);
-    setEditingCatId(null);
-    fetchData();
+  const resetCategoryForm = () => {
+    setEditingCategoryId(null);
+    setCategoryName("");
+    setCategoryImageFile(null);
+    setCategoryImagePreview(null);
+    setExistingCategoryImageUrl(null);
   };
 
-  const handleDeleteCategory = async (id: number | string, name: string) => {
-    const confirmDelete = window.confirm(
-      `Are you sure you want to delete "${name}"? Products will become uncategorized.`
-    );
-    if (!confirmDelete) return;
-
-    await supabase.from('products').update({ category: null }).eq('category', name);
-    const { error } = await supabase.from('categories').delete().eq('id', id);
-
-    if (error) {
-      showStatus(`❌ Delete failed: ${error.message}`, true);
-    } else {
-      showStatus(`🗑️ Category "${name}" deleted!`);
-      fetchData();
-    }
+  const startEditCategory = (cat: Category) => {
+    setEditingCategoryId(cat.id);
+    setCategoryName(cat.name);
+    setExistingCategoryImageUrl(cat.image_url || null);
+    setCategoryImagePreview(cat.image_url || null);
+    setCategoryImageFile(null);
+    setActiveTab("categories");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const filteredProducts = products.filter((p) => {
-    const title = (p.title || '').toLowerCase();
-    const matchesSearch = title.includes(productSearch.toLowerCase());
-    const matchesCategory =
-      filterCategory === 'ALL' ||
-      (filterCategory === 'UNCATEGORIZED' ? !p.category : p.category === filterCategory);
-    return matchesSearch && matchesCategory;
-  });
-
-  if (checkingAuth) return null;
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center px-4 bg-slate-950">
-        <div className="max-w-md w-full bg-slate-900 rounded-3xl p-8 shadow-2xl border border-slate-800">
-          <div className="text-center mb-6">
-            <div className="w-16 h-16 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-inner">
-              🔒
-            </div>
-            <h1 className="text-2xl font-black text-white">Admin Access</h1>
-            <p className="text-xs font-semibold text-slate-400 mt-1">
-              Enter security password to access control center
-            </p>
-          </div>
-
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={inputPassword}
-                  onChange={(e) => setInputPassword(e.target.value)}
-                  placeholder="Enter admin password..."
-                  className="w-full pl-4 pr-12 py-3 text-sm font-semibold border border-slate-800 rounded-2xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 shadow-sm"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3.5 text-xs font-bold text-slate-400 hover:text-white"
-                >
-                  {showPassword ? 'Hide' : 'Show'}
-                </button>
-              </div>
-
-              {authError && (
-                <p className="text-xs font-bold text-rose-400 mt-2 text-center bg-rose-500/10 py-2 rounded-xl border border-rose-500/20">
-                  {authError}
-                </p>
-              )}
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-sm rounded-2xl transition-all shadow-md active:scale-95 cursor-pointer"
-            >
-              Enter Dashboard
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+  const handleDeleteCategory = async (id: number) => {
+    if (!confirm("Are you sure you want to delete this category?")) return;
+    const { error } = await supabase.from("categories").delete().eq("id", id);
+    if (!error) fetchCategories();
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-6 bg-slate-950 min-h-screen text-white">
-      {/* Header & Logout */}
-      <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6">
+      {/* টপ হেডার বার */}
+      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <div>
-          <h1 className="text-2xl font-black text-white">Admin Control Center</h1>
-          <p className="text-sm font-medium text-slate-400 mt-0.5">
-            Full management console for products, inventory, and categories
-          </p>
+          <h1 className="text-xl font-bold text-white">Admin Management Portal</h1>
+          <span className="text-xs text-sky-400 font-mono">Manage Products, Stock, & Categories</span>
         </div>
-
-        <div className="flex items-center gap-3">
-          {statusMessage && (
-            <div
-              className={`text-xs sm:text-sm px-4 py-2 rounded-xl font-bold shadow-md ${
-                statusMessage.isError
-                  ? 'bg-rose-500 text-white animate-pulse'
-                  : 'bg-sky-500 text-white'
-              }`}
-            >
-              {statusMessage.text}
-            </div>
-          )}
-
-          <button
-            onClick={handleLogout}
-            className="px-4 py-2 bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
-          >
-            <span>🔒</span>
-            <span>Logout</span>
-          </button>
-        </div>
+        <Link
+          href="/"
+          className="text-xs bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl hover:text-white text-slate-400 transition"
+        >
+          ← View Storefront
+        </Link>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-3 border-b border-slate-800 pb-2">
-        <button
-          onClick={() => setActiveTab('products')}
-          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'products'
-              ? 'bg-sky-500 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-          }`}
-        >
-          <span>📦</span>
-          <span>Products Management ({products.length})</span>
-        </button>
+      {message && (
+        <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-300">
+          {message}
+        </div>
+      )}
 
+      {/* ট্যাব নেভিগেশন (প্রোডাক্টস বনাম ক্যাটাগরিস) */}
+      <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
         <button
-          onClick={() => setActiveTab('categories')}
-          className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer ${
-            activeTab === 'categories'
-              ? 'bg-sky-500 text-white shadow-md'
-              : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+          onClick={() => setActiveTab("products")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+            activeTab === "products"
+              ? "bg-slate-800 text-sky-400 border border-slate-700"
+              : "text-slate-400 hover:text-white"
           }`}
         >
-          <span>🏷️</span>
-          <span>Categories Management ({categories.length})</span>
+          📦 Products & Stock ({products.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("categories")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+            activeTab === "categories"
+              ? "bg-slate-800 text-sky-400 border border-slate-700"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          🏷️ Categories Management ({categories.length})
         </button>
       </div>
 
-      {loading ? (
-        <div className="text-center py-20 text-slate-500 font-bold text-sm">
-          Loading marketplace records...
-        </div>
-      ) : activeTab === 'products' ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Product Form with Photo Upload */}
-          <div className="lg:col-span-4">
-            <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800 sticky top-24">
-              <h2 className="text-lg font-black text-white mb-4 flex items-center justify-between">
-                <span>{editingProductId ? '✏️ Edit Product' : '➕ Add New Product'}</span>
-                {editingProductId && (
-                  <button
-                    onClick={resetProductForm}
-                    className="text-xs font-semibold text-rose-400 hover:underline cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                )}
+      {/* ট্যাব ১: প্রোডাক্ট ম্যানেজমেন্ট */}
+      {activeTab === "products" && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                {editingProductId ? "Edit Official Product & Stock Codes" : "Add Official Store Product"}
               </h2>
-
-              <form onSubmit={handleProductSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Product Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={productForm.title}
-                    onChange={(e) => setProductForm({ ...productForm, title: e.target.value })}
-                    placeholder="e.g. Windows 11 License"
-                    className="w-full px-3.5 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 font-medium"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">Price ($) *</label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      value={productForm.price}
-                      onChange={(e) => setProductForm({ ...productForm, price: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full px-3.5 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-slate-300 mb-1">Category</label>
-                    <select
-                      value={productForm.category}
-                      onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white font-medium"
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map((c) => (
-                        <option key={c.id} value={c.name}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Direct Photo Upload */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Upload Photo from Device
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="w-full text-xs text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-sky-500 file:text-white hover:file:bg-sky-600 cursor-pointer bg-slate-950 border border-slate-800 rounded-xl p-1"
-                  />
-
-                  {previewUrl && (
-                    <div className="mt-2 relative inline-block">
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="w-20 h-20 object-cover rounded-xl border border-sky-500/50 shadow-md"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">
-                    Or Image URL (Optional)
-                  </label>
-                  <input
-                    type="url"
-                    value={productForm.image_url}
-                    onChange={(e) => {
-                      setProductForm({ ...productForm, image_url: e.target.value });
-                      if (!selectedFile) setPreviewUrl(e.target.value);
-                    }}
-                    placeholder="https://example.com/photo.jpg"
-                    className="w-full px-3.5 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Description</label>
-                  <textarea
-                    rows={3}
-                    value={productForm.description}
-                    onChange={(e) => setProductForm({ ...productForm, description: e.target.value })}
-                    placeholder="Key specifications or details..."
-                    className="w-full px-3.5 py-2 text-sm border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500 font-medium resize-none"
-                  />
-                </div>
-
+              {editingProductId && (
                 <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 disabled:bg-sky-400 text-white font-bold text-sm rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                  type="button"
+                  onClick={resetProductForm}
+                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg"
                 >
-                  {submitting ? 'Uploading & Saving...' : editingProductId ? 'Save Changes' : 'Add Product'}
+                  Cancel Edit
                 </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Product List */}
-          <div className="lg:col-span-8 space-y-4">
-            <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800">
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-6">
-                <input
-                  type="text"
-                  value={productSearch}
-                  onChange={(e) => setProductSearch(e.target.value)}
-                  placeholder="Filter products..."
-                  className="w-full sm:w-64 px-4 py-2 text-xs border border-slate-800 rounded-xl bg-slate-950 text-white placeholder:text-slate-500 focus:ring-2 focus:ring-sky-500 focus:outline-none font-medium"
-                />
-
-                <select
-                  value={filterCategory}
-                  onChange={(e) => setFilterCategory(e.target.value)}
-                  className="w-full sm:w-auto text-xs border border-slate-800 rounded-xl px-3 py-2 bg-slate-950 text-white font-bold focus:ring-2 focus:ring-sky-500 focus:outline-none"
-                >
-                  <option value="ALL">All Products ({products.length})</option>
-                  <option value="UNCATEGORIZED">Uncategorized</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {filteredProducts.length === 0 ? (
-                <div className="text-center py-12 text-sm text-slate-500 font-medium">
-                  No products found
-                </div>
-              ) : (
-                <div className="divide-y divide-slate-800/80 max-h-[640px] overflow-y-auto pr-1">
-                  {filteredProducts.map((product) => {
-                    const title = product.title || 'Untitled Asset';
-                    const img = product.image_url;
-
-                    return (
-                      <div
-                        key={product.id}
-                        className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-800/40 p-2.5 rounded-xl transition-colors"
-                      >
-                        <div className="flex items-center gap-3.5 min-w-0">
-                          {img ? (
-                            <img
-                              src={img}
-                              alt={title}
-                              className="w-14 h-14 object-cover rounded-xl border border-slate-800 shrink-0 shadow-sm"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] text-slate-500 font-bold shrink-0">
-                              No Image
-                            </div>
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-bold text-white truncate">{title}</p>
-                            <p className="text-xs text-sky-400 font-bold mt-0.5">${product.price}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2.5 self-end sm:self-center shrink-0">
-                          <select
-                            value={product.category || ''}
-                            onChange={(e) => handleQuickMoveCategory(product.id, e.target.value)}
-                            className="text-xs font-bold border border-slate-800 rounded-xl px-2.5 py-1.5 bg-slate-950 text-white shadow-sm focus:ring-2 focus:ring-sky-500 focus:outline-none cursor-pointer"
-                          >
-                            <option value="">No Category</option>
-                            {categories.map((c) => (
-                              <option key={c.id} value={c.name}>
-                                {c.name}
-                              </option>
-                            ))}
-                          </select>
-
-                          <button
-                            onClick={() => startEditProduct(product)}
-                            className="px-3 py-1.5 text-xs font-bold text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 rounded-xl transition cursor-pointer"
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() => handleDeleteProduct(product.id, title)}
-                            className="px-3 py-1.5 text-xs font-bold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl transition cursor-pointer"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
               )}
             </div>
-          </div>
-        </div>
-      ) : (
-        /* Categories Management */
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          <div className="md:col-span-5">
-            <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800">
-              <h2 className="text-base font-black text-white mb-3 flex items-center gap-2">
-                <span>➕</span> Add New Category
-              </h2>
-              <form onSubmit={handleAddCategory} className="flex gap-2">
+
+            <form onSubmit={handleProductSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Title</label>
                 <input
                   type="text"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="e.g. Software, Templates"
-                  className="flex-1 px-4 py-2.5 text-sm font-medium border border-slate-800 rounded-xl focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white placeholder:text-slate-500"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. PUBG Mobile 60 UC Global PIN"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
                 />
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white text-sm font-bold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
-                >
-                  Create
-                </button>
-              </form>
-            </div>
-          </div>
-
-          <div className="md:col-span-7">
-            <div className="bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-800">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-black text-white">
-                  Active Categories ({categories.length})
-                </h2>
-                <span className="text-xs text-slate-400 font-bold">Total Products</span>
               </div>
 
-              {categories.length === 0 ? (
-                <div className="text-center py-10 text-sm text-slate-500 font-medium">
-                  No categories created yet
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-              ) : (
-                <div className="divide-y divide-slate-800/80 max-h-[500px] overflow-y-auto pr-1">
-                  {categories.map((cat) => {
-                    const count = products.filter((p) => p.category === cat.name).length;
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Price (USD $)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0.99"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                  />
+                </div>
+              </div>
 
-                    return (
-                      <div key={cat.id} className="py-3.5 flex items-center justify-between gap-3">
-                        {editingCatId === cat.id ? (
-                          <div className="flex items-center gap-2 flex-1">
-                            <input
-                              type="text"
-                              value={editingCatName}
-                              onChange={(e) => setEditingCatName(e.target.value)}
-                              className="flex-1 px-3 py-1.5 text-sm font-bold border border-sky-500 rounded-lg focus:ring-2 focus:ring-sky-500 focus:outline-none bg-slate-950 text-white"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleSaveEditCategory(cat.id, cat.name)}
-                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm cursor-pointer"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={() => setEditingCatId(null)}
-                              className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-lg cursor-pointer"
-                            >
-                              Cancel
-                            </button>
-                          </div>
+              {/* প্রোডাক্ট থাম্বনেইল ছবি আপলোড */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Image</label>
+                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
+                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
+                    {productImagePreview ? (
+                      <img src={productImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] text-slate-500">No Image</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="file"
+                      id="admin-prod-img"
+                      accept="image/*"
+                      onChange={handleProductImageChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="admin-prod-img"
+                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
+                    >
+                      {productImagePreview ? "Change Image" : "Upload Image from Device"}
+                    </label>
+                    <p className="text-[11px] text-slate-500">Supports JPG, PNG, WEBP</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                <textarea
+                  rows={2}
+                  required
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Redemption instructions and details..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-300">
+                    Voucher / License Codes (One code per line)
+                  </label>
+                  <span className="text-xs font-mono text-sky-400">
+                    Stock: {voucherCodes.split("\n").filter((c) => c.trim()).length} codes
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={voucherCodes}
+                  onChange={(e) => setVoucherCodes(e.target.value)}
+                  placeholder="CODE-XXXXX-1111&#10;CODE-YYYYY-2222"
+                  className="w-full font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950"
+              >
+                {submitting
+                  ? "Processing..."
+                  : editingProductId
+                  ? "Update Official Product"
+                  : "Publish Official Product"}
+              </button>
+            </form>
+          </div>
+
+          {/* প্রোডাক্ট তালিকা */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              All Listed Products ({products.length})
+            </h3>
+            <div className="space-y-2">
+              {products.map((p) => {
+                const stock = p.voucher_codes
+                  ? p.voucher_codes.split("\n").filter((c) => c.trim()).length
+                  : 0;
+
+                return (
+                  <div
+                    key={p.id}
+                    className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
                         ) : (
-                          <>
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-sm font-bold text-white truncate">{cat.name}</span>
-                              <span className="px-2.5 py-0.5 bg-slate-800 text-sky-400 rounded-full text-xs font-black">
-                                {count}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <button
-                                onClick={() => {
-                                  setEditingCatId(cat.id);
-                                  setEditingCatName(cat.name);
-                                }}
-                                className="px-3 py-1 text-xs font-bold text-sky-400 hover:text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 rounded-lg transition cursor-pointer"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCategory(cat.id, cat.name)}
-                                className="px-3 py-1 text-xs font-bold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition cursor-pointer"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </>
+                          <span className="text-[10px] text-slate-500 flex items-center justify-center h-full">
+                            No Img
+                          </span>
                         )}
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-white truncate">{p.title}</h4>
+                        <p className="text-[10px] text-slate-400 mt-0.5">
+                          {p.category} • ${p.price} • Stock:{" "}
+                          <strong className={stock > 0 ? "text-emerald-400" : "text-rose-400"}>
+                            {stock} codes
+                          </strong>{" "}
+                          • Sold: {p.sold_count || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => startEditProduct(p)}
+                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-lg transition"
+                      >
+                        Edit / Stock
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(p.id)}
+                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ট্যাব ২: সম্পূর্ণ ক্যাটাগরি ম্যানেজমেন্ট ও এডিট */}
+      {activeTab === "categories" && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                {editingCategoryId ? "Edit Category & Photo" : "Add New Category"}
+              </h2>
+              {editingCategoryId && (
+                <button
+                  type="button"
+                  onClick={resetCategoryForm}
+                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg"
+                >
+                  Cancel Edit
+                </button>
               )}
+            </div>
+
+            <form onSubmit={handleCategorySubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Free Fire, PUBG, Steam, Xbox"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                />
+              </div>
+
+              {/* ক্যাটাগরি ছবি আপলোড */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Icon / Photo</label>
+                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
+                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
+                    {categoryImagePreview ? (
+                      <img src={categoryImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] text-slate-500">No Photo</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="file"
+                      id="admin-cat-img"
+                      accept="image/*"
+                      onChange={handleCategoryImageChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="admin-cat-img"
+                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
+                    >
+                      {categoryImagePreview ? "Change Category Image" : "Upload Category Image"}
+                    </label>
+                    <p className="text-[11px] text-slate-500">Square PNG, JPG, or SVG recommended</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950"
+              >
+                {submitting
+                  ? "Processing..."
+                  : editingCategoryId
+                  ? "Update Category"
+                  : "Save Category"}
+              </button>
+            </form>
+          </div>
+
+          {/* বর্তমান ক্যাটাগরি তালিকা */}
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              All Existing Categories ({categories.length})
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {categories.map((cat) => {
+                const count = products.filter(
+                  (p) => p.category.toLowerCase() === cat.name.toLowerCase()
+                ).length;
+
+                return (
+                  <div
+                    key={cat.id}
+                    className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                        {cat.image_url ? (
+                          <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-slate-500">🎮</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-white truncate">{cat.name}</h4>
+                        <p className="text-[10px] text-slate-400">{count} products assigned</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => startEditCategory(cat)}
+                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 rounded-lg transition"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-lg transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

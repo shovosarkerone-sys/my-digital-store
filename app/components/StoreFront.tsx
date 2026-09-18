@@ -12,6 +12,10 @@ interface Product {
   description: string;
   image_url: string | null;
   views?: number;
+  seller_id?: string | null;
+  seller_name?: string | null;
+  voucher_codes?: string | null;
+  sold_count?: number;
 }
 
 interface Category {
@@ -38,7 +42,9 @@ export default function StoreFront({
 
   useEffect(() => {
     async function checkUserStatus() {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setCurrentUser(user);
 
       if (user) {
@@ -87,9 +93,10 @@ export default function StoreFront({
   const instantSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return initialProducts
-      .filter((p) =>
-        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.category.toLowerCase().includes(searchQuery.toLowerCase())
+      .filter(
+        (p) =>
+          p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.category.toLowerCase().includes(searchQuery.toLowerCase())
       )
       .slice(0, 6);
   }, [initialProducts, searchQuery]);
@@ -103,6 +110,14 @@ export default function StoreFront({
   const visibleCategories = showAllCategories
     ? categories
     : categories.slice(0, 12);
+
+  const getStockCount = (voucherCodes?: string | null) => {
+    if (!voucherCodes) return 0;
+    return voucherCodes
+      .split("\n")
+      .map((c) => c.trim())
+      .filter((c) => c.length > 0).length;
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
@@ -135,30 +150,27 @@ export default function StoreFront({
           </Link>
         </div>
 
-        {/* ডানপাশে: Become a Seller / Seller Dashboard এবং Login বাটন */}
         <div className="flex items-center gap-2 sm:gap-3">
           {isSeller ? (
             <Link
               href="/seller-dashboard"
-              className="text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-200 hover:text-white px-3.5 py-2 rounded-xl transition cursor-pointer"
             >
-              <span>🏬</span>
-              <span className="hidden sm:inline">Seller Hub</span>
+              Seller Dashboard
             </Link>
           ) : (
             <Link
               href="/become-seller"
-              className="text-xs font-bold bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="text-xs font-bold bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 px-3.5 py-2 rounded-xl transition cursor-pointer"
             >
-              <span>🚀</span>
-              <span className="hidden sm:inline">Become a Seller</span>
+              Become a Seller
             </Link>
           )}
 
           {currentUser ? (
             <Link
               href="/dashboard"
-              className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white px-3 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer"
             >
               <div className="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-black">
                 {currentUser.user_metadata?.full_name?.charAt(0)?.toUpperCase() || "U"}
@@ -170,10 +182,9 @@ export default function StoreFront({
           ) : (
             <Link
               href="/auth"
-              className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/50 text-white px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+              className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/50 text-white px-3.5 py-2 rounded-xl transition cursor-pointer shadow-md"
             >
-              <span>👤</span>
-              <span>Login</span>
+              Login
             </Link>
           )}
         </div>
@@ -217,31 +228,31 @@ export default function StoreFront({
         </div>
 
         <nav className="space-y-6 flex-1 overflow-y-auto pr-1">
-          {/* সেলার লিংক */}
           <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Merchant Center
             </span>
             {isSeller ? (
               <Link
                 href="/seller-dashboard"
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition"
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 transition"
               >
-                <span>🏬</span> Seller Dashboard
+                <span>Seller Dashboard</span>
+                <span>→</span>
               </Link>
             ) : (
               <Link
                 href="/become-seller"
                 onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 transition"
+                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-slate-900 border border-slate-800 hover:text-white transition"
               >
-                <span>🚀</span> Become a Seller
+                <span>Become a Seller</span>
+                <span>→</span>
               </Link>
             )}
           </div>
 
-          {/* বায়ার লিংক */}
           {currentUser && (
             <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
@@ -253,21 +264,21 @@ export default function StoreFront({
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
                 >
-                  <span>📊</span> Dashboard Overview
+                  Dashboard Overview
                 </Link>
                 <Link
                   href="/dashboard"
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-800 hover:text-white transition"
                 >
-                  <span>📜</span> My Transactions
+                  My Transactions
                 </Link>
                 <Link
                   href="/dashboard"
                   onClick={() => setIsMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-emerald-400 hover:bg-slate-800 transition"
                 >
-                  <span>💬</span> Create Support Ticket
+                  Create Support Ticket
                 </Link>
               </div>
             </div>
@@ -282,7 +293,7 @@ export default function StoreFront({
               onClick={() => setIsMenuOpen(false)}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 text-white shadow-lg shadow-sky-500/30 transition cursor-pointer"
             >
-              <span className="flex items-center gap-2">🛍️ All Products</span>
+              <span className="flex items-center gap-2">All Products</span>
               <span className="text-[11px] bg-sky-600/80 px-2 py-0.5 rounded-full font-mono">
                 {initialProducts.length}
               </span>
@@ -323,8 +334,7 @@ export default function StoreFront({
                 onClick={() => setIsMenuOpen(false)}
                 className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition cursor-pointer border border-slate-700"
               >
-                <span>👤</span>
-                <span>Login / Register</span>
+                Login / Register
               </Link>
             </div>
           )}
@@ -392,7 +402,11 @@ export default function StoreFront({
                       >
                         <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
                           {item.image_url ? (
-                            <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            />
                           ) : (
                             <span className="text-xs text-slate-600">No Img</span>
                           )}
@@ -426,7 +440,7 @@ export default function StoreFront({
           </div>
         </div>
 
-        {/* ক্যাটাগরি গ্রিড */}
+        {/* ক্যাটাগরি গ্রিড (ক্লিক করলে সরাসরি category/[name] পেজে যাবে) */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -437,7 +451,9 @@ export default function StoreFront({
                 onClick={() => setShowAllCategories(!showAllCategories)}
                 className="text-xs text-sky-400 hover:text-sky-300 font-semibold transition cursor-pointer"
               >
-                {showAllCategories ? "Show Less ↑" : `Show More (${categories.length - 12} more) ↓`}
+                {showAllCategories
+                  ? "Show Less ↑"
+                  : `Show More (${categories.length - 12} more) ↓`}
               </button>
             )}
           </div>
@@ -451,7 +467,11 @@ export default function StoreFront({
               >
                 <div className="w-14 h-14 mb-2 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center group-hover:scale-105 transition duration-200">
                   {cat.image_url ? (
-                    <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
+                    <img
+                      src={cat.image_url}
+                      alt={cat.name}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-xl">🎮</span>
                   )}
@@ -481,53 +501,105 @@ export default function StoreFront({
             </div>
           ) : (
             <div className="space-y-2.5 sm:space-y-3">
-              {displayedProducts.map((product) => (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.id}`}
-                  className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
-                >
-                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
-                      {product.image_url ? (
-                        <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
-                      ) : (
-                        <span className="text-slate-600 text-[10px]">No Image</span>
-                      )}
-                    </div>
+              {displayedProducts.map((product) => {
+                const stock = getStockCount(product.voucher_codes);
+                const isOfficial = !product.seller_id || product.seller_name === "Official Store";
 
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
-                        {product.category}
-                      </span>
-                      <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-2 sm:line-clamp-3 leading-snug group-hover:text-sky-300 transition">
-                        {product.title}
-                      </h3>
-                      <div className="flex items-center gap-2 text-[10px] text-slate-400 pt-0.5">
-                        <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800">
-                          👁️ {product.views || 0} views
+                return (
+                  <Link
+                    key={product.id}
+                    href={`/product/${product.id}`}
+                    className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                      {/* ছবি এবং ছবির এক কোণায় ছোট ভিউ কাউন্ট */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
+                        {product.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={product.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                          />
+                        ) : (
+                          <span className="text-slate-600 text-[10px]">No Image</span>
+                        )}
+
+                        {/* ছবির ডানপাশের কোণায় ভিউজ ব্যাজ */}
+                        <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[9px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
+                          <span>👁️</span>
+                          <span>{product.views || 0}</span>
+                        </div>
+                      </div>
+
+                      {/* টাইটেল, ক্যাটাগরি, অফিসিয়াল স্টোর ফেসবুক ব্যাজ, স্টক ও সোল্ড */}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
+                          {product.category}
                         </span>
-                        <span className="text-slate-500 hidden sm:inline">⚡ Instant Auto-Delivery</span>
+                        <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-2 sm:line-clamp-3 leading-snug group-hover:text-sky-300 transition">
+                          {product.title}
+                        </h3>
+
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] pt-1">
+                          {/* গোল ফেসবুক ব্লু ভেরিফাইড টিক চিহ্ন প্রথমে, তারপর Official Store */}
+                          {isOfficial ? (
+                            <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1.5">
+                              {/* পারফেক্ট রাউন্ড ফেসবুক ব্লু সার্কেল + টিক */}
+                              <span className="w-3.5 h-3.5 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0 shadow-xs">
+                                <svg
+                                  className="w-2.5 h-2.5 text-white"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="3.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </span>
+                              <span>Official Store</span>
+                            </span>
+                          ) : (
+                            <span className="bg-slate-800 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+                              <span>🏪</span> {product.seller_name || "Seller"}
+                            </span>
+                          )}
+
+                          {/* স্টক */}
+                          <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
+                            Stock:{" "}
+                            <strong className={stock > 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+                              {stock}
+                            </strong>
+                          </span>
+
+                          {/* সোল্ড কাউন্ট */}
+                          <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
+                            Sold: <strong className="text-slate-200 font-bold">{product.sold_count || 0}</strong>
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
-                    <div className="text-right">
-                      <span className="text-[9px] text-slate-500 block leading-none">Price</span>
-                      <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
-                        ${product.price}
+                    <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
+                      <div className="text-right">
+                        <span className="text-[9px] text-slate-500 block leading-none">Price</span>
+                        <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
+                          ${product.price}
+                        </span>
+                      </div>
+                      <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 rounded-xl transition whitespace-nowrap shadow-md shadow-sky-950">
+                        Buy Now →
                       </span>
                     </div>
-                    <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 rounded-xl transition whitespace-nowrap shadow-md shadow-sky-950">
-                      Buy Now →
-                    </span>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           )}
 
+          {/* পেজিনেশন */}
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 pt-8">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
