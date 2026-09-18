@@ -405,6 +405,7 @@ export default function StoreFront({
                             <img
                               src={item.image_url}
                               alt={item.title}
+                              referrerPolicy="no-referrer"
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                             />
                           ) : (
@@ -470,6 +471,7 @@ export default function StoreFront({
                     <img
                       src={cat.image_url}
                       alt={cat.name}
+                      referrerPolicy="no-referrer"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -512,26 +514,27 @@ export default function StoreFront({
                     className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                      {/* ছবি এবং ছবির এক কোণায় ছোট ভিউ কাউন্ট */}
+                      {/* ছবি এবং ছবির এক কোণায় ছোট ভিউ কাউন্ট */}
                       <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
                         {product.image_url ? (
                           <img
                             src={product.image_url}
                             alt={product.title}
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                           />
                         ) : (
                           <span className="text-slate-600 text-[10px]">No Image</span>
                         )}
 
-                        {/* ছবির ডানপাশের কোণায় ভিউজ ব্যাজ */}
+                        {/* ছবির ডানপাশের কোণায় ভিউজ ব্যাজ */}
                         <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[9px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
                           <span>👁️</span>
                           <span>{product.views || 0}</span>
                         </div>
                       </div>
 
-                      {/* টাইটেল, ক্যাটাগরি, অফিসিয়াল স্টোর ফেসবুক ব্যাজ, স্টক ও সোল্ড */}
+                      {/* টাইটেল, ক্যাটাগরি, অফিসিয়াল স্টোর ফেসবুক ব্যাজ, স্টক ও সোল্ড */}
                       <div className="min-w-0 flex-1 space-y-1">
                         <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
                           {product.category}
