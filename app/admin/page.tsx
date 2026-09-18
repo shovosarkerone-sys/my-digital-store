@@ -49,6 +49,7 @@ export default function AdminPage() {
 
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetchCategories();
@@ -68,7 +69,26 @@ export default function AdminPage() {
     if (data) setProducts(data);
   };
 
-  // ডিভাইস থেকে প্রোডাক্ট ইমেজ সিলেক্ট
+  // BuySellVouchers থেকে ১-ক্লিক সিঙ্ক হ্যান্ডলার (+৫% মার্জিন)
+  const handleManualSync = async () => {
+    setSyncing(true);
+    setMessage("🔄 Connecting to BuySellVouchers and fetching products (+5% margin)...");
+    try {
+      const res = await fetch("/api/cron/sync-bsv");
+      const data = await res.json();
+      if (data.success) {
+        setMessage(`✅ Sync Complete: Added ${data.summary.added}, Updated ${data.summary.updated}, Removed ${data.summary.deleted}`);
+        await fetchProducts();
+      } else {
+        setMessage("⚠️ " + (data.message || "Sync encountered an issue."));
+      }
+    } catch (e: any) {
+      setMessage("❌ Sync Failed: " + e.message);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -77,7 +97,6 @@ export default function AdminPage() {
     }
   };
 
-  // ডিভাইস থেকে ক্যাটাগরি ইমেজ সিলেক্ট
   const handleCategoryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -86,7 +105,6 @@ export default function AdminPage() {
     }
   };
 
-  // ইমেজ আপলোড হেল্পার ফাংশন
   const uploadImageToStorage = async (file: File, folder: string) => {
     const fileExt = file.name.split(".").pop();
     const fileName = `${folder}/${Date.now()}.${fileExt}`;
@@ -100,7 +118,6 @@ export default function AdminPage() {
     return data.publicUrl;
   };
 
-  // প্রোডাক্ট অ্যাড বা এডিট সাবমিট
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -173,7 +190,6 @@ export default function AdminPage() {
     if (!error) fetchProducts();
   };
 
-  // ক্যাটাগরি অ্যাড বা এডিট সাবমিট
   const handleCategorySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!categoryName.trim()) return;
@@ -238,26 +254,38 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6">
       {/* টপ হেডার বার */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
           <h1 className="text-xl font-bold text-white">Admin Management Portal</h1>
           <span className="text-xs text-sky-400 font-mono">Manage Products, Stock, & Categories</span>
         </div>
-        <Link
-          href="/"
-          className="text-xs bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl hover:text-white text-slate-400 transition"
-        >
-          ← View Storefront
-        </Link>
+
+        {/* সিঙ্ক বাটন ও স্টোরফ্রন্ট লিঙ্ক */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleManualSync}
+            disabled={syncing}
+            className="text-xs bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-sky-950"
+          >
+            <span>⚡</span>
+            <span>{syncing ? "Syncing..." : "Sync BSV Now (+5%)"}</span>
+          </button>
+          <Link
+            href="/"
+            className="text-xs bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl hover:text-white text-slate-400 transition"
+          >
+            ← View Storefront
+          </Link>
+        </div>
       </div>
 
       {message && (
-        <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-300">
+        <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-300">
           {message}
         </div>
       )}
 
-      {/* ট্যাব নেভিগেশন (প্রোডাক্টস বনাম ক্যাটাগরিস) */}
+      {/* ট্যাব সুইচ */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
         <button
           onClick={() => setActiveTab("products")}
@@ -293,7 +321,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={resetProductForm}
-                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg"
+                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
                 >
                   Cancel Edit
                 </button>
@@ -342,7 +370,7 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* প্রোডাক্ট থাম্বনেইল ছবি আপলোড */}
+              {/* থাম্বনেইল আপলোড */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Product Image</label>
                 <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
@@ -476,7 +504,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ট্যাব ২: সম্পূর্ণ ক্যাটাগরি ম্যানেজমেন্ট ও এডিট */}
+      {/* ট্যাব ২: ক্যাটাগরি ম্যানেজমেন্ট */}
       {activeTab === "categories" && (
         <div className="space-y-6">
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
@@ -488,7 +516,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   onClick={resetCategoryForm}
-                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg"
+                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
                 >
                   Cancel Edit
                 </button>
@@ -508,7 +536,6 @@ export default function AdminPage() {
                 />
               </div>
 
-              {/* ক্যাটাগরি ছবি আপলোড */}
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Category Icon / Photo</label>
                 <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
@@ -552,7 +579,6 @@ export default function AdminPage() {
             </form>
           </div>
 
-          {/* বর্তমান ক্যাটাগরি তালিকা */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               All Existing Categories ({categories.length})
