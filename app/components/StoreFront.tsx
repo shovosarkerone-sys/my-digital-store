@@ -28,21 +28,45 @@ export default function StoreFront({
   categories: Category[];
 }) {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [searchQuery, setSearchQuery] = useState<string>("" );
+  const [isSeller, setIsSeller] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [showAllCategories, setShowAllCategories] = useState<boolean>(false);
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 30;
 
-  // বায়ার লগইন স্টেট চেক
   useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function checkUserStatus() {
+      const { data: { user } } = await supabase.auth.getUser();
       setCurrentUser(user);
-    });
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_, session) => {
-      setCurrentUser(session?.user || null);
+      if (user) {
+        const { data: sellerData } = await supabase
+          .from("sellers")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        setIsSeller(!!sellerData);
+      }
+    }
+
+    checkUserStatus();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_, session) => {
+      const user = session?.user || null;
+      setCurrentUser(user);
+      if (user) {
+        const { data: sellerData } = await supabase
+          .from("sellers")
+          .select("id")
+          .eq("id", user.id)
+          .maybeSingle();
+        setIsSeller(!!sellerData);
+      } else {
+        setIsSeller(false);
+      }
     });
 
     return () => {
@@ -50,7 +74,6 @@ export default function StoreFront({
     };
   }, []);
 
-  // ইনস্ট্যান্ট সার্চ ফিল্টারিং
   const filteredProducts = useMemo(() => {
     return initialProducts.filter((product) => {
       const query = searchQuery.toLowerCase();
@@ -61,7 +84,6 @@ export default function StoreFront({
     });
   }, [initialProducts, searchQuery]);
 
-  // সার্চ ড্রপডাউন সাজেশন
   const instantSuggestions = useMemo(() => {
     if (!searchQuery.trim()) return [];
     return initialProducts
@@ -72,7 +94,6 @@ export default function StoreFront({
       .slice(0, 6);
   }, [initialProducts, searchQuery]);
 
-  // পেজিনেশন
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const displayedProducts = filteredProducts.slice(
     (currentPage - 1) * itemsPerPage,
@@ -114,21 +135,35 @@ export default function StoreFront({
           </Link>
         </div>
 
-        {/* ডানপাশে: লগইন থাকলে প্রোফাইল ও ড্যাশবোর্ড, না থাকলে Login বাটন */}
-        <div className="flex items-center gap-3">
-          <span className="text-[11px] font-semibold text-slate-400 bg-slate-900 border border-slate-800 px-3 py-1 rounded-full hidden sm:inline-block">
-            ⚡ 100% Automated Delivery
-          </span>
+        {/* ডানপাশে: Become a Seller / Seller Dashboard এবং Login বাটন */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {isSeller ? (
+            <Link
+              href="/seller-dashboard"
+              className="text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+            >
+              <span>🏬</span>
+              <span className="hidden sm:inline">Seller Hub</span>
+            </Link>
+          ) : (
+            <Link
+              href="/become-seller"
+              className="text-xs font-bold bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+            >
+              <span>🚀</span>
+              <span className="hidden sm:inline">Become a Seller</span>
+            </Link>
+          )}
 
           {currentUser ? (
             <Link
               href="/dashboard"
-              className="text-xs font-bold bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 px-3.5 py-2 rounded-xl transition flex items-center gap-2 cursor-pointer shadow-md"
+              className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 text-white px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
             >
               <div className="w-5 h-5 rounded-full bg-sky-500 text-white flex items-center justify-center text-[10px] font-black">
                 {currentUser.user_metadata?.full_name?.charAt(0)?.toUpperCase() || "U"}
               </div>
-              <span className="max-w-[100px] truncate">
+              <span className="max-w-[80px] truncate hidden sm:inline">
                 {currentUser.user_metadata?.full_name?.split(" ")[0] || "Account"}
               </span>
             </Link>
@@ -182,7 +217,31 @@ export default function StoreFront({
         </div>
 
         <nav className="space-y-6 flex-1 overflow-y-auto pr-1">
-          {/* লগইন থাকলে বায়ার মেনু সেকশন */}
+          {/* সেলার লিংক */}
+          <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
+            <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block">
+              Merchant Center
+            </span>
+            {isSeller ? (
+              <Link
+                href="/seller-dashboard"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition"
+              >
+                <span>🏬</span> Seller Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/become-seller"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 transition"
+              >
+                <span>🚀</span> Become a Seller
+              </Link>
+            )}
+          </div>
+
+          {/* বায়ার লিংক */}
           {currentUser && (
             <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
@@ -257,7 +316,6 @@ export default function StoreFront({
             </div>
           </div>
 
-          {/* লগইন বাটন (যদি লগইন না থাকে) */}
           {!currentUser && (
             <div className="pt-4 border-t border-slate-800">
               <Link
@@ -273,9 +331,8 @@ export default function StoreFront({
         </nav>
       </aside>
 
-      {/* মূল কনটেন্ট এরিয়া */}
+      {/* মূল কন্টেন্ট এরিয়া */}
       <main className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto w-full space-y-10">
-        {/* মাঝখান বরাবর হেডার ও ইনস্ট্যান্ট সার্চবার */}
         <div className="flex flex-col items-center justify-center text-center space-y-4 pt-2">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
             ⚡ Instant Digital Delivery
@@ -293,7 +350,7 @@ export default function StoreFront({
             </p>
           </div>
 
-          {/* লাইভ সার্চবার */}
+          {/* সার্চবার */}
           <div className="relative w-full max-w-2xl text-left mt-2">
             <div className="relative">
               <input
@@ -308,9 +365,7 @@ export default function StoreFront({
                 }}
                 className="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-2xl py-3.5 pl-12 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition duration-200 shadow-xl"
               />
-              <span className="absolute left-4 top-3.5 text-slate-500 text-base">
-                🔍
-              </span>
+              <span className="absolute left-4 top-3.5 text-slate-500 text-base">🔍</span>
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
@@ -321,7 +376,6 @@ export default function StoreFront({
               )}
             </div>
 
-            {/* ড্রপডাউন সাজেশন */}
             {isSearchFocused && searchQuery.trim().length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-40 divide-y divide-slate-800/70">
                 {instantSuggestions.length > 0 ? (
@@ -338,11 +392,7 @@ export default function StoreFront({
                       >
                         <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
                           {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                            />
+                            <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
                           ) : (
                             <span className="text-xs text-slate-600">No Img</span>
                           )}
@@ -376,7 +426,7 @@ export default function StoreFront({
           </div>
         </div>
 
-        {/* ক্যাটাগরি অপশন */}
+        {/* ক্যাটাগরি গ্রিড */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -387,9 +437,7 @@ export default function StoreFront({
                 onClick={() => setShowAllCategories(!showAllCategories)}
                 className="text-xs text-sky-400 hover:text-sky-300 font-semibold transition cursor-pointer"
               >
-                {showAllCategories
-                  ? "Show Less ↑"
-                  : `Show More (${categories.length - 12} more) ↓`}
+                {showAllCategories ? "Show Less ↑" : `Show More (${categories.length - 12} more) ↓`}
               </button>
             )}
           </div>
@@ -403,11 +451,7 @@ export default function StoreFront({
               >
                 <div className="w-14 h-14 mb-2 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center group-hover:scale-105 transition duration-200">
                   {cat.image_url ? (
-                    <img
-                      src={cat.image_url}
-                      alt={cat.name}
-                      className="w-full h-full object-cover"
-                    />
+                    <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
                   ) : (
                     <span className="text-xl">🎮</span>
                   )}
@@ -420,7 +464,7 @@ export default function StoreFront({
           </div>
         </section>
 
-        {/* প্রোডাক্ট লিস্ট: লাইন-বাই-লাইন কম্প্যাক্ট ভিউ */}
+        {/* প্রোডাক্ট তালিকা */}
         <section className="space-y-4">
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
             <div>
@@ -446,11 +490,7 @@ export default function StoreFront({
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
                       {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        />
+                        <img src={product.image_url} alt={product.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
                       ) : (
                         <span className="text-slate-600 text-[10px]">No Image</span>
                       )}
@@ -488,7 +528,6 @@ export default function StoreFront({
             </div>
           )}
 
-          {/* পেজিনেশন কন্ট্রোল */}
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 pt-8">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
