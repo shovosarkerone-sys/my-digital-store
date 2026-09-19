@@ -4,35 +4,58 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+
+interface LevelInfo {
+  level: number;
+  title: string;
+  badgeColor: string;
+  textColor: string;
+  icon: string;
+}
+
+const SELLER_LEVELS: Record<number, LevelInfo> = {
+  1: { level: 1, title: "Starter Merchant", badgeColor: "bg-slate-800 border-slate-700", textColor: "text-slate-300", icon: "🌱" },
+  2: { level: 2, title: "Bronze Trader", badgeColor: "bg-amber-900/20 border-amber-800/40", textColor: "text-amber-400", icon: "🥉" },
+  3: { level: 3, title: "Silver Vendor", badgeColor: "bg-slate-700/30 border-slate-600/40", textColor: "text-slate-200", icon: "🥈" },
+  4: { level: 4, title: "Gold Partner", badgeColor: "bg-yellow-500/10 border-yellow-500/30", textColor: "text-yellow-400", icon: "🥇" },
+  5: { level: 5, title: "Platinum Seller", badgeColor: "bg-cyan-500/10 border-cyan-500/30", textColor: "text-cyan-400", icon: "💠" },
+  6: { level: 6, title: "Diamond Merchant", badgeColor: "bg-sky-500/10 border-sky-500/30", textColor: "text-sky-400", icon: "💎" },
+  7: { level: 7, title: "Master Vendor", badgeColor: "bg-indigo-500/10 border-indigo-500/30", textColor: "text-indigo-400", icon: "🔮" },
+  8: { level: 8, title: "Grandmaster", badgeColor: "bg-purple-500/10 border-purple-500/30", textColor: "text-purple-400", icon: "⚡" },
+  9: { level: 9, title: "Elite Supplier", badgeColor: "bg-rose-500/10 border-rose-500/30", textColor: "text-rose-400", icon: "🔥" },
+  10: { level: 10, title: "Legendary Merchant", badgeColor: "bg-amber-500/20 border-amber-400/50", textColor: "text-amber-300", icon: "👑" },
+};
 
 export default function SellerDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [seller, setSeller] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"products" | "add_product" | "finances">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "add_product" | "finances" | "tickets">("products");
 
-  // প্রোডাক্ট ও ক্যাটাগরি স্টেট
   const [myProducts, setMyProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
+  const [sellerTickets, setSellerTickets] = useState<any[]>([]);
 
-  // এডিটিং স্টেট
   const [editingId, setEditingId] = useState<number | null>(null);
-
-  // ফর্ম স্টেট
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [voucherCodes, setVoucherCodes] = useState("");
 
-  // সরাসরি ডিভাইস থেকে ইমেজ আপলোড
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
 
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
+
+  const [newTicketSubject, setNewTicketSubject] = useState("");
+  const [newTicketMessage, setNewTicketMessage] = useState("");
+  const [submittingTicket, setSubmittingTicket] = useState(false);
+  const [ticketActionMsg, setTicketActionMsg] = useState("");
 
   useEffect(() => {
     async function initDashboard() {
@@ -69,6 +92,7 @@ export default function SellerDashboard() {
       }
 
       await loadSellerProducts(user.id);
+      await loadSellerTickets(user.id);
       setLoading(false);
     }
 
@@ -87,6 +111,18 @@ export default function SellerDashboard() {
     }
   };
 
+  const loadSellerTickets = async (userId: string) => {
+    const { data: tickets } = await supabase
+      .from("support_tickets")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (tickets) {
+      setSellerTickets(tickets);
+    }
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -99,7 +135,6 @@ export default function SellerDashboard() {
     }
   };
 
-  // এডিট শুরু করা
   const startEditProduct = (p: any) => {
     setEditingId(p.id);
     setTitle(p.title);
@@ -114,7 +149,6 @@ export default function SellerDashboard() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // এডিট বাতিল করা
   const cancelEdit = () => {
     setEditingId(null);
     setTitle("");
@@ -127,7 +161,6 @@ export default function SellerDashboard() {
     setActiveTab("products");
   };
 
-  // প্রোডাক্ট পাবলিশ বা আপডেট হ্যান্ডলার
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmittingProduct(true);
@@ -136,7 +169,6 @@ export default function SellerDashboard() {
     try {
       let finalImageUrl = existingImageUrl;
 
-      // নতুন ছবি সিলেক্ট করা থাকলে আপলোড হবে
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
         const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -171,7 +203,6 @@ export default function SellerDashboard() {
       };
 
       if (editingId) {
-        // আপডেট মোড
         const { error } = await supabase
           .from("products")
           .update(payload)
@@ -181,7 +212,6 @@ export default function SellerDashboard() {
         if (error) throw error;
         setActionMsg("✅ Product & Stock updated successfully!");
       } else {
-        // নতুন প্রোডাক্ট মোড
         const { error } = await supabase
           .from("products")
           .insert([{ ...payload, views: 0, sold_count: 0 }]);
@@ -214,6 +244,37 @@ export default function SellerDashboard() {
     }
   };
 
+  const handleCreateTicket = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingTicket(true);
+    setTicketActionMsg("");
+
+    try {
+      const { error } = await supabase.from("support_tickets").insert([
+        {
+          user_id: user.id,
+          user_email: user.email,
+          user_name: seller.shop_name,
+          role: "seller",
+          subject: newTicketSubject.trim(),
+          message: newTicketMessage.trim(),
+          status: "open",
+        },
+      ]);
+
+      if (error) throw error;
+
+      setTicketActionMsg("✅ Ticket submitted successfully! Support staff will reply here.");
+      setNewTicketSubject("");
+      setNewTicketMessage("");
+      await loadSellerTickets(user.id);
+    } catch (err: any) {
+      setTicketActionMsg(`❌ Error: ${err.message}`);
+    } finally {
+      setSubmittingTicket(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-sans text-sm">
@@ -222,17 +283,26 @@ export default function SellerDashboard() {
     );
   }
 
+  const rawLevelNumber = parseInt(seller.seller_level?.replace(/[^0-9]/g, "")) || 1;
+  const currentLevelNumber = Math.min(Math.max(rawLevelNumber, 1), 10);
+  const levelDetails = SELLER_LEVELS[currentLevelNumber];
+
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white p-4 sm:p-6 md:p-10">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* টপ বার */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center font-bold text-sm text-white">
-              S
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
+              <Image
+                src="/icon.png"
+                alt="Inskeys"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
             </div>
             <span className="font-bold text-base tracking-tight text-white">
-              Shovo<span className="text-sky-400">Store</span>
+              Inskeys
             </span>
           </Link>
           <div className="flex items-center gap-2.5">
@@ -251,20 +321,20 @@ export default function SellerDashboard() {
           </div>
         </div>
 
-        {/* সেলার প্রোফাইল */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-lg text-sky-400">
-              {seller.shop_name.charAt(0).toUpperCase()}
+            <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-2xl shadow-inner shrink-0">
+              {levelDetails.icon}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 flex-wrap">
                 <h1 className="text-lg font-bold text-white">{seller.shop_name}</h1>
-                <span className="text-[10px] bg-slate-800 text-slate-300 border border-slate-700 px-2 py-0.5 rounded-md font-medium">
-                  {seller.seller_level}
-                </span>
+                <div className={`px-2.5 py-0.5 rounded-lg border text-xs font-bold flex items-center gap-1.5 ${levelDetails.badgeColor} ${levelDetails.textColor}`}>
+                  <span>Level {levelDetails.level}</span>
+                  <span className="text-[10px] opacity-75 font-normal">({levelDetails.title})</span>
+                </div>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-1">
                 Region: <span className="text-slate-200">{seller.country}</span> | Active Listings:{" "}
                 <span className="text-sky-400 font-semibold">{myProducts.length}</span>
               </p>
@@ -282,7 +352,6 @@ export default function SellerDashboard() {
           </button>
         </div>
 
-        {/* ট্যাব সুইচ */}
         <div className="flex items-center gap-2 border-b border-slate-800 pb-1 overflow-x-auto">
           <button
             onClick={() => setActiveTab("products")}
@@ -314,6 +383,16 @@ export default function SellerDashboard() {
           >
             Escrow & Earnings
           </button>
+          <button
+            onClick={() => setActiveTab("tickets")}
+            className={`px-4 py-2 text-xs font-semibold rounded-xl transition cursor-pointer ${
+              activeTab === "tickets"
+                ? "bg-slate-800 text-sky-400 border border-slate-700"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Support Tickets ({sellerTickets.length})
+          </button>
         </div>
 
         {actionMsg && (
@@ -322,7 +401,6 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* ট্যাব ১: মাই প্রোডাক্টস তালিকা */}
         {activeTab === "products" && (
           <div className="space-y-3">
             {myProducts.length === 0 ? (
@@ -375,7 +453,6 @@ export default function SellerDashboard() {
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {/* সেলারের জন্য এডিট ও স্টক ম্যানেজ বাটন */}
                         <button
                           onClick={() => startEditProduct(p)}
                           className="text-xs text-sky-400 hover:text-sky-300 bg-sky-500/10 border border-sky-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
@@ -397,7 +474,6 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* ট্যাব ২: প্রোডাক্ট অ্যাড / এডিট ফর্ম */}
         {activeTab === "add_product" && (
           <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 sm:p-8 space-y-6 max-w-2xl">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -471,12 +547,10 @@ export default function SellerDashboard() {
                 </div>
               </div>
 
-              {/* ফটো আপলোড সেকশন */}
               <div>
                 <label className="block text-xs font-semibold text-slate-200 mb-1.5">
                   Product Thumbnail Photo
                 </label>
-
                 <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3.5">
                   <div className="w-16 h-16 rounded-lg bg-slate-900 border border-slate-800 shrink-0 overflow-hidden flex items-center justify-center">
                     {imagePreview ? (
@@ -521,7 +595,6 @@ export default function SellerDashboard() {
                 />
               </div>
 
-              {/* ভাউচার কোড / স্টক ম্যানেজমেন্ট বক্স */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-semibold text-slate-200">
@@ -543,9 +616,6 @@ export default function SellerDashboard() {
                   placeholder="CODE-XXXXX-1111&#10;CODE-YYYYY-2222&#10;CODE-ZZZZZ-3333"
                   className="w-full font-mono bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
                 />
-                <p className="text-[11px] text-slate-500 mt-1">
-                  💡 নতুন কোড পেস্ট করলে স্টক বাড়বে। কোনো লাইন মুছে দিলে স্বয়ংক্রিয়ভাবে স্টক কমে যাবে।
-                </p>
               </div>
 
               <div className="flex items-center gap-3 pt-2">
@@ -574,7 +644,6 @@ export default function SellerDashboard() {
           </div>
         )}
 
-        {/* ট্যাব ৩: ফাইন্যান্স ও এসক্রো সামারি */}
         {activeTab === "finances" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -608,15 +677,104 @@ export default function SellerDashboard() {
 
             <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 text-xs text-slate-400 space-y-2 leading-relaxed">
               <h3 className="font-semibold text-white text-sm">Escrow Protection & Withdrawal Overview</h3>
-              <p>
-                • Completed order funds remain in <strong>Hold Balance</strong> for 24 to 36 hours to safeguard buyer validity.
-              </p>
-              <p>
-                • After the dispute clearance period, funds automatically transfer to your <strong>Available Balance</strong>.
-              </p>
-              <p>
-                • Cryptocurrency payout requests are processed according to network confirmation fees.
-              </p>
+              <p>• Completed order funds remain in <strong>Hold Balance</strong> for 24 to 36 hours to safeguard buyer validity.</p>
+              <p>• After the dispute clearance period, funds automatically transfer to your <strong>Available Balance</strong>.</p>
+              <p>• Payout requests are processed according to network confirmation fees.</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === "tickets" && (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 bg-slate-900/80 border border-slate-800 rounded-2xl p-6 space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-white">Create Support Ticket</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Need help with orders or store payouts? Submit here.</p>
+              </div>
+
+              {ticketActionMsg && (
+                <div className="p-3 rounded-xl text-xs bg-slate-950 border border-slate-800 text-slate-200">
+                  {ticketActionMsg}
+                </div>
+              )}
+
+              <form onSubmit={handleCreateTicket} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Subject</label>
+                  <input
+                    type="text"
+                    required
+                    value={newTicketSubject}
+                    onChange={(e) => setNewTicketSubject(e.target.value)}
+                    placeholder="e.g. Escrow payout query"
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Issue Details</label>
+                  <textarea
+                    rows={4}
+                    required
+                    value={newTicketMessage}
+                    onChange={(e) => setNewTicketMessage(e.target.value)}
+                    placeholder="Describe your issue in detail..."
+                    className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none transition"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submittingTicket}
+                  className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-sky-950"
+                >
+                  {submittingTicket ? "Submitting Ticket..." : "Submit Ticket"}
+                </button>
+              </form>
+            </div>
+
+            <div className="lg:col-span-2 space-y-3">
+              <h3 className="text-sm font-bold text-white px-1">Your Submitted Tickets</h3>
+              {sellerTickets.length === 0 ? (
+                <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-10 text-center space-y-2">
+                  <span className="text-3xl block">🎫</span>
+                  <h4 className="text-xs font-semibold text-slate-300">No support tickets found</h4>
+                  <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                    Any queries you submit will appear here and will be resolved by the support team.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {sellerTickets.map((t) => (
+                    <div key={t.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-white truncate max-w-[200px] sm:max-w-xs">{t.subject}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                          t.status === "resolved"
+                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            : t.status === "in_progress"
+                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            : "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                        }`}>
+                          {t.status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/80">
+                        {t.message}
+                      </p>
+                      {t.admin_reply && (
+                        <div className="p-2.5 rounded-lg bg-sky-950/30 border border-sky-800/40 text-xs text-sky-200 space-y-1">
+                          <span className="text-[10px] font-bold text-sky-400 block">Support Staff Reply:</span>
+                          <p>{t.admin_reply}</p>
+                        </div>
+                      )}
+                      <div className="text-[10px] text-slate-500 font-mono">
+                        Ticket ID: #{t.id} • {new Date(t.created_at).toLocaleDateString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}

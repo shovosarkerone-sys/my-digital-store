@@ -4,6 +4,24 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import Image from "next/image";
+
+interface PaymentMethod {
+  id: string;
+  name: string;
+  badge: string;
+  tag: string;
+  color: string;
+}
+
+const PAYMENT_METHODS: PaymentMethod[] = [
+  { id: "binance", name: "Binance Pay", badge: "🟡", tag: "Zero Fees / Instant", color: "border-amber-500/30 bg-amber-500/10 text-amber-300" },
+  { id: "crypto", name: "Crypto (USDT / BTC)", badge: "⚡", tag: "Web3 Automated", color: "border-sky-500/30 bg-sky-500/10 text-sky-300" },
+  { id: "card", name: "Visa / Mastercard", badge: "💳", tag: "International", color: "border-blue-500/30 bg-blue-500/10 text-blue-300" },
+  { id: "bkash", name: "bKash", badge: "🌸", tag: "Personal / Merchant", color: "border-pink-500/30 bg-pink-500/10 text-pink-300" },
+  { id: "rocket", name: "Rocket / Nagad", badge: "🟣", tag: "Instant MFS", color: "border-purple-500/30 bg-purple-500/10 text-purple-300" },
+  { id: "bank", name: "Bank Wire Transfer", badge: "🏦", tag: "Direct Deposit", color: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" },
+];
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -11,7 +29,8 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [buying, setBuying] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedMethod, setSelectedMethod] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadProduct() {
@@ -30,7 +49,6 @@ export default function ProductDetailPage() {
 
       setProduct(data);
 
-      // ভিউজ এক বাড়ানো
       await supabase
         .from("products")
         .update({ views: (data.views || 0) + 1 })
@@ -44,8 +62,23 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sky-400 font-mono text-sm">
-        Loading product details...
+      <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 md:p-10">
+        <div className="max-w-4xl mx-auto space-y-6 animate-pulse">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div className="w-28 h-8 bg-slate-800 rounded-lg"></div>
+            <div className="w-24 h-8 bg-slate-800 rounded-xl"></div>
+          </div>
+          <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="w-full aspect-square bg-slate-800/80 rounded-2xl"></div>
+            <div className="space-y-4">
+              <div className="w-24 h-4 bg-slate-800 rounded"></div>
+              <div className="w-3/4 h-8 bg-slate-800 rounded"></div>
+              <div className="w-1/2 h-5 bg-slate-800 rounded"></div>
+              <div className="w-full h-24 bg-slate-800/60 rounded-xl"></div>
+              <div className="w-full h-12 bg-slate-800 rounded-2xl"></div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -70,26 +103,27 @@ export default function ProductDetailPage() {
 
   const isOfficial = !product.seller_id || product.seller_name === "Official Store";
 
-  const handleCheckout = () => {
-    if (stockCount === 0) {
-      alert("This item is currently out of stock!");
-      return;
-    }
-    setBuying(true);
-    alert(`Proceeding to checkout for ${product.title} ($${product.price})`);
-    setBuying(false);
-  };
+  const whatsappMessage = encodeURIComponent(
+    `Hello Inskeys, I would like to buy: "${product.title}" (Price: $${product.price} USD). Is it available?`
+  );
+  const whatsappUrl = `https://wa.me/8801797302397?text=${whatsappMessage}`;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white p-4 sm:p-6 md:p-10">
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center font-black text-sm text-white shadow-md shadow-sky-500/20">
-              S
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
+              <Image
+                src="/icon.png"
+                alt="Inskeys"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
             </div>
             <span className="font-black text-base tracking-tight text-white">
-              Shovo<span className="text-sky-400">Store</span>
+              Inskeys
             </span>
           </Link>
 
@@ -102,7 +136,6 @@ export default function ProductDetailPage() {
         </div>
 
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-2xl">
-          {/* ইমেজ কলাম */}
           <div className="space-y-3">
             <div className="w-full aspect-square bg-slate-800 rounded-2xl overflow-hidden border border-slate-700/70 relative flex items-center justify-center">
               {product.image_url ? (
@@ -115,7 +148,6 @@ export default function ProductDetailPage() {
                 <span className="text-slate-500 text-sm font-mono">No Image Available</span>
               )}
 
-              {/* ভিউজ ব্যাজ */}
               <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-xs text-[10px] text-slate-300 px-2 py-1 rounded-md font-mono flex items-center gap-1 border border-white/10">
                 <span>👁️</span>
                 <span>{product.views || 0} views</span>
@@ -123,7 +155,6 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* প্রোডাক্ট ডিটেইলস */}
           <div className="flex flex-col justify-between space-y-6">
             <div className="space-y-4">
               <div>
@@ -135,7 +166,6 @@ export default function ProductDetailPage() {
                 </h1>
               </div>
 
-              {/* স্টোর নাম, গোল ফেসবুক ব্লু ভেরিফাইড ব্যাজ, স্টক ও সোল্ড */}
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {isOfficial ? (
                   <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-1 rounded-lg font-bold inline-flex items-center gap-1.5">
@@ -173,7 +203,6 @@ export default function ProductDetailPage() {
                 </span>
               </div>
 
-              {/* প্রাইস বক্স */}
               <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl flex items-center justify-between">
                 <span className="text-xs text-slate-400 uppercase font-semibold">Total Price</span>
                 <span className="text-3xl font-black text-sky-400 font-mono">
@@ -181,7 +210,6 @@ export default function ProductDetailPage() {
                 </span>
               </div>
 
-              {/* বিবরণ */}
               <div className="space-y-1.5">
                 <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                   Product Description & Redemption
@@ -197,26 +225,113 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <div className="pt-2">
+            <div className="space-y-3 pt-2">
               <button
-                onClick={handleCheckout}
-                disabled={buying || stockCount === 0}
+                type="button"
+                onClick={() => setIsPaymentModalOpen(true)}
+                disabled={stockCount === 0}
                 className={`w-full py-3.5 rounded-2xl font-bold text-sm transition shadow-xl flex items-center justify-center gap-2 cursor-pointer ${
                   stockCount > 0
                     ? "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-950"
                     : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
                 }`}
               >
-                {stockCount > 0 ? (
-                  <span>Buy Now — Instant Delivery →</span>
-                ) : (
-                  <span>Out of Stock</span>
-                )}
+                {stockCount > 0 ? "Buy Now →" : "Out of Stock"}
               </button>
+
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 rounded-2xl font-bold text-xs transition border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>💬</span>
+                <span>Buy with WhatsApp (+880 1797-302397)</span>
+              </a>
             </div>
           </div>
         </div>
       </div>
+
+      {isPaymentModalOpen && (
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 relative">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-base font-black text-white">Select Payment Method</h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Choose your preferred gateway to complete checkout
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setIsPaymentModalOpen(false);
+                  setSelectedMethod(null);
+                }}
+                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
+              <div className="min-w-0 pr-3">
+                <span className="text-[11px] text-slate-500 block truncate">{product.title}</span>
+                <span className="text-xs font-bold text-slate-200">Amount Due</span>
+              </div>
+              <span className="text-lg font-black text-sky-400 font-mono">${product.price} USD</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-64 overflow-y-auto pr-1">
+              {PAYMENT_METHODS.map((pm) => (
+                <button
+                  key={pm.id}
+                  type="button"
+                  onClick={() => setSelectedMethod(pm.id)}
+                  className={`p-3 rounded-2xl border text-left transition flex items-center justify-between cursor-pointer ${
+                    selectedMethod === pm.id
+                      ? "border-sky-500 bg-sky-500/10"
+                      : "border-slate-800 bg-slate-950/60 hover:bg-slate-800/60"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-xl">{pm.badge}</span>
+                    <div>
+                      <span className="text-xs font-bold text-white block leading-tight">{pm.name}</span>
+                      <span className="text-[10px] text-slate-400 block">{pm.tag}</span>
+                    </div>
+                  </div>
+                  <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
+                    selectedMethod === pm.id ? "border-sky-500 bg-sky-500" : "border-slate-700"
+                  }`}>
+                    {selectedMethod === pm.id && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                disabled={!selectedMethod}
+                onClick={() => {
+                  alert(`Payment gateway integration for [${selectedMethod?.toUpperCase()}] will be configured here.`);
+                }}
+                className={`w-full py-3 rounded-xl text-xs font-bold transition shadow-lg cursor-pointer ${
+                  selectedMethod
+                    ? "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-950"
+                    : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
+                }`}
+              >
+                {selectedMethod ? "Proceed to Gateway →" : "Select a Gateway Above"}
+              </button>
+              <p className="text-[10px] text-center text-slate-500">
+                Encrypted & Secure 256-bit automated transaction processing
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

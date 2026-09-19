@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 const COUNTRIES = [
   "Bangladesh",
@@ -112,15 +113,21 @@ function AuthForm() {
     <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center font-black text-sm text-white shadow-md shadow-sky-500/20">
-            S
+          <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+            <Image
+              src="/icon.png"
+              alt="Inskeys"
+              width={32}
+              height={32}
+              className="w-full h-full object-cover"
+            />
           </div>
           <span className="font-black text-base tracking-tight text-white">
-            Shovo<span className="text-sky-400">Store</span>
+            Inskeys
           </span>
         </Link>
         <Link href="/" className="text-xs text-slate-400 hover:text-white transition">
-          ← Storefront
+          ← Home
         </Link>
       </div>
 
