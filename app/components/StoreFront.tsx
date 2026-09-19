@@ -123,7 +123,7 @@ export default function StoreFront({
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
-      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3.5 flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -141,17 +141,15 @@ export default function StoreFront({
             )}
           </button>
 
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
-              <Image
-                src="/icon.png"
-                alt="Inskeys"
-                width={32}
-                height={32}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="font-black text-lg tracking-tight text-white">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <Image
+              src="/icon.png"
+              alt="Inskeys"
+              width={38}
+              height={38}
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 transition-transform group-hover:scale-105"
+            />
+            <span className="font-black text-2xl tracking-tight text-white leading-none">
               Inskeys
             </span>
           </Link>
@@ -203,17 +201,15 @@ export default function StoreFront({
         }`}
       >
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
-              <Image
-                src="/icon.png"
-                alt="Inskeys"
-                width={36}
-                height={36}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <span className="font-black text-lg tracking-tight text-white leading-none">
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/icon.png"
+              alt="Inskeys"
+              width={40}
+              height={40}
+              className="w-10 h-10 object-contain shrink-0"
+            />
+            <span className="font-black text-2xl tracking-tight text-white leading-none">
               Inskeys
             </span>
           </div>
