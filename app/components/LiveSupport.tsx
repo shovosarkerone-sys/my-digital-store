@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 
 export default function AiChatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([
     {
       role: "ai",
-      text: "Hello! I am your ShovoStore AI Assistant. Ask me anything about vouchers, instant delivery, or buyer escrow protection!",
+      text: "Hello! Welcome to Inskeys. How can I assist you today with digital licenses, instant delivery, or account queries?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -42,7 +43,9 @@ export default function AiChatbot() {
         ...newMessages,
         {
           role: "ai",
-          text: data.reply || "For urgent queries, please email shovosarkerone@gmail.com.",
+          text:
+            data.reply ||
+            "Our support desk is always active. If you need further assistance, please contact contact@inskeys.com.",
         },
       ]);
     } catch {
@@ -50,7 +53,8 @@ export default function AiChatbot() {
         ...newMessages,
         {
           role: "ai",
-          text: "Support desk is reachable anytime at shovosarkerone@gmail.com.",
+          text:
+            "We could not reach the support service at this moment. Please email our official desk at contact@inskeys.com.",
         },
       ]);
     } finally {
@@ -60,21 +64,28 @@ export default function AiChatbot() {
 
   return (
     <div className="fixed bottom-5 right-5 z-50">
-      {/* চ্যাটবট উইন্ডো */}
+      {/* সাপোর্ট উইন্ডো */}
       {isOpen && (
-        <div className="w-[340px] sm:w-[380px] h-[480px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
-          {/* হেডার */}
+        <div className="w-[340px] sm:w-[380px] h-[500px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
+          
+          {/* হেডার (অফিসিয়াল Inskeys লোগো ও স্ট্যাটাস) */}
           <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center font-bold text-xs text-white shadow-md shadow-sky-500/30">
-                AI
+              <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center shrink-0 shadow-md">
+                <Image
+                  src="/icon.png"
+                  alt="Inskeys Support"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>ShovoStore Support AI</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                  <span>Inskeys Support Desk</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 </h3>
-                <span className="text-[10px] text-slate-400">Instant Automated Answers</span>
+                <span className="text-[10px] text-slate-400">Official Customer Concierge</span>
               </div>
             </div>
             <button
@@ -85,7 +96,7 @@ export default function AiChatbot() {
             </button>
           </div>
 
-          {/* মেসেজ তালিকা */}
+          {/* মেসেজ স্ক্রোল এরিয়া */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m, idx) => (
               <div
@@ -105,33 +116,34 @@ export default function AiChatbot() {
             ))}
             {loading && (
               <div className="flex justify-start">
-                <div className="bg-slate-950 border border-slate-800 text-sky-400 text-xs rounded-2xl rounded-bl-none p-3 font-mono">
-                  Thinking...
+                <div className="bg-slate-950 border border-slate-800 text-sky-400 text-xs rounded-2xl rounded-bl-none p-3 font-mono flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping"></span>
+                  Typing reply...
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* কুইক সাজেশনের চিপস */}
+          {/* কুইক অ্যাকশন চিপস */}
           <div className="px-3 py-1.5 bg-slate-950/60 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto text-[10px]">
             <button
-              onClick={() => handleSend("How does instant delivery work?")}
+              onClick={() => handleSend("How does instant license delivery work?")}
               className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition"
             >
               ⚡ Instant Delivery?
             </button>
             <button
-              onClick={() => handleSend("What is escrow protection?")}
+              onClick={() => handleSend("How does buyer escrow protection work?")}
               className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition"
             >
-              🛡️ Escrow Hold?
+              🛡️ Escrow Protection?
             </button>
             <button
-              onClick={() => handleSend("How do I contact support?")}
+              onClick={() => handleSend("What is your official contact email?")}
               className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition"
             >
-              📩 Email Support
+              📩 Official Desk
             </button>
           </div>
 
@@ -147,7 +159,7 @@ export default function AiChatbot() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything (e.g. delivery, escrow)..."
+              placeholder="Ask anything about Inskeys products, orders, or support..."
               className="flex-1 bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
             />
             <button
@@ -161,11 +173,11 @@ export default function AiChatbot() {
         </div>
       )}
 
-      {/* ভাসমান টগল বাটন */}
+      {/* ভাসমান বাটন */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-13 h-13 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white shadow-xl shadow-sky-950 flex items-center justify-center font-black transition transform active:scale-95 cursor-pointer relative"
-        aria-label="Open AI Chatbot"
+        aria-label="Open Support Desk"
       >
         {isOpen ? (
           <span className="text-base font-bold">✕</span>
