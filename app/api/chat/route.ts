@@ -1,22 +1,21 @@
 import { NextResponse } from "next/server";
 
 const SYSTEM_PROMPT = `
-You are the official Customer Concierge and Support Executive for "Inskeys" (https://inskeys.com).
+You are the official Customer Concierge and Support Executive for "Inskeys" (https://inskeys.com) — a verified digital marketplace for software licenses, gift cards, game keys, and automated vouchers.
+
 Platform facts:
 1. Delivery: "Official Store" items are delivered automatically and instantly upon crypto payment confirmation.
-2. Escrow: Community seller orders have a 24 to 36-hour escrow protection hold.
+2. Escrow: Community seller orders have a 24 to 36-hour escrow protection hold to verify code validity before merchant payout.
 3. Official Support Email: contact@inskeys.com
-4. Payments: Processed via Cryptomus (BTC, USDT, LTC, etc.).
-Capabilities: Answer any question politely and concisely. If in Bengali/Banglish, reply in Bengali. If in English, reply in English.
-`;
+4. Payments: Processed securely via Cryptomus (BTC, USDT, LTC, etc.).
+5. Strict Policy: Anti-circumvention policy strictly forbids exchanging external contact info (WhatsApp, Telegram, personal email).
 
-// গুগলের বিভিন্ন মডেলের তালিকা
-const CANDIDATE_MODELS = [
-  "gemini-1.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-pro",
-  "gemini-pro",
-];
+Capabilities & Instructions:
+- Answer ANY customer question intelligently (tech, gaming, activation keys, platform guidelines, or general knowledge).
+- Maintain a polite, professional, concise, and trustworthy merchant tone.
+- Never mention internal technical models, server code, or diagnostic messages to the customer.
+- If the user writes in Bengali or Banglish, reply warmly in Bengali. If in English, reply in English.
+`;
 
 export async function POST(req: Request) {
   try {
@@ -28,75 +27,88 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (!apiKey) {
-      return NextResponse.json({
-        reply: "Error: GEMINI_API_KEY পাওয়া যায়নি। Vercel-এ কি সেট করে Redeploy করুন।",
-      });
-    }
+    if (apiKey) {
+      // Apnar Google account-e shochol thaka model-gulo
+      const activeModels = ["gemini-2.5-flash", "gemini-flash-latest"];
 
-    let lastError = "";
+      for (const model of activeModels) {
+        try {
+          const res = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: "user",
+                    parts: [
+                      {
+                        text: `${SYSTEM_PROMPT}\n\nCustomer query: ${message}`,
+                      },
+                    ],
+                  },
+                ],
+              }),
+            }
+          );
 
-    // একের পর এক মডেল ট্রাই করবে যতক্ষণ না কাজ করে
-    for (const model of CANDIDATE_MODELS) {
-      try {
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [
-                {
-                  role: "user",
-                  parts: [
-                    {
-                      text: `${SYSTEM_PROMPT}\n\nUser Question: ${message}`,
-                    },
-                  ],
-                },
-              ],
-            }),
+          const data = await res.json();
+          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+          if (reply) {
+            return NextResponse.json({ reply });
           }
-        );
-
-        const data = await response.json();
-
-        if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-          return NextResponse.json({
-            reply: data.candidates[0].content.parts[0].text,
-          });
+        } catch (fetchErr) {
+          console.error(`Error with ${model}:`, fetchErr);
         }
-
-        if (data?.error?.message) {
-          lastError = `[${model}]: ${data.error.message}`;
-        }
-      } catch (err: any) {
-        lastError = err.message;
       }
     }
 
-    // যদি কোনো মডেলই কাজ না করে, তখন গুগল অনুমোদিত মডেল লিস্ট এনে চ্যাটে দেখাবে
-    const listRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
-    );
-    const listData = await listRes.json();
+    // Smart fallback (kono karone Google AI late hole ba network issue hole buyer eita pabe)
+    const lower = message.toLowerCase();
+    let reply =
+      "Welcome to Inskeys! We provide instant digital keys, automated fulfillment, and secure buyer escrow protection. How can we assist you today?";
 
-    if (listData?.models) {
-      const available = listData.models
-        .map((m: any) => m.name.replace("models/", ""))
-        .join(", ");
-      return NextResponse.json({
-        reply: `গুগলে আপনার জন্য সচল মডেলসমূহ: ${available}`,
-      });
+    if (
+      lower.includes("delivery") ||
+      lower.includes("kivabe pabo") ||
+      lower.includes("পাবো") ||
+      lower.includes("code")
+    ) {
+      reply =
+        "All verified items are delivered automatically and instantly right on your screen and order receipt as soon as payment is confirmed.";
+    } else if (
+      lower.includes("escrow") ||
+      lower.includes("protection") ||
+      lower.includes("নিরাপত্তা")
+    ) {
+      reply =
+        "Every transaction is safeguarded by our 24–36 hour Escrow Hold. The seller only receives payment after you have verified your code works.";
+    } else if (
+      lower.includes("seller") ||
+      lower.includes("bikri") ||
+      lower.includes("বিক্রি")
+    ) {
+      reply =
+        "You can join as a merchant by clicking 'Become a Seller' in our footer menu to list products on our marketplace.";
+    } else if (
+      lower.includes("contact") ||
+      lower.includes("support") ||
+      lower.includes("help") ||
+      lower.includes("যোগাযোগ") ||
+      lower.includes("email")
+    ) {
+      reply =
+        "Our official customer support desk is available at contact@inskeys.com.";
     }
 
+    return NextResponse.json({ reply });
+  } catch (error) {
+    console.error("Chat API error:", error);
     return NextResponse.json({
-      reply: `Gemini Error: ${lastError || "API Key বা মডেলে সমস্যা রয়েছে"}`,
+      reply:
+        "Thank you for contacting Inskeys. Our support team is always active at contact@inskeys.com.",
     });
-  } catch (err: any) {
-    return NextResponse.json(
-      { reply: `Server Error: ${err.message}` },
-      { status: 200 }
-    );
   }
 }
