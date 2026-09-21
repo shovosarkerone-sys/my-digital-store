@@ -27,6 +27,8 @@ export default function RootLayout({
 
         <footer className="border-t border-slate-800/80 bg-slate-950/90 py-8 px-4 sm:px-8 mt-12 text-xs text-slate-400">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            
+            {/* ব্র্যান্ড ও কপিরাইট */}
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-md overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center flex-shrink-0">
                 <Image
@@ -42,23 +44,16 @@ export default function RootLayout({
               <span className="text-[11px] text-slate-500">© 2026 All Rights Reserved</span>
             </div>
 
-            <div className="flex items-center gap-5 text-[11px] font-semibold">
+            {/* ফুটার লিঙ্কসমূহ */}
+            <div className="flex items-center gap-5 text-[11px] font-semibold flex-wrap justify-center">
               <Link href="/about" className="hover:text-white transition">
                 About Us
               </Link>
               <Link href="/support" className="hover:text-white transition">
-                
-<div className="flex flex-col sm:flex-row items-center gap-4 text-xs text-slate-400">
-  <Link href="/about" className="hover:text-white transition">
-    About Us
-  </Link>
-  <Link href="/support" className="hover:text-white transition">
-    Support
-  </Link>
-  <Link href="/privacy" className="hover:text-white transition">
-    Privacy Policy
-  </Link>
-</div>
+                Support
+              </Link>
+              <Link href="/privacy" className="hover:text-white transition">
+                Privacy Policy
               </Link>
               <Link href="/become-seller" className="text-amber-400 hover:text-amber-300 transition">
                 Become a Seller
@@ -67,6 +62,7 @@ export default function RootLayout({
                 shovosarkerone@gmail.com
               </a>
             </div>
+
           </div>
         </footer>
 
