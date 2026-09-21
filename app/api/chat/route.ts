@@ -11,10 +11,42 @@ Platform facts:
 5. Strict Policy: Anti-circumvention policy forbids exchanging external contact info.
 
 Capabilities & Instructions:
-- Answer ANY customer question intelligently (tech, gaming, activation guidelines, or general knowledge).
+- Answer ANY customer question intelligently (gaming platforms, keys, tech, troubleshooting, or general knowledge).
 - Maintain a polite, professional, concise, and trustworthy merchant tone.
 - If the user writes in Bengali or Banglish, reply warmly in Bengali. If in English, reply in English.
 `;
+
+let activeModelName: string | null = null;
+
+// গুগলের সার্ভার থেকে তোমার কি-এর জন্য সচল মডেল স্বয়ংক্রিয়ভাবে খুঁজে নেওয়ার ফাংশন
+async function getWorkingModel(apiKey: string): Promise<string> {
+  if (activeModelName) return activeModelName;
+
+  try {
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+    );
+    const data = await res.json();
+
+    if (data?.models && Array.isArray(data.models)) {
+      const validModel = data.models.find(
+        (m: any) =>
+          Array.isArray(m.supportedGenerationMethods) &&
+          m.supportedGenerationMethods.includes("generateContent") &&
+          m.name.includes("gemini")
+      );
+
+      if (validModel?.name) {
+        activeModelName = validModel.name.replace(/^models\//, "");
+        return activeModelName;
+      }
+    }
+  } catch (e) {
+    console.error("Model list fetch error:", e);
+  }
+
+  return "gemini-1.5-flash";
+}
 
 export async function POST(req: Request) {
   try {
@@ -32,9 +64,11 @@ export async function POST(req: Request) {
       });
     }
 
-    // Google Gemini API Call (স্টেবল v1 এন্ডপয়েন্ট)
-    let response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    // তোমার একাউন্টের জন্য কাজ করা মডেলটি বের করা হচ্ছে
+    const model = await getWorkingModel(apiKey);
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -53,31 +87,7 @@ export async function POST(req: Request) {
       }
     );
 
-    let data = await response.json();
-
-    // যদি v1-এ কোনো সমস্যা হয়, ব্যাকআপ হিসেবে v1beta-র লেটেস্ট মডেল কল হবে
-    if (data?.error) {
-      response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [
-              {
-                role: "user",
-                parts: [
-                  {
-                    text: `${SYSTEM_PROMPT}\n\nUser Question: ${message}`,
-                  },
-                ],
-              },
-            ],
-          }),
-        }
-      );
-      data = await response.json();
-    }
+    const data = await response.json();
 
     if (data?.error) {
       return NextResponse.json({
