@@ -8,14 +8,20 @@ Platform facts:
 2. Escrow: Community seller orders have a 24 to 36-hour escrow protection hold to verify code validity before merchant payout.
 3. Official Support Email: contact@inskeys.com
 4. Payments: Processed securely via Cryptomus (BTC, USDT, LTC, etc.).
-5. Strict Policy: Anti-circumvention policy strictly forbids exchanging external contact info (WhatsApp, Telegram, personal email).
+5. Strict Policy: Anti-circumvention policy strictly forbids exchanging external contact info.
 
-Capabilities & Instructions:
-- Answer ANY customer question intelligently (tech, gaming, activation keys, platform guidelines, or general knowledge).
-- Maintain a polite, professional, concise, and trustworthy merchant tone.
-- Never mention internal technical models, server code, or diagnostic messages to the customer.
+Capabilities:
+- Answer any customer inquiry politely, helpfully, and concisely (gaming keys, activation guides, technical questions, or general conversation).
 - If the user writes in Bengali or Banglish, reply warmly in Bengali. If in English, reply in English.
 `;
+
+// তোমার গুগল একাউন্টে যে মডেলগুলো লাইভ আছে
+const ACTIVE_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
+  "gemini-pro-latest",
+];
 
 export async function POST(req: Request) {
   try {
@@ -25,90 +31,66 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const rawKey = process.env.GEMINI_API_KEY;
+    const apiKey = rawKey ? rawKey.trim() : null;
 
-    if (apiKey) {
-      // Apnar Google account-e shochol thaka model-gulo
-      const activeModels = ["gemini-2.5-flash", "gemini-flash-latest"];
+    if (!apiKey) {
+      return NextResponse.json({
+        reply: "Error: GEMINI_API_KEY পাওয়া যায়নি। Vercel Settings থেকে key সেট করে Redeploy করুন।",
+      });
+    }
 
-      for (const model of activeModels) {
-        try {
-          const res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                contents: [
-                  {
-                    role: "user",
-                    parts: [
-                      {
-                        text: `${SYSTEM_PROMPT}\n\nCustomer query: ${message}`,
-                      },
-                    ],
-                  },
-                ],
-              }),
-            }
-          );
+    let lastErrorMessage = "";
 
-          const data = await res.json();
-          const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-          if (reply) {
-            return NextResponse.json({ reply });
+    // সচল মডেলগুলো একের পর এক চেষ্টা করবে
+    for (const model of ACTIVE_MODELS) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              contents: [
+                {
+                  parts: [
+                    {
+                      text: `${SYSTEM_PROMPT}\n\nCustomer Message: ${message}`,
+                    },
+                  ],
+                },
+              ],
+            }),
           }
-        } catch (fetchErr) {
-          console.error(`Error with ${model}:`, fetchErr);
+        );
+
+        const data = await response.json();
+
+        // সফল উত্তর পেলে সাথে সাথে পাঠিয়ে দেবে
+        const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (replyText) {
+          return NextResponse.json({ reply: replyText });
         }
+
+        if (data?.error?.message) {
+          lastErrorMessage = `[${model}]: ${data.error.message}`;
+        }
+      } catch (err: any) {
+        lastErrorMessage = err.message;
       }
     }
 
-    // Smart fallback (kono karone Google AI late hole ba network issue hole buyer eita pabe)
-    const lower = message.toLowerCase();
-    let reply =
-      "Welcome to Inskeys! We provide instant digital keys, automated fulfillment, and secure buyer escrow protection. How can we assist you today?";
-
-    if (
-      lower.includes("delivery") ||
-      lower.includes("kivabe pabo") ||
-      lower.includes("পাবো") ||
-      lower.includes("code")
-    ) {
-      reply =
-        "All verified items are delivered automatically and instantly right on your screen and order receipt as soon as payment is confirmed.";
-    } else if (
-      lower.includes("escrow") ||
-      lower.includes("protection") ||
-      lower.includes("নিরাপত্তা")
-    ) {
-      reply =
-        "Every transaction is safeguarded by our 24–36 hour Escrow Hold. The seller only receives payment after you have verified your code works.";
-    } else if (
-      lower.includes("seller") ||
-      lower.includes("bikri") ||
-      lower.includes("বিক্রি")
-    ) {
-      reply =
-        "You can join as a merchant by clicking 'Become a Seller' in our footer menu to list products on our marketplace.";
-    } else if (
-      lower.includes("contact") ||
-      lower.includes("support") ||
-      lower.includes("help") ||
-      lower.includes("যোগাযোগ") ||
-      lower.includes("email")
-    ) {
-      reply =
-        "Our official customer support desk is available at contact@inskeys.com.";
-    }
-
-    return NextResponse.json({ reply });
-  } catch (error) {
-    console.error("Chat API error:", error);
+    // কোনো মডেলই কাজ না করলে আসল সমস্যাটি দেখাবে
     return NextResponse.json({
-      reply:
-        "Thank you for contacting Inskeys. Our support team is always active at contact@inskeys.com.",
+      reply: `AI Connection Issue: ${lastErrorMessage || "Google এআই রেসপন্স দিতে পারছে না, API Key বা কোটা চেক করুন।"}`,
     });
+  } catch (error: any) {
+    return NextResponse.json(
+      { reply: `Server Exception: ${error.message}` },
+      { status: 200 }
+    );
   }
 }
