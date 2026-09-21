@@ -1,23 +1,27 @@
 import { NextResponse } from "next/server";
 
+// এআই-এর রোবোটিক ভাব দূর করার জন্য কড়া নিয়মাবলী
 const SYSTEM_PROMPT = `
-You are the official Customer Concierge and Support Executive for "Inskeys" (https://inskeys.com) — a verified digital marketplace for software licenses, gift cards, game keys, and automated vouchers.
+You are an expert human customer support executive for "Inskeys" (https://inskeys.com) — a trusted digital marketplace for game keys, gift cards, and software licenses.
 
-Platform facts:
-1. Delivery: "Official Store" items are delivered automatically and instantly upon crypto payment confirmation.
-2. Escrow: Community seller orders have a 24 to 36-hour escrow protection hold to verify code validity before merchant payout.
-3. Official Support Email: contact@inskeys.com
-4. Payments: Processed securely via Cryptomus (BTC, USDT, LTC, etc.).
-5. Strict Policy: Anti-circumvention policy strictly forbids exchanging external contact info.
+STRICT TONE & WRITING RULES:
+1. Sound 100% human, natural, and direct. You are NOT an AI bot, you are a human support agent.
+2. NO MARKDOWN OR ASTERISKS: Never use asterisks (*, **, or bullet stars) in your reply. Always write in clean, plain text.
+3. NO EMOJIS: Do not use any emojis at all. Keep it clean and professional.
+4. NO REPETITIVE GREETINGS: NEVER say "Thank you for reaching out to us", "Thanks for contacting Inskeys", or repetitive formal greetings in your answers. Answer the customer's question directly.
+5. BAN AI BUZZWORDS: Never use words like "seamless", "seamlessly", "including", "delighted", "furthermore", or corporate AI jargon. Use simple, everyday words.
+6. SHORT & CONCISE: Keep replies brief (1 to 3 short sentences maximum). Never write long paragraphs.
+7. LANGUAGE:
+   - If the user asks in Bengali or Banglish, reply in natural, everyday Bengali (যেমন: "পেমেন্ট কনফার্ম হওয়ার কয়েক সেকেন্ডের মধ্যেই কোড আপনার স্ক্রিনে চলে আসবে।").
+   - If in English, reply in plain, friendly, conversational English.
 
-Capabilities & Instructions:
-- Answer ANY customer question intelligently, concisely, and helpfully (digital key activation, gaming, store policies, or general conversation).
-- Always maintain a polite, premium, and trustworthy merchant tone.
-- Never show internal technical details, model names, or server errors to the buyer.
-- If the user writes in Bengali or Banglish, reply warmly in Bengali. If in English, reply in English.
+STORE FACTS:
+- Delivery: Official Store codes are delivered automatically and instantly upon crypto confirmation.
+- Escrow Hold: Community seller orders have a 24 to 36-hour safety hold so the buyer can verify the code.
+- Support Email: contact@inskeys.com
+- Payments: Crypto payments (USDT, BTC, LTC, etc.) processed via Cryptomus.
 `;
 
-// গুগলের ১০০% ফ্রি ফ্ল্যাশ মডেলের তালিকা (কোনো পেইড প্রো মডেল নেই)
 const FREE_FLASH_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
@@ -36,7 +40,6 @@ export async function POST(req: Request) {
     const rawKey = process.env.GEMINI_API_KEY;
     const apiKey = rawKey ? rawKey.trim() : null;
 
-    // যদি API Key থাকে, ফ্রি মডেলগুলো থেকে লাইভ উত্তর আনার চেষ্টা করবে
     if (apiKey) {
       for (const model of FREE_FLASH_MODELS) {
         try {
@@ -53,7 +56,7 @@ export async function POST(req: Request) {
                   {
                     parts: [
                       {
-                        text: `${SYSTEM_PROMPT}\n\nCustomer Message: ${message}`,
+                        text: `${SYSTEM_PROMPT}\n\nCustomer question: ${message}`,
                       },
                     ],
                   },
@@ -63,16 +66,12 @@ export async function POST(req: Request) {
           );
 
           const data = await response.json();
-          const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+          let replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-          // উত্তর পাওয়া গেলে বায়ারকে পাঠিয়ে দেবে
           if (replyText) {
+            // যদি কোনো কারণে মডেল স্টার চিহ্ন দিয়েও ফেলে, তা স্বয়ংক্রিয়ভাবে মুছে প্লেইন টেক্সট করে দেবে
+            replyText = replyText.replace(/\*/g, "").trim();
             return NextResponse.json({ reply: replyText });
-          }
-
-          // এরর হলে ব্যাকএন্ডে লগ রাখবে, বায়ার কিছুই দেখবে না
-          if (data?.error) {
-            console.error(`Gemini [${model}] error:`, data.error.message);
           }
         } catch (fetchErr) {
           console.error(`Fetch failed on ${model}:`, fetchErr);
@@ -80,50 +79,23 @@ export async function POST(req: Request) {
       }
     }
 
-    // স্মার্ট ফলব্যাক: কোনো কারণে গুগলের সংযোগে বিলম্ব হলে বায়ার এই মার্জিত উত্তরটি পাবে
+    // স্মার্ট ফলব্যাক (হিউম্যান স্টাইল)
     const lower = message.toLowerCase();
-    let safeReply =
-      "Hello! Welcome to Inskeys Support Desk. How can I assist you today with digital licenses, instant delivery, or account queries?";
+    let safeReply = "Hello! How can I help you with your Inskeys order today?";
 
-    if (
-      lower.includes("how are you") ||
-      lower.includes("kemon acho") ||
-      lower.includes("কেমন আছেন") ||
-      lower.includes("কেমন আছো")
-    ) {
-      safeReply =
-        "I am doing great, thank you! I am here and ready to help you with your Inskeys orders and digital purchases.";
-    } else if (
-      lower.includes("delivery") ||
-      lower.includes("code") ||
-      lower.includes("kivabe pabo") ||
-      lower.includes("পাবো")
-    ) {
-      safeReply =
-        "Verified purchases are delivered automatically within seconds upon confirmed payment. Your license key will appear right on your screen and order receipt.";
-    } else if (
-      lower.includes("escrow") ||
-      lower.includes("security") ||
-      lower.includes("নিরাপত্তা")
-    ) {
-      safeReply =
-        "All transactions are protected by our 24–36 hour Escrow Hold to guarantee code validity before funds are released to community sellers.";
-    } else if (
-      lower.includes("contact") ||
-      lower.includes("support") ||
-      lower.includes("help") ||
-      lower.includes("ইমেইল")
-    ) {
-      safeReply =
-        "Our official customer care desk is reachable anytime at contact@inskeys.com.";
+    if (lower.includes("delivery") || lower.includes("code") || lower.includes("kivabe pabo") || lower.includes("পাবো")) {
+      safeReply = "Official Store items are delivered instantly to your screen right after crypto payment is confirmed.";
+    } else if (lower.includes("escrow") || lower.includes("security") || lower.includes("নিরাপত্তা")) {
+      safeReply = "All orders are protected by a 24 to 36-hour escrow hold so you can verify your key before the seller is paid.";
+    } else if (lower.includes("contact") || lower.includes("support") || lower.includes("help") || lower.includes("ইমেইল")) {
+      safeReply = "You can write directly to our team at contact@inskeys.com anytime.";
     }
 
     return NextResponse.json({ reply: safeReply });
   } catch (error) {
-    console.error("Chat route fatal error:", error);
+    console.error("Chat fatal error:", error);
     return NextResponse.json({
-      reply:
-        "Welcome to Inskeys! For direct assistance, our support desk is always active at contact@inskeys.com.",
+      reply: "Please reach out to our support team at contact@inskeys.com for direct assistance.",
     });
   }
 }
