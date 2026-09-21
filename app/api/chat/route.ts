@@ -11,7 +11,7 @@ Platform facts:
 5. Strict Policy: Anti-circumvention policy forbids exchanging external contact info.
 
 Capabilities & Instructions:
-- Answer ANY customer question intelligently (tech, gaming, activation, or general knowledge).
+- Answer ANY customer question intelligently (tech, gaming, activation guidelines, or general knowledge).
 - Maintain a polite, professional, concise, and trustworthy merchant tone.
 - If the user writes in Bengali or Banglish, reply warmly in Bengali. If in English, reply in English.
 `;
@@ -28,12 +28,13 @@ export async function POST(req: Request) {
 
     if (!apiKey) {
       return NextResponse.json({
-        reply: "Error: GEMINI_API_KEY পাওয়া যায়নি। Vercel-এ কি সেট করে Redeploy করুন।",
+        reply: "Error: GEMINI_API_KEY পাওয়া যায়নি। Vercel-এ key সেট করে Redeploy করুন।",
       });
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+    // Google Gemini API Call (স্টেবল v1 এন্ডপয়েন্ট)
+    let response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,7 +53,31 @@ export async function POST(req: Request) {
       }
     );
 
-    const data = await response.json();
+    let data = await response.json();
+
+    // যদি v1-এ কোনো সমস্যা হয়, ব্যাকআপ হিসেবে v1beta-র লেটেস্ট মডেল কল হবে
+    if (data?.error) {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `${SYSTEM_PROMPT}\n\nUser Question: ${message}`,
+                  },
+                ],
+              },
+            ],
+          }),
+        }
+      );
+      data = await response.json();
+    }
 
     if (data?.error) {
       return NextResponse.json({
@@ -67,7 +92,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      reply: "কোনো উত্তর পাওয়া যায়নি, অনুগ্রহ করে আবার চেষ্টা করুন।",
+      reply: "কোনো উত্তর পাওয়া যায়নি, অনুগ্রহ করে আবার চেষ্টা করুন।",
     });
   } catch (err: any) {
     return NextResponse.json(
