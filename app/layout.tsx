@@ -58,8 +58,8 @@ export default function RootLayout({
               <Link href="/become-seller" className="text-amber-400 hover:text-amber-300 transition">
                 Become a Seller
               </Link>
-              <a href="mailto:shovosarkerone@gmail.com" className="hover:text-sky-400 transition font-mono">
-                shovosarkerone@gmail.com
+              <a href="mailto:contact@inskeys.com" className="hover:text-sky-400 transition font-mono">
+                contact@inskeys.com
               </a>
             </div>
 
