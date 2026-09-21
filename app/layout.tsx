@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import AiChatbot from "./components/AiChatbot";
+import LiveSupport from "./components/LiveSupport";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -66,7 +66,7 @@ export default function RootLayout({
           </div>
         </footer>
 
-        <AiChatbot />
+        <LiveSupport />
       </body>
     </html>
   );
