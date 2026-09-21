@@ -48,6 +48,20 @@ export default function RootLayout({
               </Link>
               <Link href="/support" className="hover:text-white transition">
                 Help & Support
+                import Link from "next/link";
+
+// আপনার বিদ্যমান সাপোর্ট ও অন্যান্য লিঙ্কের সাথে এভাবে যোগ করুন:
+<div className="flex flex-col sm:flex-row items-center gap-4 text-xs text-slate-400">
+  <Link href="/about" className="hover:text-white transition">
+    About Us
+  </Link>
+  <Link href="/support" className="hover:text-white transition">
+    Support
+  </Link>
+  <Link href="/privacy" className="hover:text-white transition">
+    Privacy Policy
+  </Link>
+</div>
               </Link>
               <Link href="/become-seller" className="text-amber-400 hover:text-amber-300 transition">
                 Become a Seller
