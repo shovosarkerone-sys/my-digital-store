@@ -3,12 +3,12 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
-export default function AiChatbot() {
+export default function LiveSupport() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Array<{ role: "user" | "ai"; text: string }>>([
     {
       role: "ai",
-      text: "Hello! Welcome to Inskeys. How can I assist you today with digital licenses, instant delivery, or account queries?",
+      text: "Hello! Welcome to Inskeys. How can I assist you today with digital licenses, order fulfillment, or account queries?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -64,25 +64,25 @@ export default function AiChatbot() {
 
   return (
     <div className="fixed bottom-5 right-5 z-50">
-      {/* সাপোর্ট উইন্ডো */}
+      {/* Support Window */}
       {isOpen && (
         <div className="w-[340px] sm:w-[380px] h-[500px] bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
           
-          {/* হেডার (অফিসিয়াল Inskeys লোগো ও স্ট্যাটাস) */}
+          {/* Header with Transparent Inskeys Logo */}
           <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center shrink-0 shadow-md">
+              <div className="shrink-0">
                 <Image
                   src="/icon.png"
-                  alt="Inskeys Support"
-                  width={32}
-                  height={32}
-                  className="w-full h-full object-cover"
+                  alt="Inskeys Live Support"
+                  width={34}
+                  height={34}
+                  className="w-8 h-8 object-contain bg-transparent"
                 />
               </div>
               <div>
                 <h3 className="text-xs font-bold text-white flex items-center gap-1.5">
-                  <span>Inskeys Support Desk</span>
+                  <span>Inskeys Live Support</span>
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 </h3>
                 <span className="text-[10px] text-slate-400">Official Customer Concierge</span>
@@ -96,7 +96,7 @@ export default function AiChatbot() {
             </button>
           </div>
 
-          {/* মেসেজ স্ক্রোল এরিয়া */}
+          {/* Message Scroll Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.map((m, idx) => (
               <div
@@ -118,36 +118,36 @@ export default function AiChatbot() {
               <div className="flex justify-start">
                 <div className="bg-slate-950 border border-slate-800 text-sky-400 text-xs rounded-2xl rounded-bl-none p-3 font-mono flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-ping"></span>
-                  Typing reply...
+                  Connecting to agent...
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* কুইক অ্যাকশন চিপস */}
+          {/* Quick Action Chips */}
           <div className="px-3 py-1.5 bg-slate-950/60 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto text-[10px]">
             <button
-              onClick={() => handleSend("How does instant license delivery work?")}
-              className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition"
+              onClick={() => handleSend("How does order delivery work on Inskeys?")}
+              className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition cursor-pointer"
             >
-              ⚡ Instant Delivery?
+              ⚡ Delivery Options
             </button>
             <button
-              onClick={() => handleSend("How does buyer escrow protection work?")}
-              className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition"
+              onClick={() => handleSend("How does 36-Hour Buyer Protection work?")}
+              className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition cursor-pointer"
             >
-              🛡️ Escrow Protection?
+              🛡️ 36h Buyer Protection
             </button>
             <button
               onClick={() => handleSend("What is your official contact email?")}
-              className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition"
+              className="bg-slate-900 border border-slate-800 hover:border-sky-500/40 text-slate-300 px-2 py-1 rounded-lg shrink-0 transition cursor-pointer"
             >
               📩 Official Desk
             </button>
           </div>
 
-          {/* ইনপুট বক্স */}
+          {/* Input Form */}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -159,7 +159,7 @@ export default function AiChatbot() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask anything about Inskeys products, orders, or support..."
+              placeholder="Ask about digital keys, orders, or support..."
               className="flex-1 bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
             />
             <button
@@ -173,11 +173,11 @@ export default function AiChatbot() {
         </div>
       )}
 
-      {/* ভাসমান বাটন */}
+      {/* Floating Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-13 h-13 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white shadow-xl shadow-sky-950 flex items-center justify-center font-black transition transform active:scale-95 cursor-pointer relative"
-        aria-label="Open Support Desk"
+        aria-label="Open Live Support"
       >
         {isOpen ? (
           <span className="text-base font-bold">✕</span>

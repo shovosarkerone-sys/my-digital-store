@@ -10,6 +10,9 @@ interface Product {
   title: string;
   category: string;
   price: number;
+  discount_price?: number | null;
+  discount_until?: string | null;
+  delivery_type?: "auto" | "manual";
   description: string;
   image_url: string | null;
   views?: number;
@@ -123,6 +126,7 @@ export default function StoreFront({
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
+      {/* Header Bar */}
       <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -182,12 +186,13 @@ export default function StoreFront({
               href="/auth"
               className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/50 text-white px-3.5 py-2 rounded-xl transition cursor-pointer shadow-md"
             >
-              Login
+              Log In
             </Link>
           )}
         </div>
       </header>
 
+      {/* Backdrop */}
       {isMenuOpen && (
         <div
           onClick={() => setIsMenuOpen(false)}
@@ -195,6 +200,7 @@ export default function StoreFront({
         />
       )}
 
+      {/* Navigation Drawer */}
       <aside
         className={`fixed top-0 left-0 bottom-0 z-50 w-72 bg-slate-900 border-r border-slate-800 p-5 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
@@ -222,7 +228,8 @@ export default function StoreFront({
           </button>
         </div>
 
-        <nav className="space-y-5 flex-1 overflow-y-auto pr-1">
+        <nav className="space-y-4 flex-1 overflow-y-auto pr-1">
+          {/* Merchant Section */}
           <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Merchant Center
@@ -248,6 +255,7 @@ export default function StoreFront({
             )}
           </div>
 
+          {/* Support Section */}
           <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Customer Support
@@ -262,6 +270,7 @@ export default function StoreFront({
             </Link>
           </div>
 
+          {/* Buyer Account */}
           {currentUser && (
             <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
@@ -286,6 +295,7 @@ export default function StoreFront({
             </div>
           )}
 
+          {/* Browse Navigation */}
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-2">
               Browse Menu
@@ -339,6 +349,15 @@ export default function StoreFront({
                   })}
                 </div>
               )}
+
+              <Link
+                href="/about"
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+              >
+                <span>About Inskeys</span>
+                <span>📖</span>
+              </Link>
             </div>
           </div>
 
@@ -349,17 +368,20 @@ export default function StoreFront({
                 onClick={() => setIsMenuOpen(false)}
                 className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-white transition cursor-pointer border border-slate-700"
               >
-                Login / Register
+                Log In / Register
               </Link>
             </div>
           )}
         </nav>
       </aside>
 
+      {/* Main Container */}
       <main className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto w-full space-y-10">
+        
+        {/* Hero Section */}
         <div className="flex flex-col items-center justify-center text-center space-y-4 pt-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
-            ⚡ Instant Digital Delivery
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
+            🛡️ 36-Hour Buyer Protection Guarantee
           </div>
 
           <div className="space-y-2 max-w-2xl">
@@ -370,10 +392,11 @@ export default function StoreFront({
               </span>
             </h1>
             <p className="text-xs md:text-sm text-slate-400 leading-relaxed max-w-xl mx-auto">
-              Explore game codes, activation licenses, and premium assets with automated crypto fulfillment.
+              Explore game keys, digital vouchers, and activation licenses with verified crypto checkout.
             </p>
           </div>
 
+          {/* Live Search Bar */}
           <div className="relative w-full max-w-2xl text-left mt-2">
             <div className="relative">
               <input
@@ -392,7 +415,7 @@ export default function StoreFront({
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-3.5 text-xs text-slate-400 hover:text-white p-1"
+                  className="absolute right-4 top-3.5 text-xs text-slate-400 hover:text-white p-1 cursor-pointer"
                 >
                   ✕
                 </button>
@@ -407,42 +430,65 @@ export default function StoreFront({
                       <span>Matching Suggestions ({instantSuggestions.length})</span>
                       <span className="text-sky-400 text-[10px]">Instant View</span>
                     </div>
-                    {instantSuggestions.map((item) => (
-                      <Link
-                        key={item.id}
-                        href={`/product/${item.id}`}
-                        className="flex items-center gap-3 p-3 hover:bg-slate-800/80 transition group"
-                      >
-                        <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center">
-                          {item.image_url ? (
-                            <img
-                              src={item.image_url}
-                              alt={item.title}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                            />
-                          ) : (
-                            <span className="text-xs text-slate-600">No Img</span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-white group-hover:text-sky-400 transition truncate">
-                            {item.title}
-                          </h4>
-                          <span className="text-[10px] text-slate-400">
-                            Category: {item.category}
-                          </span>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <span className="text-xs font-black text-sky-400 block">
-                            ${item.price}
-                          </span>
-                          <span className="text-[10px] text-slate-500 group-hover:text-sky-300">
-                            Details →
-                          </span>
-                        </div>
-                      </Link>
-                    ))}
+                    {instantSuggestions.map((item) => {
+                      const hasDiscount = Boolean(
+                        item.discount_price &&
+                        item.discount_price < item.price &&
+                        (!item.discount_until || new Date(item.discount_until) > new Date())
+                      );
+
+                      return (
+                        <Link
+                          key={item.id}
+                          href={`/product/${item.id}`}
+                          className="flex items-center gap-3 p-3 hover:bg-slate-800/80 transition group"
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden shrink-0 flex items-center justify-center relative">
+                            {item.image_url ? (
+                              <img
+                                src={item.image_url}
+                                alt={item.title}
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                              />
+                            ) : (
+                              <span className="text-xs text-slate-600">🎮</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-xs font-bold text-white group-hover:text-sky-400 transition truncate">
+                              {item.title}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <span className="text-[10px] text-slate-400">
+                                {item.category}
+                              </span>
+                              {item.delivery_type === "manual" && (
+                                <span className="text-[9px] px-1.5 py-0.2 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded font-semibold">
+                                  🕒 Manual
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            {hasDiscount ? (
+                              <div className="flex flex-col items-end">
+                                <span className="text-[10px] line-through text-slate-500">
+                                  ${item.price}
+                                </span>
+                                <span className="text-xs font-bold text-emerald-400">
+                                  ${item.discount_price}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs font-black text-sky-400 block">
+                                ${item.price}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </>
                 ) : (
                   <div className="p-4 text-center text-xs text-slate-400">
@@ -454,6 +500,7 @@ export default function StoreFront({
           </div>
         </div>
 
+        {/* Categories Grid */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -498,6 +545,7 @@ export default function StoreFront({
           </div>
         </section>
 
+        {/* Products Showcase */}
         <section className="space-y-4">
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
             <div>
@@ -518,6 +566,17 @@ export default function StoreFront({
                 const stock = getStockCount(product.voucher_codes);
                 const isOfficial = !product.seller_id || product.seller_name === "Official Store";
 
+                // Discount logic
+                const hasDiscount = Boolean(
+                  product.discount_price &&
+                  product.discount_price < product.price &&
+                  (!product.discount_until || new Date(product.discount_until) > new Date())
+                );
+                const discountPercent =
+                  hasDiscount && product.price > 0
+                    ? Math.round(((product.price - product.discount_price!) / product.price) * 100)
+                    : null;
+
                 return (
                   <Link
                     key={product.id}
@@ -525,6 +584,7 @@ export default function StoreFront({
                     className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                      {/* Product Thumbnail with % OFF Badge */}
                       <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
                         {product.image_url ? (
                           <img
@@ -534,7 +594,13 @@ export default function StoreFront({
                             className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                           />
                         ) : (
-                          <span className="text-slate-600 text-[10px]">No Image</span>
+                          <span className="text-slate-600 text-xs">🎮</span>
+                        )}
+
+                        {hasDiscount && (
+                          <div className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                            {discountPercent}% OFF
+                          </div>
                         )}
 
                         <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[9px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
@@ -543,6 +609,7 @@ export default function StoreFront({
                         </div>
                       </div>
 
+                      {/* Product Details */}
                       <div className="min-w-0 flex-1 space-y-1">
                         <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
                           {product.category}
@@ -575,12 +642,26 @@ export default function StoreFront({
                             </span>
                           )}
 
-                          <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
-                            Stock:{" "}
-                            <strong className={stock > 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
-                              {stock}
-                            </strong>
-                          </span>
+                          {/* Delivery Type Badge */}
+                          {product.delivery_type === "manual" ? (
+                            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
+                              <span>🕒</span> Manual Delivery
+                            </span>
+                          ) : (
+                            <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
+                              <span>⚡</span> Auto Delivery
+                            </span>
+                          )}
+
+                          {/* Stock (Auto Only) */}
+                          {product.delivery_type !== "manual" && (
+                            <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
+                              Stock:{" "}
+                              <strong className={stock > 0 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"}>
+                                {stock}
+                              </strong>
+                            </span>
+                          )}
 
                           <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
                             Sold: <strong className="text-slate-200 font-bold">{product.sold_count || 0}</strong>
@@ -589,12 +670,24 @@ export default function StoreFront({
                       </div>
                     </div>
 
+                    {/* Price and Action */}
                     <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
                       <div className="text-right">
                         <span className="text-[9px] text-slate-500 block leading-none">Price</span>
-                        <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
-                          ${product.price}
-                        </span>
+                        {hasDiscount ? (
+                          <div className="flex items-baseline gap-1.5 justify-end">
+                            <span className="text-[11px] line-through text-slate-500">
+                              ${product.price}
+                            </span>
+                            <span className="text-xs sm:text-base font-black text-emerald-400 leading-tight">
+                              ${product.discount_price}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
+                            ${product.price}
+                          </span>
+                        )}
                       </div>
                       <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 rounded-xl transition whitespace-nowrap shadow-md shadow-sky-950">
                         Buy Now →
@@ -606,6 +699,7 @@ export default function StoreFront({
             </div>
           )}
 
+          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex justify-center gap-2 pt-8">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (

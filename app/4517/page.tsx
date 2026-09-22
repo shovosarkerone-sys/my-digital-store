@@ -25,6 +25,20 @@ interface Category {
   image_url?: string | null;
 }
 
+interface Seller {
+  id: string;
+  shop_name: string;
+  country: string;
+  description?: string | null;
+  seller_level?: string | null;
+  document_type?: string | null;
+  document_number?: string | null;
+  document_front_url?: string | null;
+  document_back_url?: string | null;
+  verification_status: "pending" | "verified" | "rejected";
+  created_at?: string;
+}
+
 interface SupportTicket {
   id: number;
   user_id?: string | null;
@@ -43,11 +57,14 @@ export default function SecretAdminPortal() {
   const [passwordInput, setPasswordInput] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
 
-  const [activeTab, setActiveTab] = useState<"all_products" | "add_product" | "categories" | "tickets">("all_products");
+  const [activeTab, setActiveTab] = useState<
+    "all_products" | "add_product" | "categories" | "merchants" | "tickets"
+  >("all_products");
   const [productStep, setProductStep] = useState<1 | 2>(1);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
 
   // Product Form States
@@ -75,6 +92,7 @@ export default function SecretAdminPortal() {
   const [ticketStatusSelect, setTicketStatusSelect] = useState<"open" | "in_progress" | "resolved">("resolved");
   const [updatingTicket, setUpdatingTicket] = useState(false);
 
+  // Status message
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -84,6 +102,7 @@ export default function SecretAdminPortal() {
       setIsAuthenticated(true);
       fetchCategories();
       fetchProducts();
+      fetchSellers();
       fetchTickets();
     }
   }, []);
@@ -98,6 +117,7 @@ export default function SecretAdminPortal() {
       setPasswordError("");
       fetchCategories();
       fetchProducts();
+      fetchSellers();
       fetchTickets();
     } else {
       setPasswordError("Access Denied: Invalid Administrative Passkey.");
@@ -112,14 +132,17 @@ export default function SecretAdminPortal() {
 
   const fetchCategories = async () => {
     const { data } = await supabase.from("categories").select("*").order("name");
-    if (data) {
-      setCategories(data);
-    }
+    if (data) setCategories(data);
   };
 
   const fetchProducts = async () => {
     const { data } = await supabase.from("products").select("*").order("id", { ascending: false });
     if (data) setProducts(data);
+  };
+
+  const fetchSellers = async () => {
+    const { data } = await supabase.from("sellers").select("*").order("id", { ascending: false });
+    if (data) setSellers(data);
   };
 
   const fetchTickets = async () => {
@@ -131,24 +154,21 @@ export default function SecretAdminPortal() {
     (c) => c.name.toLowerCase() === category.toLowerCase()
   );
 
-  const handleCategoryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setCategoryImageFile(file);
-      setCategoryImagePreview(URL.createObjectURL(file));
+  // Merchant KYC Status Update Handler
+  const handleUpdateSellerStatus = async (sellerId: string, status: "verified" | "rejected") => {
+    try {
+      const { error } = await supabase
+        .from("sellers")
+        .update({ verification_status: status })
+        .eq("id", sellerId);
+
+      if (error) throw error;
+
+      setMessage(`Merchant verification status updated to: ${status.toUpperCase()}`);
+      await fetchSellers();
+    } catch (err: any) {
+      alert(`Error updating merchant: ${err.message}`);
     }
-  };
-
-  const uploadImageToStorage = async (file: File, folder: string) => {
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${folder}/${Date.now()}.${fileExt}`;
-    const { error } = await supabase.storage
-      .from("product-images")
-      .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
-    if (error) throw error;
-    const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
-    return data.publicUrl;
   };
 
   const handleProductStepOneSubmit = async (e: React.FormEvent) => {
@@ -272,6 +292,26 @@ export default function SecretAdminPortal() {
     if (!confirm("Are you sure you want to permanently remove this product?")) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (!error) fetchProducts();
+  };
+
+  const handleCategoryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCategoryImageFile(file);
+      setCategoryImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  const uploadImageToStorage = async (file: File, folder: string) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${folder}/${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+    if (error) throw error;
+    const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
+    return data.publicUrl;
   };
 
   const handleCategorySubmit = async (e: React.FormEvent) => {
@@ -421,6 +461,8 @@ export default function SecretAdminPortal() {
     );
   }
 
+  const pendingSellersCount = sellers.filter((s) => s.verification_status === "pending").length;
+
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6">
       {/* Header */}
@@ -503,6 +545,21 @@ export default function SecretAdminPortal() {
           }`}
         >
           🏷️ Categories ({categories.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("merchants")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
+            activeTab === "merchants"
+              ? "bg-slate-800 text-sky-400 border border-slate-700"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <span>👥 Merchants / KYC</span>
+          {pendingSellersCount > 0 && (
+            <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-1.5 py-0.2 rounded-full">
+              {pendingSellersCount}
+            </span>
+          )}
         </button>
         <button
           onClick={() => setActiveTab("tickets")}
@@ -1019,7 +1076,166 @@ export default function SecretAdminPortal() {
         </div>
       )}
 
-      {/* TAB 4: SUPPORT TICKETS */}
+      {/* TAB 4: MERCHANTS / KYC MANAGEMENT */}
+      {activeTab === "merchants" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                Merchant Applications & KYC Verification ({sellers.length})
+              </h2>
+              <span className="text-xs text-slate-400">
+                Review identity documents, store information, and approve or reject seller privileges.
+              </span>
+            </div>
+            <button
+              onClick={fetchSellers}
+              className="text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 transition"
+            >
+              Refresh List
+            </button>
+          </div>
+
+          {sellers.length === 0 ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
+              No merchant applications registered yet.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sellers.map((s) => (
+                <div
+                  key={s.id}
+                  className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h3 className="text-sm font-bold text-white">{s.shop_name}</h3>
+                        <span
+                          className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
+                            s.verification_status === "verified"
+                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              : s.verification_status === "rejected"
+                              ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                          }`}
+                        >
+                          {s.verification_status}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Country: <strong className="text-slate-200">{s.country}</strong> • Seller ID:{" "}
+                        <span className="font-mono text-sky-400 text-[11px]">{s.id}</span>
+                      </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      {s.verification_status !== "verified" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateSellerStatus(s.id, "verified")}
+                          className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-emerald-950"
+                        >
+                          Approve ✓
+                        </button>
+                      )}
+                      {s.verification_status !== "rejected" && (
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateSellerStatus(s.id, "rejected")}
+                          className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold text-xs rounded-xl transition cursor-pointer"
+                        >
+                          Reject ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {s.description && (
+                    <div className="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800/60 leading-relaxed">
+                      <strong className="text-slate-400 block mb-0.5 text-[11px]">Store Bio:</strong>
+                      {s.description}
+                    </div>
+                  )}
+
+                  {/* KYC Documents Preview (Front and Back) */}
+                  <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-300 gap-1 border-b border-slate-800/60 pb-2">
+                      <span>
+                        Document Type: <strong className="text-sky-400">{s.document_type || "NID / Passport"}</strong>
+                      </span>
+                      <span>
+                        Document No: <strong className="text-white font-mono">{s.document_number || "N/A"}</strong>
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                      {/* Front Side Card */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-semibold text-slate-400 block">
+                          Front Side Document:
+                        </span>
+                        {s.document_front_url ? (
+                          <a
+                            href={s.document_front_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block h-36 bg-slate-900 border border-slate-800 hover:border-sky-500 rounded-xl overflow-hidden relative group transition"
+                          >
+                            <img
+                              src={s.document_front_url}
+                              alt="Front Side"
+                              className="w-full h-full object-contain p-2"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-xs text-white font-semibold">
+                              View Full Size ↗
+                            </div>
+                          </a>
+                        ) : (
+                          <div className="h-36 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xs text-slate-500">
+                            No front image uploaded
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Back Side Card */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-semibold text-slate-400 block">
+                          Back Side Document:
+                        </span>
+                        {s.document_back_url ? (
+                          <a
+                            href={s.document_back_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block h-36 bg-slate-900 border border-slate-800 hover:border-sky-500 rounded-xl overflow-hidden relative group transition"
+                          >
+                            <img
+                              src={s.document_back_url}
+                              alt="Back Side"
+                              className="w-full h-full object-contain p-2"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition text-xs text-white font-semibold">
+                              View Full Size ↗
+                            </div>
+                          </a>
+                        ) : (
+                          <div className="h-36 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xs text-slate-500">
+                            No back image uploaded
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 5: SUPPORT TICKETS */}
       {activeTab === "tickets" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">

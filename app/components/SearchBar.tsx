@@ -8,6 +8,9 @@ interface Product {
   id: number | string;
   title?: string;
   price: number;
+  discount_price?: number | null;
+  discount_until?: string | null;
+  delivery_type?: "auto" | "manual";
   category?: string;
   image_url?: string;
 }
@@ -41,7 +44,7 @@ export default function SearchBar() {
       setLoading(true);
       const { data } = await supabase
         .from("products")
-        .select("id, title, price, category, image_url")
+        .select("id, title, price, discount_price, discount_until, delivery_type, category, image_url")
         .ilike("title", `%${clean}%`)
         .limit(6);
 
@@ -64,7 +67,7 @@ export default function SearchBar() {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim() && setIsOpen(true)}
-          placeholder="Search digital assets, software, templates..."
+          placeholder="Search game keys, gift cards, software..."
           className="w-full bg-slate-900/90 border border-slate-800 rounded-full pl-5 pr-28 py-2 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500 transition shadow-inner placeholder:text-slate-500"
         />
 
@@ -76,7 +79,7 @@ export default function SearchBar() {
               setResults([]);
               setIsOpen(false);
             }}
-            className="absolute right-28 text-xs text-slate-500 hover:text-white transition"
+            className="absolute right-28 text-xs text-slate-500 hover:text-white transition cursor-pointer"
           >
             ✕
           </button>
@@ -105,37 +108,67 @@ export default function SearchBar() {
               No products found for "{query}".
             </div>
           ) : (
-            results.map((item) => (
-              <Link
-                key={item.id}
-                href={`/product/${item.id}`}
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 p-3 hover:bg-slate-800/80 transition group"
-              >
-                {item.image_url ? (
-                  <img
-                    src={item.image_url}
-                    alt={item.title}
-                    className="w-10 h-10 object-cover rounded-lg border border-slate-800 shrink-0"
-                  />
-                ) : (
-                  <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-[9px] text-slate-500 font-bold shrink-0">
-                    No Img
+            results.map((item) => {
+              const hasDiscount = Boolean(
+                item.discount_price &&
+                item.discount_price < item.price &&
+                (!item.discount_until || new Date(item.discount_until) > new Date())
+              );
+
+              return (
+                <Link
+                  key={item.id}
+                  href={`/product/${item.id}`}
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center gap-3 p-3 hover:bg-slate-800/80 transition group"
+                >
+                  {item.image_url ? (
+                    <img
+                      src={item.image_url}
+                      alt={item.title || "Product"}
+                      className="w-10 h-10 object-cover rounded-lg border border-slate-800 shrink-0"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-xs text-slate-500 shrink-0">
+                      🎮
+                    </div>
+                  )}
+
+                  <div className="min-w-0 flex-1 text-left">
+                    <p className="text-xs font-semibold text-white truncate group-hover:text-sky-400 transition">
+                      {item.title}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-slate-400 uppercase font-bold">
+                        {item.category || "Item"}
+                      </span>
+                      {item.delivery_type === "manual" && (
+                        <span className="text-[9px] px-1.5 py-0.2 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded font-semibold">
+                          🕒 Manual
+                        </span>
+                      )}
+                    </div>
                   </div>
-                )}
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="text-xs font-semibold text-white truncate group-hover:text-sky-400 transition">
-                    {item.title}
-                  </p>
-                  <span className="text-[10px] text-slate-400 uppercase font-bold">
-                    {item.category || "Asset"}
-                  </span>
-                </div>
-                <span className="text-xs font-bold text-sky-400 shrink-0">
-                  ${item.price}
-                </span>
-              </Link>
-            ))
+
+                  <div className="text-right shrink-0">
+                    {hasDiscount ? (
+                      <div className="flex flex-col items-end">
+                        <span className="text-[10px] line-through text-slate-500">
+                          ${item.price}
+                        </span>
+                        <span className="text-xs font-bold text-emerald-400">
+                          ${item.discount_price}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-bold text-sky-400">
+                        ${item.price}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              );
+            })
           )}
         </div>
       )}

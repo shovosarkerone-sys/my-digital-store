@@ -218,14 +218,23 @@ export default function BecomeSellerPage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const [description, setDescription] = useState("");
-  const [documentType, setDocumentType] = useState<"National ID Card" | "Passport" | "Driver's License">("National ID Card");
+  
+  // 3 Identity Document Options
+  const [documentType, setDocumentType] = useState<
+    "National ID Card (NID)" | "International Passport" | "Driver's License"
+  >("National ID Card (NID)");
   const [documentNumber, setDocumentNumber] = useState("");
-  const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [documentPreview, setDocumentPreview] = useState<string | null>(null);
+
+  // Front & Back Document Files
+  const [frontFile, setFrontFile] = useState<File | null>(null);
+  const [frontPreview, setFrontPreview] = useState<string | null>(null);
+  const [backFile, setBackFile] = useState<File | null>(null);
+  const [backPreview, setBackPreview] = useState<string | null>(null);
 
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [applicationSubmitted, setApplicationSubmitted] = useState(false);
 
   useEffect(() => {
     async function checkAuthAndSeller() {
@@ -242,12 +251,17 @@ export default function BecomeSellerPage() {
 
       const { data: existingSeller } = await supabase
         .from("sellers")
-        .select("id")
+        .select("id, verification_status")
         .eq("id", user.id)
         .maybeSingle();
 
       if (existingSeller) {
-        router.push("/seller-dashboard");
+        if (existingSeller.verification_status === "verified") {
+          router.push("/seller-dashboard");
+        } else {
+          setApplicationSubmitted(true);
+        }
+        setLoading(false);
         return;
       }
 
@@ -264,7 +278,7 @@ export default function BecomeSellerPage() {
     checkAuthAndSeller();
   }, [router]);
 
-  // Click outside to close country dropdown
+  // Click outside listener for Country dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -275,22 +289,35 @@ export default function BecomeSellerPage() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFrontFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 8 * 1024 * 1024) {
-        setErrorMsg("Document file size must not exceed 8MB.");
+        setErrorMsg("Front photo file size must not exceed 8MB.");
         return;
       }
-      setDocumentFile(file);
-      setDocumentPreview(URL.createObjectURL(file));
+      setFrontFile(file);
+      setFrontPreview(URL.createObjectURL(file));
       setErrorMsg("");
     }
   };
 
-  const uploadDocumentToStorage = async (file: File) => {
+  const handleBackFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        setErrorMsg("Back photo file size must not exceed 8MB.");
+        return;
+      }
+      setBackFile(file);
+      setBackPreview(URL.createObjectURL(file));
+      setErrorMsg("");
+    }
+  };
+
+  const uploadFileToStorage = async (file: File, side: "front" | "back") => {
     const fileExt = file.name.split(".").pop();
-    const fileName = `kyc/${user.id}_${Date.now()}.${fileExt}`;
+    const fileName = `kyc/${user.id}_${side}_${Date.now()}.${fileExt}`;
     const { error } = await supabase.storage
       .from("product-images")
       .upload(fileName, file, { cacheControl: "3600", upsert: false });
@@ -332,14 +359,17 @@ export default function BecomeSellerPage() {
       return;
     }
 
+    if (!frontFile || !backFile) {
+      setErrorMsg("Please upload both Front and Back photos of your identification document.");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg("");
 
     try {
-      let finalDocUrl = null;
-      if (documentFile) {
-        finalDocUrl = await uploadDocumentToStorage(documentFile);
-      }
+      const frontUrl = await uploadFileToStorage(frontFile, "front");
+      const backUrl = await uploadFileToStorage(backFile, "back");
 
       const { error } = await supabase.from("sellers").insert([
         {
@@ -350,17 +380,17 @@ export default function BecomeSellerPage() {
           seller_level: "Level 1 Verified Merchant",
           document_type: documentType,
           document_number: documentNumber.trim(),
-          document_url: finalDocUrl,
+          document_front_url: frontUrl,
+          document_back_url: backUrl,
           verification_status: "pending",
         },
       ]);
 
       if (error) throw error;
 
-      router.push("/seller-dashboard");
-      router.refresh();
+      setApplicationSubmitted(true);
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to register merchant account.");
+      setErrorMsg(err.message || "Failed to submit merchant verification application.");
     } finally {
       setSubmitting(false);
     }
@@ -374,6 +404,35 @@ export default function BecomeSellerPage() {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-sans text-sm">
         Verifying account status...
+      </div>
+    );
+  }
+
+  // Application Pending Screen
+  if (applicationSubmitted) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6 selection:bg-sky-500 selection:text-white">
+        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center text-2xl font-bold shadow-lg shadow-amber-950/40">
+            ⏳
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-white">Application Under Review</h2>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Your merchant application and identity documents have been submitted securely. Our compliance team will review your details shortly.
+            </p>
+          </div>
+          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-400 space-y-1 text-left font-mono">
+            <div>Status: <span className="text-amber-400 font-bold uppercase">Pending Verification</span></div>
+            <div>Safety: <span className="text-sky-400 font-bold">36-Hour Buyer Protection Standard</span></div>
+          </div>
+          <Link
+            href="/"
+            className="block w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition"
+          >
+            ← Return to Home
+          </Link>
+        </div>
       </div>
     );
   }
@@ -507,13 +566,12 @@ export default function BecomeSellerPage() {
                 />
               </div>
 
-              {/* Custom Searchable Country Selector with Official Flags */}
+              {/* Country Selector with Flags */}
               <div className="relative" ref={dropdownRef}>
                 <label className="block text-xs font-semibold text-slate-200 mb-1.5">
                   Operating Country
                 </label>
                 
-                {/* Trigger Button */}
                 <button
                   type="button"
                   onClick={() => {
@@ -535,7 +593,6 @@ export default function BecomeSellerPage() {
                   </svg>
                 </button>
 
-                {/* Dropdown Menu with Live Search Filter */}
                 {isCountryDropdownOpen && (
                   <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 space-y-2">
                     <div className="p-1">
@@ -597,7 +654,7 @@ export default function BecomeSellerPage() {
               </div>
             </div>
 
-            {/* KYC & Identity Verification Section */}
+            {/* KYC & Identity Verification (3 Document Types + Front & Back) */}
             <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-4">
               <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2.5">
                 <span className="text-sky-400 text-sm">🪪</span>
@@ -609,61 +666,97 @@ export default function BecomeSellerPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Document Type
+                    Select Document Type
                   </label>
                   <select
                     value={documentType}
                     onChange={(e) => setDocumentType(e.target.value as any)}
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                   >
-                    <option value="National ID Card">National ID Card (NID)</option>
-                    <option value="Passport">International Passport</option>
+                    <option value="National ID Card (NID)">National ID Card (NID)</option>
+                    <option value="International Passport">International Passport</option>
                     <option value="Driver's License">Driver's License</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">
-                    Document / NID Number
+                    Document Number
                   </label>
                   <input
                     type="text"
                     required
                     value={documentNumber}
                     onChange={(e) => setDocumentNumber(e.target.value)}
-                    placeholder="Enter document ID number"
+                    placeholder="Enter ID / Document number"
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
-                  Upload Document Photo / Scan (Front Side)
-                </label>
-                <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
-                  <div className="w-14 h-14 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center shrink-0">
-                    {documentPreview ? (
-                      <img src={documentPreview} alt="Doc Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-slate-600 text-[10px]">No File</span>
-                    )}
+              {/* Both Front and Back Upload Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* 1. Front Side */}
+                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                  <span className="block text-xs font-medium text-slate-300">
+                    Front Side Photo
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center shrink-0">
+                      {frontPreview ? (
+                        <img src={frontPreview} alt="Front Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-slate-600 text-[10px]">No File</span>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <input
+                        type="file"
+                        id="doc-front-upload"
+                        accept="image/*,application/pdf"
+                        onChange={handleFrontFileChange}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="doc-front-upload"
+                        className="inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold rounded-lg cursor-pointer transition"
+                      >
+                        {frontPreview ? "Change Front" : "Upload Front"}
+                      </label>
+                      <p className="text-[10px] text-slate-500 truncate">JPG, PNG, PDF (Max 8MB)</p>
+                    </div>
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <input
-                      type="file"
-                      id="doc-upload"
-                      accept="image/*,application/pdf"
-                      onChange={handleDocumentChange}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="doc-upload"
-                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
-                    >
-                      {documentPreview ? "Change Document" : "Choose File"}
-                    </label>
-                    <p className="text-[10px] text-slate-500">Supports JPG, PNG, WEBP, or PDF (Max 8MB)</p>
+                </div>
+
+                {/* 2. Back Side */}
+                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
+                  <span className="block text-xs font-medium text-slate-300">
+                    Back Side Photo
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-14 h-14 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center shrink-0">
+                      {backPreview ? (
+                        <img src={backPreview} alt="Back Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-slate-600 text-[10px]">No File</span>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-1 min-w-0">
+                      <input
+                        type="file"
+                        id="doc-back-upload"
+                        accept="image/*,application/pdf"
+                        onChange={handleBackFileChange}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="doc-back-upload"
+                        className="inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold rounded-lg cursor-pointer transition"
+                      >
+                        {backPreview ? "Change Back" : "Upload Back"}
+                      </label>
+                      <p className="text-[10px] text-slate-500 truncate">JPG, PNG, PDF (Max 8MB)</p>
+                    </div>
                   </div>
                 </div>
               </div>
