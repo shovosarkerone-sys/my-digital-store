@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -35,6 +36,7 @@ export default function StoreFront({
   initialProducts: Product[];
   categories: Category[];
 }) {
+  const router = useRouter();
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isSeller, setIsSeller] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -133,7 +135,7 @@ export default function StoreFront({
       .filter((c) => c.length > 0).length;
   };
 
-  // Enter ba Search batone chaple dropdown bondho kore direct product list-e scroll korbe
+  // Enter বা Search বাটনে চাপলে সরাসরি প্রোডাক্ট তালিকায় স্ক্রোল করবে
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSearchFocused(false);
@@ -391,7 +393,6 @@ export default function StoreFront({
 
       {/* Main Container */}
       <main className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto w-full space-y-10">
-        
         {/* Hero Section */}
         <div className="flex flex-col items-center justify-center text-center space-y-4 pt-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
@@ -640,6 +641,7 @@ export default function StoreFront({
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] pt-1">
+                          {/* Seller Identity Badge */}
                           {isOfficial ? (
                             <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1.5">
                               <span className="w-3.5 h-3.5 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0 shadow-xs">
@@ -658,9 +660,20 @@ export default function StoreFront({
                               <span>Official Store</span>
                             </span>
                           ) : (
-                            <span className="bg-slate-800 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (product.seller_id) {
+                                  router.push(`/seller/${product.seller_id}`);
+                                }
+                              }}
+                              className="bg-slate-800 hover:bg-slate-700 hover:text-sky-400 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1 transition cursor-pointer"
+                              title="Click to visit Merchant Storefront"
+                            >
                               <span>🏪</span> {product.seller_name || "Seller"}
-                            </span>
+                            </button>
                           )}
 
                           {product.delivery_type === "manual" ? (
