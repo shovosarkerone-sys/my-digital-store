@@ -269,7 +269,7 @@ function DashboardContent() {
     (c) => c.name.toLowerCase() === category.toLowerCase()
   );
 
-  // মেম্বারশিপের বয়স হিসেব (বছর, মাস ও দিন)
+  // মেম্বারশিপের বয়স হিসেব (বছর, মাস ও দিন)
   const getMembershipDuration = (createdAt?: string) => {
     if (!createdAt) return "1 day";
     const start = new Date(createdAt);
@@ -327,7 +327,6 @@ function DashboardContent() {
         );
         if (contacts.length > 0) {
           setConversations((prev) => Array.from(new Set([...contacts, ...prev])));
-          // URL-এ আগে থেকে কোনো কন্টাক্ট না থাকলে তবেই প্রথমটি সেট করবে
           if (!searchParams.get("contact")) {
             setActiveChatEmail(contacts[0]);
           }
@@ -353,7 +352,6 @@ function DashboardContent() {
       created_at: new Date().toISOString(),
     };
 
-    // অপটিমিস্টিক আপডেট
     setChatMessages((prev) => [...prev, newMsg]);
 
     try {
@@ -371,7 +369,6 @@ function DashboardContent() {
     }
   };
 
-  // 2-Step Product Submission (Seller Flow)
   const handleProductStepOneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!category) {
@@ -471,13 +468,6 @@ function DashboardContent() {
     setProductStep(1);
   };
 
-  const handleCopyCode = (text?: string | null) => {
-    if (!text) return;
-    navigator.clipboard.writeText(text);
-    setCopiedKey(text);
-    setTimeout(() => setCopiedKey(null), 2000);
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/");
@@ -522,8 +512,11 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sky-400 font-mono text-sm">
-        Loading Inskeys Account Console...
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
+        <div className="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+        <span className="text-xs font-mono text-sky-400 tracking-wider animate-soft-pulse">
+          Establishing Secure Account Session...
+        </span>
       </div>
     );
   }
@@ -536,7 +529,6 @@ function DashboardContent() {
   const registeredDate = user?.created_at ? user.created_at.split("T")[0] : "2026-01-01";
   const membershipDurationText = getMembershipDuration(user?.created_at);
 
-  // স্বয়ংক্রিয় লেভেল গণনা (অর্ডারের সংখ্যা অনুযায়ী) অথবা ম্যানুয়াল অ্যাডমিন ওভাররাইড
   const calculateAutoLevel = (count: number) => {
     if (count >= 2500) return 10;
     if (count >= 1000) return 9;
@@ -773,7 +765,7 @@ function DashboardContent() {
               </>
             )}
 
-            {/* VIEW 2: "MY PRODUCTS" (2-STEP SYSTEM IDENTICAL TO /4517) */}
+            {/* VIEW 2: "MY PRODUCTS" */}
             {activeTab === "products" && (
               <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -828,7 +820,6 @@ function DashboardContent() {
                       </button>
                     </div>
 
-                    {/* STEP 1: Basic Information */}
                     {productStep === 1 && (
                       <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
                         <div>
@@ -963,7 +954,6 @@ function DashboardContent() {
                       </form>
                     )}
 
-                    {/* STEP 2: Choose Delivery Method */}
                     {productStep === 2 && (
                       <div className="space-y-6">
                         <div>
@@ -1714,8 +1704,11 @@ export default function BuyerDashboard() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sky-400 font-mono text-sm">
-          Loading Inskeys Account Console...
+        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
+          <div className="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
+          <span className="text-xs font-mono text-sky-400 tracking-wider animate-soft-pulse">
+            Establishing Secure Account Session...
+          </span>
         </div>
       }
     >
