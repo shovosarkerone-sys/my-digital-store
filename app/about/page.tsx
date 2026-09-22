@@ -87,7 +87,7 @@ export default function AboutPage() {
               Explore Products →
             </Link>
             <Link
-              href="/#contact"
+              href="/support"
               className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs rounded-xl transition"
             >
               Contact Support
