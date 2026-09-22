@@ -64,7 +64,6 @@ export default function BuyerDashboard() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Tabs: BuySellVouchers Navigation
   const [activeTab, setActiveTab] = useState<
     | "dashboard"
     | "transactions"
@@ -84,7 +83,6 @@ export default function BuyerDashboard() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Add Product Form in "My products"
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState("Game Keys");
@@ -93,13 +91,11 @@ export default function BuyerDashboard() {
   const [newVoucherCodes, setNewVoucherCodes] = useState("");
   const [addingProduct, setAddingProduct] = useState(false);
 
-  // Private Messages States
   const [conversations, setConversations] = useState<string[]>(["contact@inskeys.com"]);
   const [activeChatEmail, setActiveChatEmail] = useState<string>("contact@inskeys.com");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [typedMessage, setTypedMessage] = useState("");
 
-  // Ticket Form States
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketOrderId, setTicketOrderId] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");
@@ -118,16 +114,16 @@ export default function BuyerDashboard() {
       }
       setUser(user);
 
-      // Load Orders
-      const { data: orderData } = await supabase
-        .from("orders")
-        .select("*")
-        .or(`user_email.eq.${user.email},customer_email.eq.${user.email}`)
-        .order("id", { ascending: false });
+      if (user.email) {
+        const { data: orderData } = await supabase
+          .from("orders")
+          .select("*")
+          .or(`user_email.eq.${user.email},customer_email.eq.${user.email}`)
+          .order("id", { ascending: false });
 
-      if (orderData) setOrders(orderData);
+        if (orderData) setOrders(orderData);
+      }
 
-      // Load Seller's Products (if merchant)
       const { data: prodData } = await supabase
         .from("products")
         .select("id, title, category, price, sold_count, voucher_codes, delivery_type")
@@ -136,11 +132,11 @@ export default function BuyerDashboard() {
 
       if (prodData) setMyProducts(prodData);
 
-      // Load Support Tickets
       await loadUserTickets(user.email, user.id);
 
-      // Load Messages
-      await loadMessages(user.email);
+      if (user.email) {
+        await loadMessages(user.email);
+      }
 
       setLoading(false);
     }
@@ -148,7 +144,6 @@ export default function BuyerDashboard() {
     loadUserData();
   }, [router]);
 
-  // Membership Duration Calculator (Years, Months, Days)
   const getMembershipDuration = (createdAt?: string) => {
     if (!createdAt) return "1 day";
     const start = new Date(createdAt);
@@ -188,7 +183,8 @@ export default function BuyerDashboard() {
     if (data) setTickets(data);
   };
 
-  const loadMessages = async (myEmail: string) => {
+  const loadMessages = async (myEmail?: string) => {
+    if (!myEmail) return;
     try {
       const { data } = await supabase
         .from("direct_messages")
@@ -215,7 +211,7 @@ export default function BuyerDashboard() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!typedMessage.trim() || !user) return;
+    if (!typedMessage.trim() || !user || !user.email) return;
 
     const newMsg: ChatMessage = {
       id: Date.now(),
@@ -271,7 +267,8 @@ export default function BuyerDashboard() {
     }
   };
 
-  const handleCopyCode = (text: string) => {
+  const handleCopyCode = (text?: string | null) => {
+    if (!text) return;
     navigator.clipboard.writeText(text);
     setCopiedKey(text);
     setTimeout(() => setCopiedKey(null), 2000);
@@ -558,7 +555,7 @@ export default function BuyerDashboard() {
               </>
             )}
 
-            {/* VIEW 2: "MY PRODUCTS" (EXACTLY AS IN SCREENSHOT) */}
+            {/* VIEW 2: "MY PRODUCTS" */}
             {activeTab === "products" && (
               <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -587,7 +584,6 @@ export default function BuyerDashboard() {
                   </div>
                 </div>
 
-                {/* Add Product Sub-Panel */}
                 {showAddProductModal && (
                   <form onSubmit={handleCreateProduct} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-4">
                     <h4 className="text-xs font-bold text-sky-400 uppercase tracking-wider">
@@ -678,7 +674,6 @@ export default function BuyerDashboard() {
                   </form>
                 )}
 
-                {/* Products Table (Screenshot Layout) */}
                 <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
                   <table className="w-full text-left text-xs text-slate-300">
                     <thead className="bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
@@ -802,10 +797,9 @@ export default function BuyerDashboard() {
               </div>
             )}
 
-            {/* VIEW 4: MESSENGER PRIVATE MESSAGES */}
+            {/* VIEW 4: MESSENGER */}
             {activeTab === "messages" && (
               <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl h-[520px] flex flex-col md:flex-row">
-                {/* Left Conversations Sidebar */}
                 <div className="w-full md:w-56 bg-slate-950 border-r border-slate-800 p-3 space-y-2 overflow-y-auto">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-2">
                     Conversations
@@ -828,9 +822,7 @@ export default function BuyerDashboard() {
                   ))}
                 </div>
 
-                {/* Right Messenger Chat Window */}
                 <div className="flex-1 flex flex-col justify-between bg-slate-900/50">
-                  {/* Chat Header */}
                   <div className="p-3.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
@@ -839,7 +831,6 @@ export default function BuyerDashboard() {
                     <span className="text-[10px] text-slate-500">Direct In-Site Messaging</span>
                   </div>
 
-                  {/* Messages Area */}
                   <div className="flex-1 p-4 overflow-y-auto space-y-3">
                     {activeMessages.length === 0 ? (
                       <div className="h-full flex items-center justify-center text-xs text-slate-500">
@@ -868,7 +859,6 @@ export default function BuyerDashboard() {
                     )}
                   </div>
 
-                  {/* Messenger Input Form */}
                   <form onSubmit={handleSendMessage} className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
                     <input
                       type="text"
@@ -1141,7 +1131,6 @@ export default function BuyerDashboard() {
                   </form>
                 </div>
 
-                {/* Support History */}
                 <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-3 shadow-xl">
                   <h3 className="text-sm font-bold text-white">Your Support History ({tickets.length})</h3>
                   {tickets.length === 0 ? (
@@ -1186,7 +1175,7 @@ export default function BuyerDashboard() {
 
           </div>
 
-          {/* RIGHT SIDEBAR MENU - 9 BUTTONS */}
+          {/* RIGHT SIDEBAR MENU */}
           <aside className="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-3 sm:p-4 space-y-1 shadow-2xl sticky top-24">
             
             <button
@@ -1228,7 +1217,6 @@ export default function BuyerDashboard() {
               <span>Financial</span>
             </button>
 
-            {/* Products Tab with Active Counter */}
             <button
               type="button"
               onClick={() => setActiveTab("products")}
