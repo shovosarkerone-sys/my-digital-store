@@ -59,25 +59,30 @@ export async function POST(req: Request) {
     }
 
     const payload = {
-      amount: String(finalAmount),
+      amount: Number(finalAmount).toFixed(2), // সঠিক ফরম্যাট নিশ্চিত করতে
       currency: "USD",
       order_id: orderId,
       url_return: `${siteUrl}/order/success?order_id=${orderId}`,
       url_callback: `${siteUrl}/api/webhook/cryptomus`,
-      is_payment_multiple: false,
-      lifetime: 3600,
     };
 
     const payloadJson = JSON.stringify(payload);
     const base64Payload = Buffer.from(payloadJson).toString("base64");
 
-    // ৫. সিগনেচার তৈরি (Base64 + API Key দিয়ে MD5)
+    // ৫. সিগনেচার তৈরি
     const sign = crypto
       .createHash("md5")
       .update(base64Payload + apiKey)
       .digest("hex");
 
-    // ৬. Cryptomus API কল (সঠিক ফরম্যাট: { data: base64Payload })
+    // ডিবাগ করার জন্য কনসোলে প্রিন্ট করা (Vercel Logs-এ দেখা যাবে)
+    console.log("--- CRYPTOMUS DEBUG ---");
+    console.log("Merchant ID:", merchantId);
+    console.log("Payload JSON:", payloadJson);
+    console.log("Base64 Payload:", base64Payload);
+    console.log("Generated Sign:", sign);
+
+    // ৬. Cryptomus API কল
     const res = await fetch("https://api.cryptomus.com/v1/payment", {
       method: "POST",
       headers: {
@@ -89,6 +94,7 @@ export async function POST(req: Request) {
     });
 
     const data = await res.json();
+    console.log("Cryptomus Response:", data);
 
     if (data.state === 0 && data.result?.url) {
       return NextResponse.json({ checkoutUrl: data.result.url });
