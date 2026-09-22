@@ -1,78 +1,241 @@
-import { supabase } from "@/lib/supabase";
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
+import { supabase } from "@/lib/supabase";
 
-export const dynamic = "force-dynamic";
+interface OrderData {
+  id: number;
+  product_title: string;
+  amount: number;
+  currency?: string;
+  payment_status: string;
+  delivery_type?: "auto" | "manual";
+  delivery_content?: string | null;
+  payment_id: string;
+  seller_id?: string | null;
+  seller_name?: string | null;
+  created_at: string;
+}
 
-export default async function OrderSuccessPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ order_id?: string }>;
-}) {
-  const { order_id } = await searchParams;
+function OrderSuccessContent() {
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("order_id");
 
-  let order = null;
-  if (order_id) {
-    const { data } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("payment_id", order_id)
-      .single();
-    order = data;
+  const [order, setOrder] = useState<OrderData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    async function fetchOrder() {
+      if (!orderId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*")
+          .eq("payment_id", orderId)
+          .maybeSingle();
+
+        if (data) {
+          setOrder(data);
+        }
+      } catch (err) {
+        console.error("Error fetching order:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchOrder();
+  }, [orderId]);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sky-400 font-mono text-sm">
+        Verifying cryptographic transaction...
+      </div>
+    );
   }
 
+  const isManual = order?.delivery_type === "manual";
+
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-      <div className="max-w-lg w-full bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl text-center space-y-6">
-        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black">
-          ✓
+    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-sky-500 selection:text-white">
+      {/* Inskeys Branding */}
+      <Link href="/" className="flex items-center gap-2.5 mb-6 group">
+        <Image
+          src="/icon.png"
+          alt="Inskeys"
+          width={36}
+          height={36}
+          className="w-9 h-9 object-contain transition-transform group-hover:scale-105"
+        />
+        <span className="font-black text-2xl tracking-tight text-white leading-none">
+          Inskeys
+        </span>
+      </Link>
+
+      <div className="max-w-xl w-full bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6 relative overflow-hidden backdrop-blur-xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        {/* Success Icon */}
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto text-3xl font-black shadow-lg shadow-emerald-950/40">
+            ✓
+          </div>
+
+          <div>
+            <span className="text-[11px] font-bold text-sky-400 uppercase tracking-widest block mb-1">
+              Payment Confirmed
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Thank You For Your Purchase!
+            </h1>
+            <p className="text-xs text-slate-400 mt-1 font-mono">
+              Order Reference: <span className="text-slate-200">{orderId || "N/A"}</span>
+            </p>
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full text-[11px] font-bold text-amber-300">
+            <span>🛡️</span>
+            <span>36-Hour Buyer Protection Active</span>
+          </div>
         </div>
 
-        <div>
-          <span className="text-xs font-bold text-sky-400 uppercase tracking-widest block mb-1">
-            Payment Completed
-          </span>
-          <h1 className="text-2xl font-black text-white">
-            Thank You For Your Purchase!
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            Order Reference: <span className="font-mono text-slate-300">{order_id || "N/A"}</span>
-          </p>
-        </div>
-
+        {/* Order Details Container */}
         {order ? (
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-left space-y-3">
-            <div>
-              <span className="text-[11px] text-slate-500 block font-semibold">Product</span>
-              <p className="text-sm font-bold text-white">{order.product_title}</p>
-            </div>
-
-            <div>
-              <span className="text-[11px] text-slate-500 block font-semibold">Amount Paid</span>
-              <p className="text-sm font-black text-sky-400">${order.amount} {order.currency}</p>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800">
-              <span className="text-[11px] text-emerald-400 font-bold block mb-1">
-                ⚡ Instant Digital Product Delivery:
-              </span>
-              <div className="bg-slate-900 p-3 rounded-lg border border-slate-800 text-xs font-mono text-slate-200 whitespace-pre-line select-all">
-                {order.delivery_content || "Your instant license key / download access link is active."}
+          <div className="bg-slate-950 border border-slate-800/90 rounded-2xl p-5 space-y-4 shadow-inner">
+            <div className="flex items-start justify-between gap-3 border-b border-slate-800/80 pb-3">
+              <div className="min-w-0">
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">
+                  Product Item
+                </span>
+                <p className="text-sm font-bold text-white truncate mt-0.5">
+                  {order.product_title}
+                </p>
+                {order.seller_name && (
+                  <span className="text-[11px] text-slate-400 block mt-0.5">
+                    Merchant: <strong className="text-slate-200">{order.seller_name}</strong>
+                  </span>
+                )}
+              </div>
+              <div className="text-right shrink-0">
+                <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider block">
+                  Total Paid
+                </span>
+                <p className="text-base font-black text-emerald-400 mt-0.5 font-mono">
+                  ${order.amount} {order.currency || "USD"}
+                </p>
               </div>
             </div>
+
+            {/* Delivery Section */}
+            {isManual ? (
+              // MANUAL DELIVERY NOTICE
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl space-y-2">
+                <div className="flex items-center gap-2 text-amber-300 font-bold text-xs">
+                  <span>🕒</span>
+                  <span>Manual Delivery in Progress</span>
+                </div>
+                <p className="text-xs text-amber-200/80 leading-relaxed">
+                  The seller has received your order and is preparing your activation details/credentials. You will receive an update shortly or you can coordinate directly with the seller.
+                </p>
+                {order.seller_id && (
+                  <Link
+                    href={`/seller/${order.seller_id}`}
+                    className="inline-block mt-1 text-xs text-sky-400 font-bold hover:underline"
+                  >
+                    View Merchant Profile & Chat →
+                  </Link>
+                )}
+              </div>
+            ) : (
+              // AUTO DELIVERY KEY / CODE
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+                    <span>⚡</span>
+                    <span>Instant Digital Activation Key:</span>
+                  </span>
+                  {order.delivery_content && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(order.delivery_content!)}
+                      className="px-2.5 py-1 bg-sky-500 hover:bg-sky-600 text-white font-bold text-[10px] rounded-lg transition cursor-pointer shadow"
+                    >
+                      {copied ? "Copied! ✓" : "Copy Key"}
+                    </button>
+                  )}
+                </div>
+
+                <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 font-mono text-xs text-slate-200 whitespace-pre-line select-all leading-relaxed break-all">
+                  {order.delivery_content || "Code has been allocated to your account."}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 text-xs text-slate-400">
-            Payment received! Processing fulfillment to your registered email...
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 text-center text-xs text-slate-400 space-y-1">
+            <p>Your payment is confirmed on the blockchain.</p>
+            <p className="text-[11px] text-slate-500">
+              License details have been dispatched to your account dashboard.
+            </p>
           </div>
         )}
 
-        <Link
-          href="/"
-          className="inline-block w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition shadow"
-        >
-          Return to Marketplace
-        </Link>
+        {/* Navigation Action Buttons */}
+        <div className="space-y-2.5 pt-2">
+          <Link
+            href="/dashboard?tab=products"
+            className="w-full py-3 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-sky-950 flex items-center justify-center gap-2 cursor-pointer text-center"
+          >
+            <span>📦</span>
+            <span>View All My Purchased Keys & Orders</span>
+          </Link>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <Link
+              href="/"
+              className="py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl transition border border-slate-700 text-center"
+            >
+              Back to Store
+            </Link>
+
+            <Link
+              href="/dashboard?tab=support"
+              className="py-2.5 bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white font-bold text-xs rounded-xl transition border border-slate-800 text-center"
+            >
+              Get Support 🎫
+            </Link>
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sky-400 font-mono text-sm">
+          Loading receipt details...
+        </div>
+      }
+    >
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

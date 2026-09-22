@@ -22,10 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={`${inter.className} bg-slate-950 text-white min-h-screen flex flex-col justify-between`}>
+      <body className={`${inter.className} bg-slate-950 text-white min-h-screen flex flex-col justify-between antialiased`}>
         <div className="flex-1">{children}</div>
 
-        <footer className="border-t border-slate-800/80 bg-slate-950/90 py-8 px-4 sm:px-8 mt-12 text-xs text-slate-400">
+        <footer className="border-t border-slate-800/80 bg-slate-950/90 backdrop-blur py-8 px-4 sm:px-8 mt-12 text-xs text-slate-400">
           <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
             
             {/* ব্র্যান্ড ও কপিরাইট */}
