@@ -42,7 +42,6 @@ export default function BecomeSellerPage() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        // রিডাইরেক্ট না করে ইউজারকে এখানেই গুগল দিয়ে সাইন ইন করার সুযোগ দেওয়া হলো
         setLoading(false);
         return;
       }
@@ -70,7 +69,6 @@ export default function BecomeSellerPage() {
     checkAuthAndSeller();
   }, [router]);
 
-  // সরাসরি গুগল সাইনআপ হ্যান্ডলার
   const handleGoogleSignIn = async () => {
     setSubmitting(true);
     setErrorMsg("");
@@ -134,16 +132,16 @@ export default function BecomeSellerPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6 selection:bg-sky-500 selection:text-white">
       <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8">
-        {/* ব্র্যান্ড হেডার */}
+        {/* Brand Header with Transparent Logo */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-5">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+            <div className="shrink-0">
               <Image
                 src="/icon.png"
                 alt="Inskeys"
-                width={32}
-                height={32}
-                className="w-full h-full object-cover"
+                width={34}
+                height={34}
+                className="w-8 h-8 object-contain bg-transparent"
               />
             </div>
             <span className="font-bold text-base tracking-tight text-white">
@@ -158,7 +156,7 @@ export default function BecomeSellerPage() {
           </Link>
         </div>
 
-        {/* হেডার টেক্সট */}
+        {/* Header Text */}
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700/60 text-slate-300 text-[11px] font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
@@ -180,7 +178,7 @@ export default function BecomeSellerPage() {
           </div>
         )}
 
-        {/* ইউজার লগইন না করা থাকলে সরাসরি Continue with Google স্ক্রিন */}
+        {/* View if User Not Logged In */}
         {!user ? (
           <div className="space-y-5 py-2">
             <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 text-center space-y-3">
@@ -189,8 +187,7 @@ export default function BecomeSellerPage() {
                 Merchant Authentication Required
               </h3>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                To protect marketplace integrity and manage escrow payouts,
-                merchants must verify their identity.
+                To protect marketplace integrity and manage merchant payouts safely, merchants must verify their identity.
               </p>
             </div>
 
@@ -226,12 +223,12 @@ export default function BecomeSellerPage() {
                 href="/auth?redirect=/become-seller"
                 className="text-xs text-slate-500 hover:text-sky-400 transition"
               >
-                Prefer using email & password? Click here
+                Prefer using email & password? Click here to Log In
               </Link>
             </div>
           </div>
         ) : (
-          /* ইউজার লগইন করা থাকলে মূল মার্চেন্ট ফর্ম */
+          /* Merchant Onboarding Form */
           <form onSubmit={handleRegisterSeller} className="space-y-5">
             <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
               <span className="text-slate-400">Authenticated as:</span>
@@ -285,7 +282,7 @@ export default function BecomeSellerPage() {
               />
             </div>
 
-            {/* মার্চেন্ট কমপ্লায়েন্স ও এগ্রিমেন্ট কার্ড */}
+            {/* Merchant Compliance & Buyer Protection Agreement Card */}
             <div className="bg-slate-950/70 border border-slate-800/90 rounded-xl p-4 sm:p-5 space-y-3.5">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 border-b border-slate-800/80 pb-2.5">
                 <svg
@@ -301,25 +298,22 @@ export default function BecomeSellerPage() {
                     d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
                   />
                 </svg>
-                <span>Merchant Code of Conduct & Escrow Terms</span>
+                <span>Merchant Code of Conduct & Buyer Protection Terms</span>
               </div>
 
               <ul className="space-y-2 text-[11px] text-slate-400 leading-relaxed">
                 <li className="flex items-start gap-2">
                   <span className="text-slate-600 mt-0.5">•</span>
                   <span>
-                    <strong className="text-slate-200">Escrow Security:</strong>{" "}
-                    All sales funds remain held in escrow for 24–36 hours
-                    post-fulfillment to safeguard buyer validity and prevent
-                    chargebacks.
+                    <strong className="text-slate-200">36-Hour Buyer Protection Hold:</strong>{" "}
+                    All sales payouts remain safely held for 36 hours post-fulfillment to guarantee code validity and eliminate chargebacks.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-slate-600 mt-0.5">•</span>
                   <span>
                     <strong className="text-slate-200">Platform Integrity:</strong>{" "}
-                    All buyer communications and fulfillment must remain
-                    strictly within the Inskeys platform.
+                    All customer resolutions and digital deliveries must remain strictly within the Inskeys platform.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
@@ -328,13 +322,7 @@ export default function BecomeSellerPage() {
                     <strong className="text-slate-200">
                       Anti-Circumvention Policy:
                     </strong>{" "}
-                    Exchanging direct contact information (Email, Telegram,
-                    WhatsApp) or soliciting off-platform payments will result in
-                    a{" "}
-                    <strong className="text-rose-400 font-medium">
-                      $100 compliance penalty
-                    </strong>{" "}
-                    or immediate account termination.
+                    Exchanging direct off-platform contact info (Email, Telegram, WhatsApp) or requesting external payments will result in immediate account termination.
                   </span>
                 </li>
               </ul>
@@ -349,8 +337,7 @@ export default function BecomeSellerPage() {
                     className="mt-0.5 w-4 h-4 rounded bg-slate-900 border-slate-700 text-sky-500 focus:ring-sky-500/30 cursor-pointer"
                   />
                   <span className="text-xs text-slate-300 group-hover:text-white transition leading-snug">
-                    I acknowledge and agree to comply with the Merchant Terms,
-                    Escrow Policy, and Platform Security Guidelines.
+                    I acknowledge and agree to comply with the Merchant Terms, 36-Hour Buyer Protection Policy, and Platform Security Guidelines.
                   </span>
                 </label>
               </div>
