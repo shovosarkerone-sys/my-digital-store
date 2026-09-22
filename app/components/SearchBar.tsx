@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 
@@ -16,12 +17,14 @@ interface Product {
 }
 
 export default function SearchBar() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // বাইরে ক্লিক করলে ড্রপডাউন বন্ধ করার লিসেনার
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -32,6 +35,7 @@ export default function SearchBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // লাইভ ড্রপডাউন সাজেশন (মাল্টি-কীওয়ার্ড টোকেনাইজড সার্চ)
   useEffect(() => {
     const searchProducts = async () => {
       const clean = query.trim();
@@ -43,7 +47,6 @@ export default function SearchBar() {
 
       setLoading(true);
 
-      // স্পেস দিয়ে প্রতিটি শব্দকে আলাদা টোকেন করা
       const words = clean
         .split(/\s+/)
         .map((w) => w.replace(/[,()]/g, "").trim())
@@ -56,7 +59,6 @@ export default function SearchBar() {
       }
 
       try {
-        // ডেটাবেজ থেকে সম্ভাব্য সব ম্যাচিং প্রোডাক্ট আনা
         const orConditions = words
           .flatMap((w) => [`title.ilike.%${w}%`, `category.ilike.%${w}%`])
           .join(",");
@@ -68,7 +70,6 @@ export default function SearchBar() {
           .limit(40);
 
         if (data) {
-          // মাল্টি-কীওয়ার্ড ফিল্টারিং: প্রতিটি শব্দ টাইটেল বা ক্যাটাগরিতে থাকতে হবে
           const matchedResults = data
             .filter((item) => {
               const target = `${item.title || ""} ${item.category || ""}`.toLowerCase();
@@ -90,9 +91,20 @@ export default function SearchBar() {
     return () => clearTimeout(debounceTimer);
   }, [query]);
 
+  // এন্টার বাটন অথবা সার্চ বাটনে চাপলে সরাসরি সার্চ পেজে রিডাইরেক্ট
+  const handleManualSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const clean = query.trim();
+    if (!clean) return;
+
+    setIsOpen(false); // ড্রপডাউন বন্ধ করবে
+    router.push(`/products?search=${encodeURIComponent(clean)}`);
+  };
+
   return (
     <div ref={containerRef} className="relative w-full max-w-lg mx-auto">
-      <div className="relative flex items-center">
+      {/* ফর্ম দিয়ে র‍্যাপ করা হয়েছে যাতে কীবোর্ডের Enter কাজ করে */}
+      <form onSubmit={handleManualSearch} className="relative flex items-center">
         <input
           type="text"
           value={query}
@@ -116,8 +128,9 @@ export default function SearchBar() {
           </button>
         )}
 
+        {/* সাবমিট বাটন (ক্লিক করলে বা Enter চাপলে কাজ করবে) */}
         <button
-          type="button"
+          type="submit"
           className="absolute right-1 top-1 bottom-1 px-4 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
         >
           <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -125,7 +138,7 @@ export default function SearchBar() {
           </svg>
           <span>Search</span>
         </button>
-      </div>
+      </form>
 
       {/* Live Dropdown Results */}
       {isOpen && (
