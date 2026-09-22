@@ -46,9 +46,19 @@ interface SellerProduct {
   title: string;
   category: string;
   price: number;
+  discount_price?: number | null;
+  discount_until?: string | null;
+  delivery_type?: "auto" | "manual";
+  description?: string;
+  image_url?: string | null;
   sold_count?: number;
   voucher_codes?: string | null;
-  delivery_type?: string;
+}
+
+interface Category {
+  id: number;
+  name: string;
+  image_url?: string | null;
 }
 
 interface ChatMessage {
@@ -63,7 +73,9 @@ export default function BuyerDashboard() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [shopName, setShopName] = useState<string>("Merchant Store");
 
+  // Tab State
   const [activeTab, setActiveTab] = useState<
     | "dashboard"
     | "transactions"
@@ -80,22 +92,33 @@ export default function BuyerDashboard() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [myProducts, setMyProducts] = useState<SellerProduct[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
+  // 2-Step Product Creation States (Identical to /4517)
   const [showAddProductModal, setShowAddProductModal] = useState(false);
-  const [newTitle, setNewTitle] = useState("");
-  const [newCategory, setNewCategory] = useState("Game Keys");
-  const [newPrice, setNewPrice] = useState("");
-  const [newDeliveryType, setNewDeliveryType] = useState<"auto" | "manual">("auto");
-  const [newVoucherCodes, setNewVoucherCodes] = useState("");
-  const [addingProduct, setAddingProduct] = useState(false);
+  const [productStep, setProductStep] = useState<1 | 2>(1);
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
 
+  const [title, setTitle] = useState("");
+  const [category, setCategory] = useState("");
+  const [price, setPrice] = useState("");
+  const [discountPrice, setDiscountPrice] = useState("");
+  const [discountDurationType, setDiscountDurationType] = useState<"none" | "lifetime" | "custom">("none");
+  const [discountDays, setDiscountDays] = useState("7");
+  const [deliveryType, setDeliveryType] = useState<"auto" | "manual">("auto");
+  const [description, setDescription] = useState("");
+  const [voucherCodes, setVoucherCodes] = useState("");
+  const [submittingProduct, setSubmittingProduct] = useState(false);
+
+  // Private Messages States
   const [conversations, setConversations] = useState<string[]>(["contact@inskeys.com"]);
   const [activeChatEmail, setActiveChatEmail] = useState<string>("contact@inskeys.com");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [typedMessage, setTypedMessage] = useState("");
 
+  // Support Ticket Form States
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketOrderId, setTicketOrderId] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");
@@ -114,6 +137,27 @@ export default function BuyerDashboard() {
       }
       setUser(user);
 
+      // Check seller store name
+      const { data: sellerData } = await supabase
+        .from("sellers")
+        .select("shop_name")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (sellerData && sellerData.shop_name) {
+        setShopName(sellerData.shop_name);
+      } else if (user.user_metadata?.full_name) {
+        setShopName(user.user_metadata.full_name);
+      }
+
+      // Fetch Categories for product dropdown
+      const { data: catData } = await supabase
+        .from("categories")
+        .select("*")
+        .order("name");
+      if (catData) setCategories(catData);
+
+      // Fetch user's orders
       if (user.email) {
         const { data: orderData } = await supabase
           .from("orders")
@@ -124,16 +168,17 @@ export default function BuyerDashboard() {
         if (orderData) setOrders(orderData);
       }
 
+      // Fetch seller's own products
       const { data: prodData } = await supabase
         .from("products")
-        .select("id, title, category, price, sold_count, voucher_codes, delivery_type")
+        .select("*")
         .eq("seller_id", user.id)
         .order("id", { ascending: false });
 
       if (prodData) setMyProducts(prodData);
 
+      // Fetch tickets & messages
       await loadUserTickets(user.email, user.id);
-
       if (user.email) {
         await loadMessages(user.email);
       }
@@ -144,6 +189,12 @@ export default function BuyerDashboard() {
     loadUserData();
   }, [router]);
 
+  // Selected Category Auto-Image inherit
+  const activeSelectedCategory = categories.find(
+    (c) => c.name.toLowerCase() === category.toLowerCase()
+  );
+
+  // Membership Duration Calculator (Years, Months, Days)
   const getMembershipDuration = (createdAt?: string) => {
     if (!createdAt) return "1 day";
     const start = new Date(createdAt);
@@ -237,34 +288,105 @@ export default function BuyerDashboard() {
     }
   };
 
-  const handleCreateProduct = async (e: React.FormEvent) => {
+  // 2-Step Product Submission (Seller flow: seller_name != Official Store)
+  const handleProductStepOneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAddingProduct(true);
+    if (!category) {
+      alert("Please select a category.");
+      return;
+    }
+
+    setSubmittingProduct(true);
     try {
+      const autoCategoryImageUrl = activeSelectedCategory?.image_url || null;
+
+      let computedDiscountUntil: string | null = null;
+      if (discountDurationType === "custom" && discountDays) {
+        const d = new Date();
+        d.setDate(d.getDate() + parseInt(discountDays));
+        computedDiscountUntil = d.toISOString();
+      } else if (discountDurationType === "lifetime") {
+        computedDiscountUntil = "2099-12-31T23:59:59Z";
+      }
+
       const payload = {
-        title: newTitle.trim(),
-        category: newCategory,
-        price: parseFloat(newPrice),
-        seller_id: user.id,
-        seller_name: user?.user_metadata?.full_name || "Merchant",
-        delivery_type: newDeliveryType,
-        voucher_codes: newDeliveryType === "auto" ? newVoucherCodes.trim() : null,
-        description: "Fulfilled securely with 36-Hour Buyer Protection.",
+        title: title.trim(),
+        category,
+        price: parseFloat(price),
+        discount_price: discountPrice ? parseFloat(discountPrice) : null,
+        discount_until: computedDiscountUntil,
+        image_url: autoCategoryImageUrl,
+        description: description.trim(),
+        seller_id: user.id, // Authenticated Seller ID
+        seller_name: shopName, // Merchant Shop Name (NOT Official Store)
       };
 
-      const { data, error } = await supabase.from("products").insert([payload]).select().single();
+      if (editingProductId) {
+        const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
+        if (error) throw error;
+      } else {
+        const { data, error } = await supabase
+          .from("products")
+          .insert([{ ...payload, delivery_type: "auto", voucher_codes: "", views: 0, sold_count: 0 }])
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (data) setEditingProductId(data.id);
+      }
+
+      setProductStep(2);
+    } catch (err: any) {
+      alert(`Error saving details: ${err.message}`);
+    } finally {
+      setSubmittingProduct(false);
+    }
+  };
+
+  const handleProductStepTwoSubmit = async () => {
+    if (!editingProductId) return;
+    setSubmittingProduct(true);
+
+    try {
+      const payload = {
+        delivery_type: deliveryType,
+        voucher_codes: deliveryType === "auto" ? voucherCodes.trim() : null,
+      };
+
+      const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
       if (error) throw error;
 
-      if (data) setMyProducts((prev) => [data, ...prev]);
+      // Refresh list
+      const { data: updatedProdList } = await supabase
+        .from("products")
+        .select("*")
+        .eq("seller_id", user.id)
+        .order("id", { ascending: false });
+
+      if (updatedProdList) setMyProducts(updatedProdList);
+
+      resetProductForm();
       setShowAddProductModal(false);
-      setNewTitle("");
-      setNewPrice("");
-      setNewVoucherCodes("");
+      alert("Product published successfully to Inskeys marketplace!");
     } catch (err: any) {
-      alert(`Failed to add product: ${err.message}`);
+      alert(`Error publishing product: ${err.message}`);
     } finally {
-      setAddingProduct(false);
+      setSubmittingProduct(false);
     }
+  };
+
+  const resetProductForm = () => {
+    setEditingProductId(null);
+    setTitle("");
+    setCategory("");
+    setPrice("");
+    setDiscountPrice("");
+    setDiscountDurationType("none");
+    setDiscountDays("7");
+    setDeliveryType("auto");
+    setDescription("");
+    setVoucherCodes("");
+    setProductStep(1);
   };
 
   const handleCopyCode = (text?: string | null) => {
@@ -484,7 +606,7 @@ export default function BuyerDashboard() {
                   </div>
                 </div>
 
-                {/* Sub Buttons (Feedback & Messages) */}
+                {/* Sub Buttons */}
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -555,21 +677,24 @@ export default function BuyerDashboard() {
               </>
             )}
 
-            {/* VIEW 2: "MY PRODUCTS" */}
+            {/* VIEW 2: "MY PRODUCTS" - 2-STEP SYSTEM IDENTICAL TO /4517 */}
             {activeTab === "products" && (
               <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                   <div>
                     <h2 className="text-xl font-black text-white">My products</h2>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Here you can manage your products and product codes.
+                      Manage your digital vouchers, code stock, and pricing as a merchant.
                     </p>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
-                      onClick={() => setShowAddProductModal(!showAddProductModal)}
+                      onClick={() => {
+                        resetProductForm();
+                        setShowAddProductModal(true);
+                      }}
                       className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer flex items-center gap-1.5"
                     >
                       <span>Add New Product</span>
@@ -584,96 +709,275 @@ export default function BuyerDashboard() {
                   </div>
                 </div>
 
+                {/* 2-STEP PRODUCT CREATION MODAL / PANEL (EXACTLY AS /4517) */}
                 {showAddProductModal && (
-                  <form onSubmit={handleCreateProduct} className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-4">
-                    <h4 className="text-xs font-bold text-sky-400 uppercase tracking-wider">
-                      Add New Product Listing
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-6">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                       <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Product Title</label>
-                        <input
-                          type="text"
-                          required
-                          value={newTitle}
-                          onChange={(e) => setNewTitle(e.target.value)}
-                          placeholder="e.g. PUBG Mobile 60 UC Global Pin"
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
-                        />
+                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                          Add New Product Listing
+                        </h3>
+                        <span className="text-xs text-slate-400">
+                          {productStep === 1 ? "Step 1 of 2: Product Information" : "Step 2 of 2: Delivery Method Setup"}
+                        </span>
                       </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Price (USD $)</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          required
-                          value={newPrice}
-                          onChange={(e) => setNewPrice(e.target.value)}
-                          placeholder="0.99"
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Delivery Method</label>
-                        <select
-                          value={newDeliveryType}
-                          onChange={(e) => setNewDeliveryType(e.target.value as any)}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                        >
-                          <option value="auto">⚡ Automatic Delivery (Codes attached)</option>
-                          <option value="manual">🕒 Manual Delivery (Dispatched later)</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">Category</label>
-                        <input
-                          type="text"
-                          required
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          placeholder="e.g. PUBG, Steam, Gift Cards"
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    {newDeliveryType === "auto" && (
-                      <div>
-                        <label className="block text-[11px] text-slate-300 mb-1">
-                          Voucher / License Codes (One per line)
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={newVoucherCodes}
-                          onChange={(e) => setNewVoucherCodes(e.target.value)}
-                          placeholder="CODE-12345&#10;CODE-67890"
-                          className="w-full font-mono bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white focus:outline-none"
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex justify-end gap-2">
                       <button
                         type="button"
-                        onClick={() => setShowAddProductModal(false)}
-                        className="px-3 py-1.5 text-xs text-slate-400 hover:text-white"
+                        onClick={() => {
+                          resetProductForm();
+                          setShowAddProductModal(false);
+                        }}
+                        className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
                       >
                         Cancel
                       </button>
-                      <button
-                        type="submit"
-                        disabled={addingProduct}
-                        className="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition cursor-pointer"
-                      >
-                        {addingProduct ? "Publishing..." : "Save Product ✓"}
-                      </button>
                     </div>
-                  </form>
+
+                    {/* STEP 1: Basic Information */}
+                    {productStep === 1 && (
+                      <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-300 mb-1">Product Title</label>
+                          <input
+                            type="text"
+                            required
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder="e.g. PUBG Mobile 60 UC Global Pin"
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+
+                        {/* Category Dropdown with Automatic Category Photo Preview */}
+                        <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
+                          <label className="block text-xs font-semibold text-slate-300">
+                            Category & Product Icon
+                          </label>
+                          <div className="flex items-center gap-4">
+                            <div className="w-16 h-16 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shrink-0 flex items-center justify-center">
+                              {activeSelectedCategory?.image_url ? (
+                                <img
+                                  src={activeSelectedCategory.image_url}
+                                  alt={activeSelectedCategory.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-slate-600 text-xs font-mono">No Icon</span>
+                              )}
+                            </div>
+                            <div className="flex-1 space-y-1">
+                              <select
+                                required
+                                value={category}
+                                onChange={(e) => setCategory(e.target.value)}
+                                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                              >
+                                <option value="" disabled>-- Select a Category --</option>
+                                {categories.map((c) => (
+                                  <option key={c.id} value={c.name}>
+                                    {c.name}
+                                  </option>
+                                ))}
+                              </select>
+                              <p className="text-[11px] text-slate-500">
+                                Product image will automatically inherit the official icon of the selected category.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">Regular Price (USD $)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              required
+                              value={price}
+                              onChange={(e) => setPrice(e.target.value)}
+                              placeholder="9.99"
+                              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-300 mb-1">Discount Price (USD $ - Optional)</label>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={discountPrice}
+                              onChange={(e) => setDiscountPrice(e.target.value)}
+                              placeholder="7.99"
+                              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Discount Duration Controls */}
+                        {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (
+                          <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
+                            <span className="block text-xs font-bold text-sky-400">Discount Timer / Duration</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div>
+                                <label className="block text-xs text-slate-400 mb-1">Offer Type</label>
+                                <select
+                                  value={discountDurationType}
+                                  onChange={(e) => setDiscountDurationType(e.target.value as any)}
+                                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                                >
+                                  <option value="none">No Expiry Date (Until manually changed)</option>
+                                  <option value="lifetime">Lifetime Deal</option>
+                                  <option value="custom">Set Specific Days</option>
+                                </select>
+                              </div>
+                              {discountDurationType === "custom" && (
+                                <div>
+                                  <label className="block text-xs text-slate-400 mb-1">Number of Days Active</label>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="365"
+                                    value={discountDays}
+                                    onChange={(e) => setDiscountDays(e.target.value)}
+                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                          <textarea
+                            rows={3}
+                            required
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            placeholder="Redemption instructions, region limitations, and key details..."
+                            className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                          />
+                        </div>
+
+                        <div className="flex justify-end pt-2">
+                          <button
+                            type="submit"
+                            disabled={submittingProduct}
+                            className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950 flex items-center gap-2"
+                          >
+                            <span>{submittingProduct ? "Saving..." : "Next: Set Delivery Method →"}</span>
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* STEP 2: Choose Delivery Method */}
+                    {productStep === 2 && (
+                      <div className="space-y-6">
+                        <div>
+                          <h4 className="text-base font-bold text-white mb-1">How will this product be delivered?</h4>
+                          <p className="text-xs text-slate-400">
+                            Select fulfillment method for <strong>{title}</strong>.
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Option 1: Automatic Delivery */}
+                          <div
+                            onClick={() => setDeliveryType("auto")}
+                            className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
+                              deliveryType === "auto"
+                                ? "bg-sky-500/10 border-sky-500 ring-1 ring-sky-500/50"
+                                : "bg-slate-900 border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-2xl">⚡</span>
+                              <input
+                                type="radio"
+                                checked={deliveryType === "auto"}
+                                onChange={() => setDeliveryType("auto")}
+                                className="cursor-pointer text-sky-500"
+                              />
+                            </div>
+                            <h4 className="text-sm font-bold text-white">Automatic Delivery</h4>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              License keys/vouchers are delivered instantly to buyer's screen right after payment confirmation.
+                            </p>
+                          </div>
+
+                          {/* Option 2: Manual Delivery */}
+                          <div
+                            onClick={() => setDeliveryType("manual")}
+                            className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
+                              deliveryType === "manual"
+                                ? "bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50"
+                                : "bg-slate-900 border-slate-800 hover:border-slate-700"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-2xl">🕒</span>
+                              <input
+                                type="radio"
+                                checked={deliveryType === "manual"}
+                                onChange={() => setDeliveryType("manual")}
+                                className="cursor-pointer text-amber-500"
+                              />
+                            </div>
+                            <h4 className="text-sm font-bold text-white">Manual Delivery</h4>
+                            <p className="text-xs text-slate-400 leading-relaxed">
+                              You fulfill the order manually. A <strong>🕒 Manual Delivery</strong> badge will appear on storefront.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* If Automatic Delivery: Codes input */}
+                        {deliveryType === "auto" ? (
+                          <div className="space-y-2 bg-slate-900 border border-slate-800 rounded-xl p-4">
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-xs font-semibold text-slate-300">
+                                Voucher / License Codes (One code per line)
+                              </label>
+                              <span className="text-xs font-mono text-sky-400">
+                                Stock: {voucherCodes.split("\n").filter((c) => c.trim()).length} codes
+                              </span>
+                            </div>
+                            <textarea
+                              rows={4}
+                              value={voucherCodes}
+                              onChange={(e) => setVoucherCodes(e.target.value)}
+                              placeholder="CODE-XXXXX-1111&#10;CODE-YYYYY-2222"
+                              className="w-full font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none"
+                            />
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
+                            🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual dispatch.
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setProductStep(1)}
+                            className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                          >
+                            ← Back to Details
+                          </button>
+                          <button
+                            type="button"
+                            disabled={submittingProduct}
+                            onClick={handleProductStepTwoSubmit}
+                            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-emerald-950"
+                          >
+                            {submittingProduct ? "Finalizing..." : "Complete & Publish Product ✓"}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
 
+                {/* Products Table (Screenshot Layout) */}
                 <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
                   <table className="w-full text-left text-xs text-slate-300">
                     <thead className="bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
