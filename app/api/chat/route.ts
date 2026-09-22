@@ -4,20 +4,22 @@ const SYSTEM_PROMPT = `
 You are the official Customer Concierge and Support Executive for "Inskeys" (https://inskeys.com) — a verified digital marketplace for software licenses, gift cards, game keys, and automated vouchers.
 
 Platform facts:
-1. Delivery: "Official Store" items are delivered automatically and instantly upon crypto payment confirmation.
-2. Escrow: Community seller orders have a 24 to 36-hour escrow protection hold to verify code validity before merchant payout.
+1. Delivery Options:
+   - "Automatic Delivery": License keys and codes are delivered on-screen and to the order receipt immediately upon crypto payment confirmation.
+   - "Manual Delivery": Orders marked with a manual delivery badge (🕒) are fulfilled directly by the merchant or official staff shortly after confirmation.
+2. Buyer Protection: All orders are backed by guaranteed 36-Hour Buyer Protection safety hold to verify code activation and validity before payout.
 3. Official Support Email: contact@inskeys.com
-4. Payments: Processed securely via Cryptomus (BTC, USDT, LTC, etc.).
+4. Payments: Processed securely via Cryptomus (BTC, USDT, LTC, and top cryptocurrencies).
 5. Strict Policy: Anti-circumvention policy strictly forbids exchanging external contact info.
 
 Capabilities & Instructions:
 - Answer ANY customer question intelligently, concisely, and helpfully (digital key activation, gaming, store policies, or general conversation).
 - Always maintain a polite, premium, and trustworthy merchant tone.
+- Never use the term "Escrow"; always refer to safety holds as "36-Hour Buyer Protection".
 - Never show internal technical details, model names, or server errors to the buyer.
 - If the user writes in Bengali or Banglish, reply warmly in Bengali. If in English, reply in English.
 `;
 
-// গুগলের ১০০% ফ্রি ফ্ল্যাশ মডেলের তালিকা (কোনো পেইড প্রো মডেল নেই)
 const FREE_FLASH_MODELS = [
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
@@ -36,7 +38,6 @@ export async function POST(req: Request) {
     const rawKey = process.env.GEMINI_API_KEY;
     const apiKey = rawKey ? rawKey.trim() : null;
 
-    // যদি API Key থাকে, ফ্রি মডেলগুলো থেকে লাইভ উত্তর আনার চেষ্টা করবে
     if (apiKey) {
       for (const model of FREE_FLASH_MODELS) {
         try {
@@ -65,12 +66,10 @@ export async function POST(req: Request) {
           const data = await response.json();
           const replyText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
-          // উত্তর পাওয়া গেলে বায়ারকে পাঠিয়ে দেবে
           if (replyText) {
             return NextResponse.json({ reply: replyText });
           }
 
-          // এরর হলে ব্যাকএন্ডে লগ রাখবে, বায়ার কিছুই দেখবে না
           if (data?.error) {
             console.error(`Gemini [${model}] error:`, data.error.message);
           }
@@ -80,10 +79,10 @@ export async function POST(req: Request) {
       }
     }
 
-    // স্মার্ট ফলব্যাক: কোনো কারণে গুগলের সংযোগে বিলম্ব হলে বায়ার এই মার্জিত উত্তরটি পাবে
+    // স্মার্ট ফলব্যাক রেসপন্স (সার্ভার ডিলে হলেও বায়ার মার্জিত উত্তর পাবে)
     const lower = message.toLowerCase();
     let safeReply =
-      "Hello! Welcome to Inskeys Support Desk. How can I assist you today with digital licenses, instant delivery, or account queries?";
+      "Hello! Welcome to Inskeys Support Desk. How can I assist you today with digital licenses, order fulfillment, or account queries?";
 
     if (
       lower.includes("how are you") ||
@@ -100,14 +99,15 @@ export async function POST(req: Request) {
       lower.includes("পাবো")
     ) {
       safeReply =
-        "Verified purchases are delivered automatically within seconds upon confirmed payment. Your license key will appear right on your screen and order receipt.";
+        "Items with Automatic Delivery are sent to your screen immediately upon confirmed payment. Manual delivery orders are dispatched promptly by our merchants.";
     } else if (
       lower.includes("escrow") ||
+      lower.includes("protection") ||
       lower.includes("security") ||
       lower.includes("নিরাপত্তা")
     ) {
       safeReply =
-        "All transactions are protected by our 24–36 hour Escrow Hold to guarantee code validity before funds are released to community sellers.";
+        "All transactions are protected by our guaranteed 36-Hour Buyer Protection to ensure complete validity before funds are finalized.";
     } else if (
       lower.includes("contact") ||
       lower.includes("support") ||
