@@ -50,7 +50,7 @@ export default function SecretAdminPortal() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
 
-  // Product Form States
+  // Product Form States (No separate image upload needed)
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -61,10 +61,6 @@ export default function SecretAdminPortal() {
   const [deliveryType, setDeliveryType] = useState<"auto" | "manual">("auto");
   const [description, setDescription] = useState("");
   const [voucherCodes, setVoucherCodes] = useState("");
-
-  const [productImageFile, setProductImageFile] = useState<File | null>(null);
-  const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
-  const [existingProductImageUrl, setExistingProductImageUrl] = useState<string | null>(null);
 
   // Category Form States
   const [categoryName, setCategoryName] = useState("");
@@ -132,13 +128,10 @@ export default function SecretAdminPortal() {
     if (data) setTickets(data);
   };
 
-  const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setProductImageFile(file);
-      setProductImagePreview(URL.createObjectURL(file));
-    }
-  };
+  // Get active category object & its image URL automatically
+  const activeSelectedCategory = categories.find(
+    (c) => c.name.toLowerCase() === category.toLowerCase()
+  );
 
   const handleCategoryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -160,26 +153,15 @@ export default function SecretAdminPortal() {
     return data.publicUrl;
   };
 
-  // Step 1: Save Basic Information & Go to Step 2
+  // Step 1: Save Basic Info (Auto-attaches Category Image)
   const handleProductStepOneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setMessage("");
 
     try {
-      let finalImageUrl = existingProductImageUrl;
-
-      if (productImageFile) {
-        finalImageUrl = await uploadImageToStorage(productImageFile, "admin-products");
-      } else if (!finalImageUrl) {
-        // Fallback: Use category image if no custom image uploaded
-        const matchedCategory = categories.find(
-          (c) => c.name.toLowerCase() === category.toLowerCase()
-        );
-        if (matchedCategory && matchedCategory.image_url) {
-          finalImageUrl = matchedCategory.image_url;
-        }
-      }
+      // Direct assignment of Category Photo
+      const autoCategoryImageUrl = activeSelectedCategory?.image_url || null;
 
       let computedDiscountUntil: string | null = null;
       if (discountDurationType === "custom" && discountDays) {
@@ -196,7 +178,7 @@ export default function SecretAdminPortal() {
         price: parseFloat(price),
         discount_price: discountPrice ? parseFloat(discountPrice) : null,
         discount_until: computedDiscountUntil,
-        image_url: finalImageUrl,
+        image_url: autoCategoryImageUrl,
         description: description.trim(),
         seller_name: "Official Store",
       };
@@ -223,7 +205,7 @@ export default function SecretAdminPortal() {
     }
   };
 
-  // Step 2: Finalize Delivery Method & Publish
+  // Step 2: Finalize Delivery Method
   const handleProductStepTwoSubmit = async () => {
     if (!editingProductId) return;
     setSubmitting(true);
@@ -259,9 +241,6 @@ export default function SecretAdminPortal() {
     setDeliveryType("auto");
     setDescription("");
     setVoucherCodes("");
-    setProductImageFile(null);
-    setProductImagePreview(null);
-    setExistingProductImageUrl(null);
     setProductStep(1);
   };
 
@@ -283,9 +262,6 @@ export default function SecretAdminPortal() {
     setDeliveryType(p.delivery_type || "auto");
     setDescription(p.description);
     setVoucherCodes(p.voucher_codes || "");
-    setExistingProductImageUrl(p.image_url);
-    setProductImagePreview(p.image_url);
-    setProductImageFile(null);
     setProductStep(1);
     setActiveTab("add_product");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -318,7 +294,16 @@ export default function SecretAdminPortal() {
       if (editingCategoryId) {
         const { error } = await supabase.from("categories").update(payload).eq("id", editingCategoryId);
         if (error) throw error;
-        setMessage("Category updated successfully.");
+
+        // Auto sync updated category image to all existing products under this category
+        if (finalCatImageUrl) {
+          await supabase
+            .from("products")
+            .update({ image_url: finalCatImageUrl })
+            .ilike("category", categoryName.trim());
+        }
+
+        setMessage("Category updated & synced to related products successfully.");
       } else {
         const { error } = await supabase.from("categories").insert([payload]);
         if (error) throw error;
@@ -327,6 +312,7 @@ export default function SecretAdminPortal() {
 
       resetCategoryForm();
       await fetchCategories();
+      await fetchProducts();
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
     } finally {
@@ -483,7 +469,7 @@ export default function SecretAdminPortal() {
         </div>
       )}
 
-      {/* Tabs */}
+      {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab("all_products")}
@@ -574,7 +560,7 @@ export default function SecretAdminPortal() {
                         {p.image_url ? (
                           <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-[10px] text-slate-500">No Img</span>
+                          <span className="text-[10px] text-slate-500">🎮</span>
                         )}
                         {hasDiscount && (
                           <span className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-bold px-1 rounded">
@@ -640,7 +626,7 @@ export default function SecretAdminPortal() {
         </div>
       )}
 
-      {/* TAB 2: ADD / EDIT PRODUCT (2-STEP FLOW) */}
+      {/* TAB 2: ADD / EDIT PRODUCT (AUTOMATIC PHOTO BINDING) */}
       {activeTab === "add_product" && (
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -678,21 +664,43 @@ export default function SecretAdminPortal() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
+              {/* Category Dropdown + Real-Time Category Photo Preview */}
+              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Category & Automatic Product Image
+                </label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 bg-slate-900 rounded-xl overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
+                    {activeSelectedCategory?.image_url ? (
+                      <img
+                        src={activeSelectedCategory.image_url}
+                        alt={activeSelectedCategory.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl">🎮</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                    >
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-[11px] text-sky-400">
+                      ✓ এই ক্যাটাগরির নির্ধারিত ছবিটি স্বয়ংক্রিয়ভাবে প্রোডাক্টের থাম্বনেইল হিসেবে সেট হয়ে গেছে। আলাদা কোনো ছবি আপলোড করতে হবে না।
+                    </p>
+                  </div>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1">Regular Price (USD $)</label>
                   <input
@@ -752,38 +760,6 @@ export default function SecretAdminPortal() {
                 </div>
               )}
 
-              {/* Product Image (Optional - Fallback to Category Image) */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Product Image (Optional — will automatically use Category photo if left blank)
-                </label>
-                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
-                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
-                    {productImagePreview ? (
-                      <img src={productImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-[10px] text-slate-500">Auto Cat.</span>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <input
-                      type="file"
-                      id="admin-prod-img"
-                      accept="image/*"
-                      onChange={handleProductImageChange}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="admin-prod-img"
-                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
-                    >
-                      {productImagePreview ? "Change Image" : "Upload Custom Image"}
-                    </label>
-                    <p className="text-[11px] text-slate-500">If no image is uploaded, category image will show automatically</p>
-                  </div>
-                </div>
-              </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
                 <textarea
@@ -814,7 +790,7 @@ export default function SecretAdminPortal() {
               <div>
                 <h3 className="text-base font-bold text-white mb-1">How will this product be delivered?</h3>
                 <p className="text-xs text-slate-400">
-                  Select your fulfillment method for <strong>{title}</strong>.
+                  Select fulfillment method for <strong>{title}</strong>.
                 </p>
               </div>
 
@@ -839,7 +815,7 @@ export default function SecretAdminPortal() {
                   </div>
                   <h4 className="text-sm font-bold text-white">Automatic Delivery</h4>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    License keys/vouchers are delivered automatically to buyer's screen and order history right after payment.
+                    License keys/vouchers are delivered instantly to buyer screen right after payment.
                   </p>
                 </div>
 
@@ -889,7 +865,7 @@ export default function SecretAdminPortal() {
                 </div>
               ) : (
                 <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
-                  🕒 Manual Delivery selected. No keys are required in advance. Buyers will be notified to contact you or wait for manual order dispatch.
+                  🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual fulfillment.
                 </div>
               )}
 
@@ -915,7 +891,7 @@ export default function SecretAdminPortal() {
         </div>
       )}
 
-      {/* TAB 3: CATEGORIES */}
+      {/* TAB 3: CATEGORIES (Manage Category & Image) */}
       {activeTab === "categories" && (
         <div className="space-y-6">
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
@@ -948,7 +924,7 @@ export default function SecretAdminPortal() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Icon / Photo</label>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Master Icon / Photo</label>
                 <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
                   <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
                     {categoryImagePreview ? (
@@ -971,7 +947,7 @@ export default function SecretAdminPortal() {
                     >
                       {categoryImagePreview ? "Change Category Image" : "Upload Category Image"}
                     </label>
-                    <p className="text-[11px] text-slate-500">Used automatically for all products in this category</p>
+                    <p className="text-[11px] text-slate-500">This photo is automatically inherited by all products under this category</p>
                   </div>
                 </div>
               </div>
@@ -984,7 +960,7 @@ export default function SecretAdminPortal() {
                 {submitting
                   ? "Processing..."
                   : editingCategoryId
-                  ? "Update Category"
+                  ? "Update Category & Sync Products"
                   : "Save Category"}
               </button>
             </form>
