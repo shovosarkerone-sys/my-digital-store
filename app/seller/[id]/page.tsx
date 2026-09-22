@@ -64,7 +64,7 @@ export default function SellerPublicProfile() {
       if (!sellerId) return;
 
       try {
-        // ১. সেলারের প্রোফাইল ডাটা ফেচ
+        // সেলারের তথ্য লোড
         const { data: sellerData } = await supabase
           .from("sellers")
           .select("*")
@@ -74,7 +74,6 @@ export default function SellerPublicProfile() {
         if (sellerData) {
           setSeller(sellerData);
         } else {
-          // সেলার টেবিল না পেলে ডিফল্ট অবজেক্ট
           setSeller({
             id: sellerId,
             shop_name: "Verified Merchant",
@@ -86,7 +85,7 @@ export default function SellerPublicProfile() {
           });
         }
 
-        // ২. এই সেলারের সব প্রোডাক্ট ফেচ
+        // সেলারের পণ্য লোড
         const { data: productData } = await supabase
           .from("products")
           .select("id, title, category, price, discount_price, discount_until, delivery_type, image_url, voucher_codes, sold_count")
@@ -106,7 +105,6 @@ export default function SellerPublicProfile() {
     fetchSellerData();
   }, [sellerId]);
 
-  // মেম্বারশিপের বয়স হিসেব (বছর, মাস ও দিন)
   const getDuration = (dateStr?: string) => {
     if (!dateStr) return "1 month";
     const start = new Date(dateStr);
@@ -152,7 +150,7 @@ export default function SellerPublicProfile() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
-      {/* হেডার */}
+      {/* Header */}
       <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5 group">
@@ -180,12 +178,11 @@ export default function SellerPublicProfile() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* সেলার পরিচিতি ব্যানার ও কার্ড */}
+        {/* Seller Info Card */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-96 h-96 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-            {/* সেলার ডিটেইলস */}
             <div className="flex items-start gap-4 sm:gap-5">
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-3xl sm:text-4xl shadow-inner shrink-0">
                 {level.icon}
@@ -219,7 +216,6 @@ export default function SellerPublicProfile() {
               </div>
             </div>
 
-            {/* মেসেজ বাটন ও সুরক্ষা স্ট্যাটাস */}
             <div className="flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end gap-3 shrink-0">
               <button
                 type="button"
@@ -236,7 +232,7 @@ export default function SellerPublicProfile() {
             </div>
           </div>
 
-          {/* সেলার স্ট্যাটস বার */}
+          {/* Seller Stats */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-800/80">
             <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 text-center">
               <span className="text-[10px] text-slate-500 block uppercase font-bold">Listed Products</span>
@@ -257,7 +253,7 @@ export default function SellerPublicProfile() {
           </div>
         </div>
 
-        {/* সেলারের পণ্য তালিকা (Store Inventory) */}
+        {/* Product Inventory */}
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
