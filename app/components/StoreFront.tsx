@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
@@ -45,6 +45,8 @@ export default function StoreFront({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 30;
 
+  const productsSectionRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
     async function checkUserStatus() {
       const {
@@ -85,7 +87,7 @@ export default function StoreFront({
     };
   }, []);
 
-  // Smart Multi-Keyword Tokenized Search (Matches words in any order)
+  // Smart Multi-Keyword Tokenized Search
   const filteredProducts = useMemo(() => {
     const cleanQuery = searchQuery.trim().toLowerCase();
     if (!cleanQuery) return initialProducts;
@@ -98,7 +100,7 @@ export default function StoreFront({
     });
   }, [initialProducts, searchQuery]);
 
-  // Live Instant Dropdown Suggestions
+  // Live Instant Suggestions
   const instantSuggestions = useMemo(() => {
     const cleanQuery = searchQuery.trim().toLowerCase();
     if (!cleanQuery) return [];
@@ -129,6 +131,15 @@ export default function StoreFront({
       .split("\n")
       .map((c) => c.trim())
       .filter((c) => c.length > 0).length;
+  };
+
+  // Enter ba Search batone chaple dropdown bondho kore direct product list-e scroll korbe
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSearchFocused(false);
+    if (productsSectionRef.current) {
+      productsSectionRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   return (
@@ -236,7 +247,6 @@ export default function StoreFront({
         </div>
 
         <nav className="space-y-4 flex-1 overflow-y-auto pr-1">
-          {/* Merchant Section */}
           <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Merchant Center
@@ -262,7 +272,6 @@ export default function StoreFront({
             )}
           </div>
 
-          {/* Support Section */}
           <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
               Customer Support
@@ -277,7 +286,6 @@ export default function StoreFront({
             </Link>
           </div>
 
-          {/* Buyer Account */}
           {currentUser && (
             <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
               <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
@@ -302,7 +310,6 @@ export default function StoreFront({
             </div>
           )}
 
-          {/* Browse Navigation */}
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-2">
               Browse Menu
@@ -403,9 +410,9 @@ export default function StoreFront({
             </p>
           </div>
 
-          {/* Live Search Bar */}
+          {/* Live Search Bar with Form & Action Button */}
           <div className="relative w-full max-w-2xl text-left mt-2">
-            <div className="relative">
+            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
               <input
                 type="text"
                 placeholder="Search products by title, category, game..."
@@ -416,20 +423,29 @@ export default function StoreFront({
                   setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-2xl py-3.5 pl-12 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition duration-200 shadow-xl"
+                className="w-full bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-2xl py-3.5 pl-12 pr-32 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition duration-200 shadow-xl"
               />
-              <span className="absolute left-4 top-3.5 text-slate-500 text-base">🔍</span>
+              <span className="absolute left-4 text-slate-500 text-base">🔍</span>
+
               {searchQuery && (
                 <button
+                  type="button"
                   onClick={() => setSearchQuery("")}
-                  className="absolute right-4 top-3.5 text-xs text-slate-400 hover:text-white p-1 cursor-pointer"
+                  className="absolute right-24 text-xs text-slate-400 hover:text-white p-1 cursor-pointer"
                 >
                   ✕
                 </button>
               )}
-            </div>
 
-            {/* Instant Suggestions Dropdown with Tokenized Multi-Keyword Search */}
+              <button
+                type="submit"
+                className="absolute right-2 top-2 bottom-2 px-4 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
+              >
+                <span>Search</span>
+              </button>
+            </form>
+
+            {/* Instant Suggestions Dropdown */}
             {isSearchFocused && searchQuery.trim().length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-40 divide-y divide-slate-800/70">
                 {instantSuggestions.length > 0 ? (
@@ -554,7 +570,7 @@ export default function StoreFront({
         </section>
 
         {/* Products Showcase */}
-        <section className="space-y-4">
+        <section ref={productsSectionRef} className="space-y-4">
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
             <div>
               <h2 className="text-lg font-bold text-white">All Available Products</h2>
@@ -574,7 +590,6 @@ export default function StoreFront({
                 const stock = getStockCount(product.voucher_codes);
                 const isOfficial = !product.seller_id || product.seller_name === "Official Store";
 
-                // Discount logic
                 const hasDiscount = Boolean(
                   product.discount_price &&
                   product.discount_price < product.price &&
@@ -592,7 +607,6 @@ export default function StoreFront({
                     className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                      {/* Product Thumbnail with % OFF Badge */}
                       <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
                         {product.image_url ? (
                           <img
@@ -617,7 +631,6 @@ export default function StoreFront({
                         </div>
                       </div>
 
-                      {/* Product Details */}
                       <div className="min-w-0 flex-1 space-y-1">
                         <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
                           {product.category}
@@ -650,7 +663,6 @@ export default function StoreFront({
                             </span>
                           )}
 
-                          {/* Delivery Type Badge */}
                           {product.delivery_type === "manual" ? (
                             <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
                               <span>🕒</span> Manual Delivery
@@ -661,7 +673,6 @@ export default function StoreFront({
                             </span>
                           )}
 
-                          {/* Stock (Auto Only) */}
                           {product.delivery_type !== "manual" && (
                             <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
                               Stock:{" "}
@@ -678,7 +689,6 @@ export default function StoreFront({
                       </div>
                     </div>
 
-                    {/* Price and Action */}
                     <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
                       <div className="text-right">
                         <span className="text-[9px] text-slate-500 block leading-none">Price</span>
