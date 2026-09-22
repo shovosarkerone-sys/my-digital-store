@@ -47,15 +47,13 @@ export async function POST(req: Request) {
       delivery_content: product.description || "Thank you for your purchase from Inskeys!",
     });
 
-    // ৪. Cryptomus পেমেন্ট পেলোড ও সিগনেচার তৈরি (উভয় ভ্যারিয়েবল নাম সাপোর্ট করবে)
+    // ৪. Cryptomus ক্রেডেনশিয়াল চেক
     const merchantId = process.env.CRYPTOMUS_MERCHANT_ID;
     const apiKey = process.env.CRYPTOMUS_PAYMENT_KEY || process.env.CRYPTOMUS_API_KEY;
 
     if (!merchantId || !apiKey) {
       return NextResponse.json(
-        {
-          error: "Payment gateway is being configured. Please contact support at contact@inskeys.com",
-        },
+        { error: "Payment gateway configuration is missing." },
         { status: 503 }
       );
     }
@@ -71,12 +69,15 @@ export async function POST(req: Request) {
     };
 
     const payloadJson = JSON.stringify(payload);
+    const base64Payload = Buffer.from(payloadJson).toString("base64");
+
+    // ৫. সিগনেচার তৈরি (Base64 + API Key দিয়ে MD5)
     const sign = crypto
       .createHash("md5")
-      .update(Buffer.from(payloadJson).toString("base64") + apiKey)
+      .update(base64Payload + apiKey)
       .digest("hex");
 
-    // ৫. Cryptomus API কল
+    // ৬. Cryptomus API কল (সঠিক ফরম্যাট: { data: base64Payload })
     const res = await fetch("https://api.cryptomus.com/v1/payment", {
       method: "POST",
       headers: {
@@ -84,7 +85,7 @@ export async function POST(req: Request) {
         merchant: merchantId,
         sign: sign,
       },
-      body: payloadJson,
+      body: JSON.stringify({ data: base64Payload }),
     });
 
     const data = await res.json();
@@ -92,7 +93,7 @@ export async function POST(req: Request) {
     if (data.state === 0 && data.result?.url) {
       return NextResponse.json({ checkoutUrl: data.result.url });
     } else {
-      console.error("Cryptomus Error:", data);
+      console.error("Cryptomus Error Response:", data);
       return NextResponse.json(
         { error: data.message || "Failed to initialize payment invoice" },
         { status: 500 }
