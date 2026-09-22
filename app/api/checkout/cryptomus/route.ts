@@ -6,6 +6,20 @@ export async function POST(req: Request) {
   try {
     const { productId, buyerEmail } = await req.json();
 
+    // ভেরিয়েবলগুলো ঠিকমতো লোড হচ্ছে কিনা চেক করার জন্য
+    const merchantId = process.env.CRYPTOMUS_MERCHANT_ID;
+    const apiKey = process.env.CRYPTOMUS_PAYMENT_KEY || process.env.CRYPTOMUS_API_KEY;
+
+    console.log("CHECK - Merchant ID:", merchantId ? "Found (" + merchantId.length + " chars)" : "MISSING!");
+    console.log("CHECK - API Key:", apiKey ? "Found (" + apiKey.length + " chars)" : "MISSING!");
+
+    if (!merchantId || !apiKey) {
+      return NextResponse.json(
+        { error: "Cryptomus keys are missing in Vercel environment variables!" },
+        { status: 500 }
+      );
+    }
+
     if (!productId || !buyerEmail) {
       return NextResponse.json(
         { error: "Product ID and Email are required" },
@@ -13,7 +27,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // ১. প্রোডাক্ট ডেটা সংগ্রহ
     const { data: product, error: prodError } = await supabase
       .from("products")
       .select("*")
@@ -24,7 +37,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // ২. ডিসকাউন্ট থাকলে অফার প্রাইস নির্ধারণ
     const finalAmount =
       product.discount_price && product.discount_price < product.price
         ? product.discount_price
@@ -33,7 +45,6 @@ export async function POST(req: Request) {
     const orderId = `ORDER_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://inskeys.com";
 
-    // ৩. orders টেবিলে pending অর্ডার এন্ট্রি
     await supabase.from("orders").insert({
       user_email: buyerEmail.trim(),
       product_id: product.id,
@@ -47,19 +58,8 @@ export async function POST(req: Request) {
       delivery_content: product.description || "Thank you for your purchase from Inskeys!",
     });
 
-    // ৪. Cryptomus ক্রেডেনশিয়াল চেক
-    const merchantId = process.env.CRYPTOMUS_MERCHANT_ID;
-    const apiKey = process.env.CRYPTOMUS_PAYMENT_KEY || process.env.CRYPTOMUS_API_KEY;
-
-    if (!merchantId || !apiKey) {
-      return NextResponse.json(
-        { error: "Payment gateway configuration is missing." },
-        { status: 503 }
-      );
-    }
-
     const payload = {
-      amount: Number(finalAmount).toFixed(2), // সঠিক ফরম্যাট নিশ্চিত করতে
+      amount: Number(finalAmount).toFixed(2),
       currency: "USD",
       order_id: orderId,
       url_return: `${siteUrl}/order/success?order_id=${orderId}`,
@@ -69,20 +69,11 @@ export async function POST(req: Request) {
     const payloadJson = JSON.stringify(payload);
     const base64Payload = Buffer.from(payloadJson).toString("base64");
 
-    // ৫. সিগনেচার তৈরি
     const sign = crypto
       .createHash("md5")
       .update(base64Payload + apiKey)
       .digest("hex");
 
-    // ডিবাগ করার জন্য কনসোলে প্রিন্ট করা (Vercel Logs-এ দেখা যাবে)
-    console.log("--- CRYPTOMUS DEBUG ---");
-    console.log("Merchant ID:", merchantId);
-    console.log("Payload JSON:", payloadJson);
-    console.log("Base64 Payload:", base64Payload);
-    console.log("Generated Sign:", sign);
-
-    // ৬. Cryptomus API কল
     const res = await fetch("https://api.cryptomus.com/v1/payment", {
       method: "POST",
       headers: {
@@ -94,12 +85,11 @@ export async function POST(req: Request) {
     });
 
     const data = await res.json();
-    console.log("Cryptomus Response:", data);
+    console.log("Cryptomus Full Response:", data);
 
     if (data.state === 0 && data.result?.url) {
       return NextResponse.json({ checkoutUrl: data.result.url });
     } else {
-      console.error("Cryptomus Error Response:", data);
       return NextResponse.json(
         { error: data.message || "Failed to initialize payment invoice" },
         { status: 500 }
