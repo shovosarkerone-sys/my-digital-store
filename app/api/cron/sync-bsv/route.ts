@@ -58,7 +58,7 @@ export async function GET(req: Request) {
       // Proxy fallback
     }
 
-    // ২. প্রক্সি গেটওয়ে ফলব্যাক
+    // ২. প্রক্সি গেটওয়ে ফলব্যাক
     if (!html) {
       const googleProxy = `https://www-buysellvouchers-com.translate.goog/en/seller/info/BSV.Official.Store/${
         page > 1 ? `?page=${page}` : ""
@@ -184,7 +184,7 @@ export async function GET(req: Request) {
       });
     }
 
-    // ৪. ক্যাটাগরি তৈরি
+    // ৪. ক্যাটাগরি তৈরি ও সিঙ্ক
     const uniqueCategories = Array.from(new Set(scrapedProducts.map((p) => p.category)));
     for (const catName of uniqueCategories) {
       const { data: existingCat } = await supabase
@@ -204,7 +204,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // ৫. প্রোডাক্ট ডাটাবেজ আপডেট (TypeScript Type-Safe Fix)
+    // ৫. প্রোডাক্ট ডাটাবেজ আপডেট
     const { data: existingBsvProducts } = await supabase
       .from("products")
       .select("id, source_url, price, title")
@@ -220,7 +220,6 @@ export async function GET(req: Request) {
     for (const item of scrapedProducts) {
       const existing = existingMap.get(item.source_url);
 
-      // TypeScript TS18048 ফিক্স: existing আছে কি না নিশ্চিত করে কোড রান করানো
       if (existing && existing.id) {
         if (existing.price !== item.price || existing.title !== item.title) {
           await supabase
@@ -229,6 +228,7 @@ export async function GET(req: Request) {
               price: item.price,
               title: item.title,
               category: item.category,
+              delivery_type: "auto",
               ...(item.image_url ? { image_url: item.image_url } : {}),
             })
             .eq("id", existing.id);
@@ -241,7 +241,8 @@ export async function GET(req: Request) {
             category: item.category,
             price: item.price,
             image_url: item.image_url || null,
-            description: "Instant digital key delivery upon payment confirmation. Official Store fulfillment.",
+            description: "Digital code delivery upon payment confirmation. Official Store fulfillment.",
+            delivery_type: "auto",
             seller_name: "Official Store",
             source_url: item.source_url,
             views: 0,
