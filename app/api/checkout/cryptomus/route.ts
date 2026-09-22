@@ -6,12 +6,8 @@ export async function POST(req: Request) {
   try {
     const { productId, buyerEmail } = await req.json();
 
-    // ভেরিয়েবলগুলো ঠিকমতো লোড হচ্ছে কিনা চেক করার জন্য
     const merchantId = process.env.CRYPTOMUS_MERCHANT_ID;
     const apiKey = process.env.CRYPTOMUS_PAYMENT_KEY || process.env.CRYPTOMUS_API_KEY;
-
-    console.log("CHECK - Merchant ID:", merchantId ? "Found (" + merchantId.length + " chars)" : "MISSING!");
-    console.log("CHECK - API Key:", apiKey ? "Found (" + apiKey.length + " chars)" : "MISSING!");
 
     if (!merchantId || !apiKey) {
       return NextResponse.json(
@@ -58,12 +54,13 @@ export async function POST(req: Request) {
       delivery_content: product.description || "Thank you for your purchase from Inskeys!",
     });
 
+    // Cryptomus এর নিয়ম অনুযায়ী কিগুলো অবশ্যই অ্যালফাবেটিক্যালি সাজাতে হবে
     const payload = {
       amount: Number(finalAmount).toFixed(2),
       currency: "USD",
       order_id: orderId,
-      url_return: `${siteUrl}/order/success?order_id=${orderId}`,
       url_callback: `${siteUrl}/api/webhook/cryptomus`,
+      url_return: `${siteUrl}/order/success?order_id=${orderId}`,
     };
 
     const payloadJson = JSON.stringify(payload);
