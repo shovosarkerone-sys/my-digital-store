@@ -11,6 +11,9 @@ interface Product {
   title: string;
   category: string;
   price: number;
+  discount_price?: number | null;
+  discount_until?: string | null;
+  delivery_type?: "auto" | "manual";
   description: string;
   image_url: string | null;
   views?: number;
@@ -59,16 +62,16 @@ export default function CategoryProductsPage() {
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white p-4 sm:p-6 md:p-10">
       <div className="max-w-5xl mx-auto space-y-6">
         
-        {/* টপ হেডার বার */}
+        {/* Top Header Bar with Transparent Logo */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="shrink-0">
               <Image
                 src="/icon.png"
                 alt="Inskeys"
-                width={32}
-                height={32}
-                className="w-full h-full object-cover"
+                width={34}
+                height={34}
+                className="w-8 h-8 object-contain bg-transparent"
               />
             </div>
             <span className="font-black text-base tracking-tight text-white">
@@ -80,11 +83,11 @@ export default function CategoryProductsPage() {
             href="/"
             className="text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl transition"
           >
-            ← Back to Storefront
+            ← Home
           </Link>
         </div>
 
-        {/* ক্যাটাগরি টাইটেল ব্যানার */}
+        {/* Category Title Banner */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 flex items-center justify-between shadow-xl">
           <div>
             <span className="text-[10px] font-bold text-sky-400 uppercase tracking-widest block mb-1">
@@ -95,16 +98,15 @@ export default function CategoryProductsPage() {
             </h1>
             <p className="text-xs text-slate-400 mt-1">
               {loading
-                ? "Discover verified instant digital licenses and keys."
+                ? "Discover verified digital licenses, vouchers, and game keys."
                 : `Found ${products.length} active listings under this category.`}
             </p>
           </div>
           <span className="text-4xl sm:text-5xl">🎮</span>
         </div>
 
-        {/* মূল কনটেন্ট ও প্রোডাক্ট তালিকা */}
+        {/* Product Listings */}
         {loading ? (
-          /* প্রিমিয়াম শিমার স্কেলিটন (কোনো লোডিং টেক্সট থাকবে না) */
           <div className="space-y-2.5 sm:space-y-3">
             {[1, 2, 3, 4].map((i) => (
               <div
@@ -141,6 +143,17 @@ export default function CategoryProductsPage() {
               const isOfficial =
                 !product.seller_id || product.seller_name === "Official Store";
 
+              // Discount calculation with expiration check
+              const hasDiscount = Boolean(
+                product.discount_price &&
+                product.discount_price < product.price &&
+                (!product.discount_until || new Date(product.discount_until) > new Date())
+              );
+              const discountPercent =
+                hasDiscount && product.price > 0
+                  ? Math.round(((product.price - product.discount_price!) / product.price) * 100)
+                  : null;
+
               return (
                 <Link
                   key={product.id}
@@ -148,7 +161,7 @@ export default function CategoryProductsPage() {
                   className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                 >
                   <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                    {/* ছবি এবং ভিউ কাউন্ট */}
+                    {/* Thumbnail & Discount % Badge */}
                     <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
                       {product.image_url ? (
                         <img
@@ -157,7 +170,13 @@ export default function CategoryProductsPage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
                         />
                       ) : (
-                        <span className="text-slate-600 text-[10px]">No Image</span>
+                        <span className="text-slate-600 text-xs">🎮</span>
+                      )}
+
+                      {hasDiscount && (
+                        <div className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                          {discountPercent}% OFF
+                        </div>
                       )}
 
                       <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[9px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
@@ -166,7 +185,7 @@ export default function CategoryProductsPage() {
                       </div>
                     </div>
 
-                    {/* টাইটেল, ক্যাটাগরি ও ব্যাজ */}
+                    {/* Title, Category & Delivery Info */}
                     <div className="min-w-0 flex-1 space-y-1">
                       <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
                         {product.category}
@@ -199,18 +218,32 @@ export default function CategoryProductsPage() {
                           </span>
                         )}
 
-                        <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
-                          Stock:{" "}
-                          <strong
-                            className={
-                              stock > 0
-                                ? "text-emerald-400 font-bold"
-                                : "text-rose-400 font-bold"
-                            }
-                          >
-                            {stock}
-                          </strong>
-                        </span>
+                        {/* Delivery Method Badge */}
+                        {product.delivery_type === "manual" ? (
+                          <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
+                            <span>🕒</span> Manual Delivery
+                          </span>
+                        ) : (
+                          <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
+                            <span>⚡</span> Auto Delivery
+                          </span>
+                        )}
+
+                        {/* Stock (Only for Auto Delivery items) */}
+                        {product.delivery_type !== "manual" && (
+                          <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
+                            Stock:{" "}
+                            <strong
+                              className={
+                                stock > 0
+                                  ? "text-emerald-400 font-bold"
+                                  : "text-rose-400 font-bold"
+                              }
+                            >
+                              {stock}
+                            </strong>
+                          </span>
+                        )}
 
                         <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
                           Sold:{" "}
@@ -222,14 +255,26 @@ export default function CategoryProductsPage() {
                     </div>
                   </div>
 
+                  {/* Pricing and Action */}
                   <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
                     <div className="text-right">
                       <span className="text-[9px] text-slate-500 block leading-none">
                         Price
                       </span>
-                      <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
-                        ${product.price}
-                      </span>
+                      {hasDiscount ? (
+                        <div className="flex items-baseline gap-1.5 justify-end">
+                          <span className="text-[11px] line-through text-slate-500">
+                            ${product.price}
+                          </span>
+                          <span className="text-xs sm:text-base font-black text-emerald-400 leading-tight">
+                            ${product.discount_price}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
+                          ${product.price}
+                        </span>
+                      )}
                     </div>
                     <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 rounded-xl transition whitespace-nowrap shadow-md shadow-sky-950">
                       Buy Now →
