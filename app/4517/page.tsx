@@ -403,21 +403,26 @@ export default function SecretAdminPortal() {
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
+        <Link
+          href="https://inskeys.com"
+          className="flex items-center gap-3 group transition hover:opacity-95"
+        >
+          <div className="shrink-0 flex items-center justify-center">
             <Image
               src="/icon.png"
               alt="Inskeys"
               width={36}
               height={36}
-              className="w-full h-full object-cover"
+              className="w-9 h-9 object-contain"
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white leading-tight">Inskeys Admin Console</h1>
+            <h1 className="text-xl font-bold text-white leading-tight group-hover:text-sky-400 transition">
+              Inskeys Admin Console
+            </h1>
             <span className="text-xs text-sky-400 font-mono">Route: /4517 • Master Authorized</span>
           </div>
-        </div>
+        </Link>
 
         <div className="flex items-center gap-2">
           <button
