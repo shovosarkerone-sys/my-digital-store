@@ -42,17 +42,48 @@ export default function SearchBar() {
       }
 
       setLoading(true);
-      const { data } = await supabase
-        .from("products")
-        .select("id, title, price, discount_price, discount_until, delivery_type, category, image_url")
-        .ilike("title", `%${clean}%`)
-        .limit(6);
 
-      if (data) {
-        setResults(data);
-        setIsOpen(true);
+      // স্পেস দিয়ে প্রতিটি শব্দকে আলাদা টোকেন করা
+      const words = clean
+        .split(/\s+/)
+        .map((w) => w.replace(/[,()]/g, "").trim())
+        .filter(Boolean);
+
+      if (words.length === 0) {
+        setResults([]);
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        // ডেটাবেজ থেকে সম্ভাব্য সব ম্যাচিং প্রোডাক্ট আনা
+        const orConditions = words
+          .flatMap((w) => [`title.ilike.%${w}%`, `category.ilike.%${w}%`])
+          .join(",");
+
+        const { data } = await supabase
+          .from("products")
+          .select("id, title, price, discount_price, discount_until, delivery_type, category, image_url")
+          .or(orConditions)
+          .limit(40);
+
+        if (data) {
+          // মাল্টি-কীওয়ার্ড ফিল্টারিং: প্রতিটি শব্দ টাইটেল বা ক্যাটাগরিতে থাকতে হবে
+          const matchedResults = data
+            .filter((item) => {
+              const target = `${item.title || ""} ${item.category || ""}`.toLowerCase();
+              return words.every((word) => target.includes(word.toLowerCase()));
+            })
+            .slice(0, 6);
+
+          setResults(matchedResults);
+          setIsOpen(true);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setLoading(false);
+      }
     };
 
     const debounceTimer = setTimeout(searchProducts, 250);

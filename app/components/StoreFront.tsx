@@ -85,24 +85,31 @@ export default function StoreFront({
     };
   }, []);
 
+  // Smart Multi-Keyword Tokenized Search (Matches words in any order)
   const filteredProducts = useMemo(() => {
+    const cleanQuery = searchQuery.trim().toLowerCase();
+    if (!cleanQuery) return initialProducts;
+
+    const searchWords = cleanQuery.split(/\s+/).filter(Boolean);
+
     return initialProducts.filter((product) => {
-      const query = searchQuery.toLowerCase();
-      return (
-        product.title.toLowerCase().includes(query) ||
-        product.category.toLowerCase().includes(query)
-      );
+      const targetText = `${product.title} ${product.category}`.toLowerCase();
+      return searchWords.every((word) => targetText.includes(word));
     });
   }, [initialProducts, searchQuery]);
 
+  // Live Instant Dropdown Suggestions
   const instantSuggestions = useMemo(() => {
-    if (!searchQuery.trim()) return [];
+    const cleanQuery = searchQuery.trim().toLowerCase();
+    if (!cleanQuery) return [];
+
+    const searchWords = cleanQuery.split(/\s+/).filter(Boolean);
+
     return initialProducts
-      .filter(
-        (p) =>
-          p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.category.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      .filter((product) => {
+        const targetText = `${product.title} ${product.category}`.toLowerCase();
+        return searchWords.every((word) => targetText.includes(word));
+      })
       .slice(0, 6);
   }, [initialProducts, searchQuery]);
 
@@ -151,7 +158,7 @@ export default function StoreFront({
               alt="Inskeys"
               width={38}
               height={38}
-              className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 transition-transform group-hover:scale-105"
+              className="w-9 h-9 sm:w-10 sm:h-10 object-contain shrink-0 transition-transform group-hover:scale-105 bg-transparent"
             />
             <span className="font-black text-2xl tracking-tight text-white leading-none">
               Inskeys
@@ -213,7 +220,7 @@ export default function StoreFront({
               alt="Inskeys"
               width={40}
               height={40}
-              className="w-10 h-10 object-contain shrink-0"
+              className="w-10 h-10 object-contain shrink-0 bg-transparent"
             />
             <span className="font-black text-2xl tracking-tight text-white leading-none">
               Inskeys
@@ -422,6 +429,7 @@ export default function StoreFront({
               )}
             </div>
 
+            {/* Instant Suggestions Dropdown with Tokenized Multi-Keyword Search */}
             {isSearchFocused && searchQuery.trim().length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-40 divide-y divide-slate-800/70">
                 {instantSuggestions.length > 0 ? (
