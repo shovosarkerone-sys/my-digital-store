@@ -10,6 +10,9 @@ interface Product {
   title: string;
   category: string;
   price: number;
+  discount_price?: number | null;
+  discount_until?: string | null;
+  delivery_type?: "auto" | "manual";
   description: string;
   image_url: string | null;
   voucher_codes?: string | null;
@@ -40,35 +43,37 @@ export default function SecretAdminPortal() {
   const [passwordInput, setPasswordInput] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
 
-  const [activeTab, setActiveTab] = useState<"products" | "categories" | "crawler" | "tickets">("products");
+  const [activeTab, setActiveTab] = useState<"all_products" | "add_product" | "categories" | "tickets">("all_products");
+  const [productStep, setProductStep] = useState<1 | 2>(1);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
 
-  const [startPage, setStartPage] = useState<number>(1);
-  const [endPage, setEndPage] = useState<number>(10);
-  const [isCrawling, setIsCrawling] = useState<boolean>(false);
-  const [crawlerProgress, setCrawlerProgress] = useState<string>("");
-  const [totalCrawledItems, setTotalCrawledItems] = useState<number>(0);
-
+  // Product Form States
+  const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
+  const [discountPrice, setDiscountPrice] = useState("");
+  const [discountDurationType, setDiscountDurationType] = useState<"none" | "lifetime" | "custom">("none");
+  const [discountDays, setDiscountDays] = useState("7");
+  const [deliveryType, setDeliveryType] = useState<"auto" | "manual">("auto");
   const [description, setDescription] = useState("");
   const [voucherCodes, setVoucherCodes] = useState("");
-  const [editingProductId, setEditingProductId] = useState<number | null>(null);
 
   const [productImageFile, setProductImageFile] = useState<File | null>(null);
   const [productImagePreview, setProductImagePreview] = useState<string | null>(null);
   const [existingProductImageUrl, setExistingProductImageUrl] = useState<string | null>(null);
 
+  // Category Form States
   const [categoryName, setCategoryName] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
   const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(null);
   const [existingCategoryImageUrl, setExistingCategoryImageUrl] = useState<string | null>(null);
 
+  // Ticket Management States
   const [activeTicketId, setActiveTicketId] = useState<number | null>(null);
   const [ticketReplyText, setTicketReplyText] = useState("");
   const [ticketStatusSelect, setTicketStatusSelect] = useState<"open" | "in_progress" | "resolved">("resolved");
@@ -127,40 +132,6 @@ export default function SecretAdminPortal() {
     if (data) setTickets(data);
   };
 
-  const handleStartMultiPageCrawl = async () => {
-    if (startPage < 1 || endPage < startPage) {
-      alert("Please enter a valid page range (e.g. Page 1 to 10)");
-      return;
-    }
-
-    setIsCrawling(true);
-    let totalItems = 0;
-
-    for (let p = startPage; p <= endPage; p++) {
-      setCrawlerProgress(`Fetching Page ${p} of ${endPage}... Do not close this browser window.`);
-      try {
-        const res = await fetch(`/api/cron/sync-bsv?page=${p}`);
-        const data = await res.json();
-        if (data.success) {
-          totalItems += data.count || 0;
-          setTotalCrawledItems(totalItems);
-          setCrawlerProgress(`Page ${p} Completed (${data.count} items imported). Total synced: ${totalItems}`);
-        } else {
-          setCrawlerProgress(`Page ${p} Notice: ${data.message || "No products found"}`);
-        }
-      } catch (err: any) {
-        setCrawlerProgress(`Error on Page ${p}: ${err.message}`);
-      }
-
-      await new Promise((r) => setTimeout(r, 600));
-    }
-
-    setIsCrawling(false);
-    setCrawlerProgress(`Sync Completed! Processed pages ${startPage} through ${endPage}. Total imported: ${totalItems}`);
-    await fetchProducts();
-    await fetchCategories();
-  };
-
   const handleProductImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -185,12 +156,12 @@ export default function SecretAdminPortal() {
       .upload(fileName, file, { cacheControl: "3600", upsert: false });
 
     if (error) throw error;
-
     const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
     return data.publicUrl;
   };
 
-  const handleProductSubmit = async (e: React.FormEvent) => {
+  // Step 1: Save Basic Information & Go to Step 2
+  const handleProductStepOneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     setMessage("");
@@ -200,30 +171,77 @@ export default function SecretAdminPortal() {
 
       if (productImageFile) {
         finalImageUrl = await uploadImageToStorage(productImageFile, "admin-products");
+      } else if (!finalImageUrl) {
+        // Fallback: Use category image if no custom image uploaded
+        const matchedCategory = categories.find(
+          (c) => c.name.toLowerCase() === category.toLowerCase()
+        );
+        if (matchedCategory && matchedCategory.image_url) {
+          finalImageUrl = matchedCategory.image_url;
+        }
+      }
+
+      let computedDiscountUntil: string | null = null;
+      if (discountDurationType === "custom" && discountDays) {
+        const d = new Date();
+        d.setDate(d.getDate() + parseInt(discountDays));
+        computedDiscountUntil = d.toISOString();
+      } else if (discountDurationType === "lifetime") {
+        computedDiscountUntil = "2099-12-31T23:59:59Z";
       }
 
       const payload = {
         title: title.trim(),
         category,
         price: parseFloat(price),
+        discount_price: discountPrice ? parseFloat(discountPrice) : null,
+        discount_until: computedDiscountUntil,
         image_url: finalImageUrl,
         description: description.trim(),
-        voucher_codes: voucherCodes.trim(),
         seller_name: "Official Store",
       };
 
       if (editingProductId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
         if (error) throw error;
-        setMessage("Official Product updated successfully.");
       } else {
-        const { error } = await supabase.from("products").insert([{ ...payload, views: 0, sold_count: 0 }]);
+        const { data, error } = await supabase
+          .from("products")
+          .insert([{ ...payload, delivery_type: "auto", voucher_codes: "", views: 0, sold_count: 0 }])
+          .select()
+          .single();
+
         if (error) throw error;
-        setMessage("Official Product published successfully.");
+        if (data) setEditingProductId(data.id);
       }
 
+      setProductStep(2);
+    } catch (err: any) {
+      setMessage(`Error: ${err.message}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Step 2: Finalize Delivery Method & Publish
+  const handleProductStepTwoSubmit = async () => {
+    if (!editingProductId) return;
+    setSubmitting(true);
+    setMessage("");
+
+    try {
+      const payload = {
+        delivery_type: deliveryType,
+        voucher_codes: deliveryType === "auto" ? voucherCodes.trim() : null,
+      };
+
+      const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
+      if (error) throw error;
+
+      setMessage("Product published & delivery setup completed successfully!");
       resetProductForm();
       await fetchProducts();
+      setActiveTab("all_products");
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
     } finally {
@@ -235,11 +253,16 @@ export default function SecretAdminPortal() {
     setEditingProductId(null);
     setTitle("");
     setPrice("");
+    setDiscountPrice("");
+    setDiscountDurationType("none");
+    setDiscountDays("7");
+    setDeliveryType("auto");
     setDescription("");
     setVoucherCodes("");
     setProductImageFile(null);
     setProductImagePreview(null);
     setExistingProductImageUrl(null);
+    setProductStep(1);
   };
 
   const startEditProduct = (p: Product) => {
@@ -247,12 +270,24 @@ export default function SecretAdminPortal() {
     setTitle(p.title);
     setCategory(p.category);
     setPrice(p.price.toString());
+    setDiscountPrice(p.discount_price ? p.discount_price.toString() : "");
+    if (p.discount_until) {
+      if (p.discount_until.startsWith("2099")) {
+        setDiscountDurationType("lifetime");
+      } else {
+        setDiscountDurationType("custom");
+      }
+    } else {
+      setDiscountDurationType("none");
+    }
+    setDeliveryType(p.delivery_type || "auto");
     setDescription(p.description);
     setVoucherCodes(p.voucher_codes || "");
     setExistingProductImageUrl(p.image_url);
     setProductImagePreview(p.image_url);
     setProductImageFile(null);
-    setActiveTab("products");
+    setProductStep(1);
+    setActiveTab("add_product");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -392,7 +427,7 @@ export default function SecretAdminPortal() {
 
           <div className="text-center">
             <Link href="/" className="text-[11px] text-slate-500 hover:text-slate-400">
-              ← Return to Storefront
+              ← Return to Home
             </Link>
           </div>
         </div>
@@ -402,41 +437,35 @@ export default function SecretAdminPortal() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <Link
-          href="https://inskeys.com"
+          href="/"
           className="flex items-center gap-3 group transition hover:opacity-95"
         >
-          <div className="shrink-0 flex items-center justify-center">
+          <div className="shrink-0">
             <Image
               src="/icon.png"
               alt="Inskeys"
-              width={36}
-              height={36}
-              className="w-9 h-9 object-contain"
+              width={38}
+              height={38}
+              className="w-9 h-9 object-contain bg-transparent"
             />
           </div>
           <div>
             <h1 className="text-xl font-bold text-white leading-tight group-hover:text-sky-400 transition">
               Inskeys Admin Console
             </h1>
-            <span className="text-xs text-sky-400 font-mono">Route: /4517 • Master Authorized</span>
+            <span className="text-xs text-sky-400 font-mono">Control Center</span>
           </div>
         </Link>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setActiveTab("crawler")}
-            className="text-xs bg-sky-500 hover:bg-sky-600 text-white font-bold px-3.5 py-2 rounded-xl transition cursor-pointer flex items-center gap-1.5 shadow-lg shadow-sky-950"
-          >
-            <span>🚀</span>
-            <span>Crawl Pages (1–437)</span>
-          </button>
           <Link
             href="/"
             className="text-xs bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl hover:text-white text-slate-400 transition"
           >
-            Storefront
+            Home
           </Link>
           <button
             onClick={handleLogout}
@@ -454,16 +483,30 @@ export default function SecretAdminPortal() {
         </div>
       )}
 
+      {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
         <button
-          onClick={() => setActiveTab("products")}
+          onClick={() => setActiveTab("all_products")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
-            activeTab === "products"
+            activeTab === "all_products"
               ? "bg-slate-800 text-sky-400 border border-slate-700"
               : "text-slate-400 hover:text-white"
           }`}
         >
-          📦 Products ({products.length})
+          📦 All Products ({products.length})
+        </button>
+        <button
+          onClick={() => {
+            resetProductForm();
+            setActiveTab("add_product");
+          }}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+            activeTab === "add_product"
+              ? "bg-sky-500 text-white font-bold"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          ➕ Add New Product
         </button>
         <button
           onClick={() => setActiveTab("categories")}
@@ -485,18 +528,520 @@ export default function SecretAdminPortal() {
         >
           🎫 Support Tickets ({tickets.length})
         </button>
-        <button
-          onClick={() => setActiveTab("crawler")}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
-            activeTab === "crawler"
-              ? "bg-sky-500 text-white"
-              : "text-slate-400 hover:text-white"
-          }`}
-        >
-          ⚡ Batch Crawler
-        </button>
       </div>
 
+      {/* TAB 1: ALL PRODUCTS */}
+      {activeTab === "all_products" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              Inventory & Catalog ({products.length})
+            </h2>
+            <button
+              onClick={() => {
+                resetProductForm();
+                setActiveTab("add_product");
+              }}
+              className="text-xs bg-sky-500 hover:bg-sky-600 text-white font-bold px-3 py-1.5 rounded-lg transition"
+            >
+              + Add Product
+            </button>
+          </div>
+
+          {products.length === 0 ? (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
+              No products found. Click "Add New Product" to create your first listing.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {products.map((p) => {
+                const stock = p.voucher_codes
+                  ? p.voucher_codes.split("\n").filter((c) => c.trim()).length
+                  : 0;
+
+                const hasDiscount = p.discount_price && p.discount_price < p.price;
+                const discountPercent = hasDiscount
+                  ? Math.round(((p.price - p.discount_price!) / p.price) * 100)
+                  : null;
+
+                return (
+                  <div
+                    key={p.id}
+                    className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3 hover:border-slate-700 transition"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-14 h-14 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center relative">
+                        {p.image_url ? (
+                          <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-[10px] text-slate-500">No Img</span>
+                        )}
+                        {hasDiscount && (
+                          <span className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-bold px-1 rounded">
+                            {discountPercent}% OFF
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs font-bold text-white truncate">{p.title}</h4>
+                          {p.delivery_type === "manual" ? (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                              🕒 Manual
+                            </span>
+                          ) : (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                              ⚡ Auto
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-0.5">
+                          {p.category} •{" "}
+                          {hasDiscount ? (
+                            <>
+                              <span className="line-through text-slate-500">${p.price}</span>{" "}
+                              <strong className="text-emerald-400">${p.discount_price}</strong>
+                            </>
+                          ) : (
+                            <strong>${p.price}</strong>
+                          )}
+                          {" "}• Stock:{" "}
+                          {p.delivery_type === "manual" ? (
+                            <strong className="text-amber-400">Manual Delivery</strong>
+                          ) : (
+                            <strong className={stock > 0 ? "text-emerald-400" : "text-rose-400"}>
+                              {stock} codes
+                            </strong>
+                          )}
+                          {" "}• Sold: {p.sold_count || 0}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={() => startEditProduct(p)}
+                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(p.id)}
+                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 2: ADD / EDIT PRODUCT (2-STEP FLOW) */}
+      {activeTab === "add_product" && (
+        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                {editingProductId ? "Edit Product" : "Add New Product"}
+              </h2>
+              <span className="text-xs text-slate-400">
+                {productStep === 1 ? "Step 1 of 2: Product Information" : "Step 2 of 2: Delivery Method Setup"}
+              </span>
+            </div>
+            {editingProductId && (
+              <button
+                type="button"
+                onClick={resetProductForm}
+                className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+
+          {/* STEP 1: Basic Information */}
+          {productStep === 1 && (
+            <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Title</label>
+                <input
+                  type="text"
+                  required
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g. Discord Nitro 1 Month Global"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                  >
+                    {categories.map((c) => (
+                      <option key={c.id} value={c.name}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Regular Price (USD $)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="9.99"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 mb-1">Discount Price (USD $ - Optional)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={discountPrice}
+                    onChange={(e) => setDiscountPrice(e.target.value)}
+                    placeholder="7.99"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                  />
+                </div>
+              </div>
+
+              {/* Discount Duration Controls */}
+              {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (
+                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+                  <span className="block text-xs font-bold text-sky-400">Discount Timer / Duration</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-400 mb-1">Offer Type</label>
+                      <select
+                        value={discountDurationType}
+                        onChange={(e) => setDiscountDurationType(e.target.value as any)}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                      >
+                        <option value="none">No Expiry Date (Until turned off)</option>
+                        <option value="lifetime">Lifetime Deal</option>
+                        <option value="custom">Set Specific Days</option>
+                      </select>
+                    </div>
+                    {discountDurationType === "custom" && (
+                      <div>
+                        <label className="block text-xs text-slate-400 mb-1">Number of Days Active</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={discountDays}
+                          onChange={(e) => setDiscountDays(e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Product Image (Optional - Fallback to Category Image) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
+                  Product Image (Optional — will automatically use Category photo if left blank)
+                </label>
+                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
+                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
+                    {productImagePreview ? (
+                      <img src={productImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] text-slate-500">Auto Cat.</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="file"
+                      id="admin-prod-img"
+                      accept="image/*"
+                      onChange={handleProductImageChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="admin-prod-img"
+                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
+                    >
+                      {productImagePreview ? "Change Image" : "Upload Custom Image"}
+                    </label>
+                    <p className="text-[11px] text-slate-500">If no image is uploaded, category image will show automatically</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Redemption instructions and key features..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white"
+                />
+              </div>
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950 flex items-center gap-2"
+                >
+                  <span>{submitting ? "Saving..." : "Next: Set Delivery Method →"}</span>
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 2: Choose Delivery Method */}
+          {productStep === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-base font-bold text-white mb-1">How will this product be delivered?</h3>
+                <p className="text-xs text-slate-400">
+                  Select your fulfillment method for <strong>{title}</strong>.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Option 1: Automatic Delivery */}
+                <div
+                  onClick={() => setDeliveryType("auto")}
+                  className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
+                    deliveryType === "auto"
+                      ? "bg-sky-500/10 border-sky-500"
+                      : "bg-slate-950 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">⚡</span>
+                    <input
+                      type="radio"
+                      checked={deliveryType === "auto"}
+                      onChange={() => setDeliveryType("auto")}
+                      className="cursor-pointer text-sky-500"
+                    />
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Automatic Delivery</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    License keys/vouchers are delivered automatically to buyer's screen and order history right after payment.
+                  </p>
+                </div>
+
+                {/* Option 2: Manual Delivery */}
+                <div
+                  onClick={() => setDeliveryType("manual")}
+                  className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
+                    deliveryType === "manual"
+                      ? "bg-amber-500/10 border-amber-500"
+                      : "bg-slate-950 border-slate-800 hover:border-slate-700"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-2xl">🕒</span>
+                    <input
+                      type="radio"
+                      checked={deliveryType === "manual"}
+                      onChange={() => setDeliveryType("manual")}
+                      className="cursor-pointer text-amber-500"
+                    />
+                  </div>
+                  <h4 className="text-sm font-bold text-white">Manual Delivery</h4>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    You fulfill the order manually. A <strong>🕒 Manual Delivery</strong> badge will appear on the storefront.
+                  </p>
+                </div>
+              </div>
+
+              {/* If Automatic Delivery: Show Codes input */}
+              {deliveryType === "auto" ? (
+                <div className="space-y-2 bg-slate-950 border border-slate-800 rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-300">
+                      Voucher / License Codes (One code per line)
+                    </label>
+                    <span className="text-xs font-mono text-sky-400">
+                      Stock: {voucherCodes.split("\n").filter((c) => c.trim()).length} codes
+                    </span>
+                  </div>
+                  <textarea
+                    rows={4}
+                    value={voucherCodes}
+                    onChange={(e) => setVoucherCodes(e.target.value)}
+                    placeholder="CODE-XXXXX-1111&#10;CODE-YYYYY-2222"
+                    className="w-full font-mono bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none"
+                  />
+                </div>
+              ) : (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
+                  🕒 Manual Delivery selected. No keys are required in advance. Buyers will be notified to contact you or wait for manual order dispatch.
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-2">
+                <button
+                  type="button"
+                  onClick={() => setProductStep(1)}
+                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                >
+                  ← Back to Details
+                </button>
+                <button
+                  type="button"
+                  disabled={submitting}
+                  onClick={handleProductStepTwoSubmit}
+                  className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-emerald-950"
+                >
+                  {submitting ? "Finalizing..." : "Complete & Publish Product ✓"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: CATEGORIES */}
+      {activeTab === "categories" && (
+        <div className="space-y-6">
+          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                {editingCategoryId ? "Edit Category & Photo" : "Add New Category"}
+              </h2>
+              {editingCategoryId && (
+                <button
+                  type="button"
+                  onClick={resetCategoryForm}
+                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleCategorySubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Steam, Xbox, PlayStation, Nintendo"
+                  value={categoryName}
+                  onChange={(e) => setCategoryName(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Icon / Photo</label>
+                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
+                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
+                    {categoryImagePreview ? (
+                      <img src={categoryImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-[10px] text-slate-500">No Photo</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="file"
+                      id="admin-cat-img"
+                      accept="image/*"
+                      onChange={handleCategoryImageChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="admin-cat-img"
+                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
+                    >
+                      {categoryImagePreview ? "Change Category Image" : "Upload Category Image"}
+                    </label>
+                    <p className="text-[11px] text-slate-500">Used automatically for all products in this category</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting}
+                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950"
+              >
+                {submitting
+                  ? "Processing..."
+                  : editingCategoryId
+                  ? "Update Category"
+                  : "Save Category"}
+              </button>
+            </form>
+          </div>
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              All Existing Categories ({categories.length})
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {categories.map((cat) => {
+                const count = products.filter(
+                  (p) => p.category.toLowerCase() === cat.name.toLowerCase()
+                ).length;
+
+                return (
+                  <div
+                    key={cat.id}
+                    className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                        {cat.image_url ? (
+                          <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-slate-500">🎮</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="text-xs font-bold text-white truncate">{cat.name}</h4>
+                        <p className="text-[10px] text-slate-400">{count} products assigned</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => startEditCategory(cat)}
+                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteCategory(cat.id)}
+                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: SUPPORT TICKETS */}
       {activeTab === "tickets" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -613,387 +1158,6 @@ export default function SecretAdminPortal() {
               ))}
             </div>
           )}
-        </div>
-      )}
-
-      {activeTab === "crawler" && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
-          <div>
-            <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block mb-1">
-              Automated Catalog Sync
-            </span>
-            <h2 className="text-lg font-bold text-white">
-              Sync External Catalog Across Batches (Pages 1 to 437)
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-              To prevent execution timeouts, select page intervals (e.g. Page 1 to 10). Products, categories, images, and price calculations (+5% margin) will sync safely into Supabase.
-            </p>
-          </div>
-
-          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Start Page
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="437"
-                value={startPage}
-                onChange={(e) => setStartPage(parseInt(e.target.value) || 1)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                End Page (Up to 437)
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="437"
-                value={endPage}
-                onChange={(e) => setEndPage(parseInt(e.target.value) || 1)}
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-4">
-            <button
-              onClick={handleStartMultiPageCrawl}
-              disabled={isCrawling}
-              className="w-full sm:w-auto px-6 py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-sky-950 flex items-center justify-center gap-2"
-            >
-              <span>{isCrawling ? "Crawling in Progress..." : `Start Sync for Pages ${startPage} to ${endPage}`}</span>
-            </button>
-            <span className="text-xs text-slate-400 font-mono">
-              Total Imported: <strong className="text-sky-400">{totalCrawledItems}</strong> products
-            </span>
-          </div>
-
-          {crawlerProgress && (
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-emerald-400 font-mono leading-relaxed">
-              {crawlerProgress}
-            </div>
-          )}
-        </div>
-      )}
-
-      {activeTab === "products" && (
-        <div className="space-y-6">
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
-                {editingProductId ? "Edit Official Listing & Codes" : "Add Official Store Listing"}
-              </h2>
-              {editingProductId && (
-                <button
-                  type="button"
-                  onClick={resetProductForm}
-                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
-                >
-                  Cancel Edit
-                </button>
-              )}
-            </div>
-
-            <form onSubmit={handleProductSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Title</label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. Steam $10 USD Global Key"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Category</label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
-                  >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.name}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Price (USD $)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="9.99"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Image</label>
-                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
-                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
-                    {productImagePreview ? (
-                      <img src={productImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-[10px] text-slate-500">No Image</span>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <input
-                      type="file"
-                      id="admin-prod-img"
-                      accept="image/*"
-                      onChange={handleProductImageChange}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="admin-prod-img"
-                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
-                    >
-                      {productImagePreview ? "Change Image" : "Upload Image from Device"}
-                    </label>
-                    <p className="text-[11px] text-slate-500">Supports JPG, PNG, WEBP</p>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
-                <textarea
-                  rows={2}
-                  required
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Redemption instructions and details..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white"
-                />
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-300">
-                    Voucher / License Codes (One code per line)
-                  </label>
-                  <span className="text-xs font-mono text-sky-400">
-                    Stock: {voucherCodes.split("\n").filter((c) => c.trim()).length} codes
-                  </span>
-                </div>
-                <textarea
-                  rows={3}
-                  value={voucherCodes}
-                  onChange={(e) => setVoucherCodes(e.target.value)}
-                  placeholder="CODE-XXXXX-1111&#10;CODE-YYYYY-2222"
-                  className="w-full font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950"
-              >
-                {submitting
-                  ? "Processing..."
-                  : editingProductId
-                  ? "Update Official Product"
-                  : "Publish Official Product"}
-              </button>
-            </form>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              All Listed Products ({products.length})
-            </h3>
-            <div className="space-y-2">
-              {products.map((p) => {
-                const stock = p.voucher_codes
-                  ? p.voucher_codes.split("\n").filter((c) => c.trim()).length
-                  : 0;
-
-                return (
-                  <div
-                    key={p.id}
-                    className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
-                        {p.image_url ? (
-                          <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-[10px] text-slate-500 flex items-center justify-center h-full">
-                            No Img
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-white truncate">{p.title}</h4>
-                        <p className="text-[10px] text-slate-400 mt-0.5">
-                          {p.category} • ${p.price} • Stock:{" "}
-                          <strong className={stock > 0 ? "text-emerald-400" : "text-rose-400"}>
-                            {stock} codes
-                          </strong>{" "}
-                          • Sold: {p.sold_count || 0}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => startEditProduct(p)}
-                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
-                      >
-                        Edit / Stock
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(p.id)}
-                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "categories" && (
-        <div className="space-y-6">
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
-                {editingCategoryId ? "Edit Category & Photo" : "Add New Category"}
-              </h2>
-              {editingCategoryId && (
-                <button
-                  type="button"
-                  onClick={resetCategoryForm}
-                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
-                >
-                  Cancel Edit
-                </button>
-              )}
-            </div>
-
-            <form onSubmit={handleCategorySubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Steam, Xbox, PlayStation, Nintendo"
-                  value={categoryName}
-                  onChange={(e) => setCategoryName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Icon / Photo</label>
-                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
-                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
-                    {categoryImagePreview ? (
-                      <img src={categoryImagePreview} alt="Preview" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-[10px] text-slate-500">No Photo</span>
-                    )}
-                  </div>
-                  <div className="flex-1 space-y-1">
-                    <input
-                      type="file"
-                      id="admin-cat-img"
-                      accept="image/*"
-                      onChange={handleCategoryImageChange}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="admin-cat-img"
-                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
-                    >
-                      {categoryImagePreview ? "Change Category Image" : "Upload Category Image"}
-                    </label>
-                    <p className="text-[11px] text-slate-500">Square PNG, JPG, or SVG recommended</p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950"
-              >
-                {submitting
-                  ? "Processing..."
-                  : editingCategoryId
-                  ? "Update Category"
-                  : "Save Category"}
-              </button>
-            </form>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              All Existing Categories ({categories.length})
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {categories.map((cat) => {
-                const count = products.filter(
-                  (p) => p.category.toLowerCase() === cat.name.toLowerCase()
-                ).length;
-
-                return (
-                  <div
-                    key={cat.id}
-                    className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
-                        {cat.image_url ? (
-                          <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <span className="text-xs text-slate-500">🎮</span>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-white truncate">{cat.name}</h4>
-                        <p className="text-[10px] text-slate-400">{count} products assigned</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => startEditCategory(cat)}
-                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteCategory(cat.id)}
-                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       )}
     </div>
