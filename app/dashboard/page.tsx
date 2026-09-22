@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -69,8 +69,10 @@ interface ChatMessage {
   created_at: string;
 }
 
-export default function BuyerDashboard() {
+function DashboardContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [shopName, setShopName] = useState<string>("Merchant Store");
@@ -96,7 +98,7 @@ export default function BuyerDashboard() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // 2-Step Product Creation States (Identical to /4517)
+  // 2-Step Product Creation States
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [productStep, setProductStep] = useState<1 | 2>(1);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
@@ -117,6 +119,7 @@ export default function BuyerDashboard() {
   const [activeChatEmail, setActiveChatEmail] = useState<string>("contact@inskeys.com");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [typedMessage, setTypedMessage] = useState("");
+  const chatBottomRef = useRef<HTMLDivElement>(null);
 
   // Support Ticket Form States
   const [ticketSubject, setTicketSubject] = useState("");
@@ -150,7 +153,7 @@ export default function BuyerDashboard() {
         setShopName(user.user_metadata.full_name);
       }
 
-      // Fetch Categories for product dropdown
+      // Fetch Categories
       const { data: catData } = await supabase
         .from("categories")
         .select("*")
@@ -189,12 +192,84 @@ export default function BuyerDashboard() {
     loadUserData();
   }, [router]);
 
-  // Selected Category Auto-Image inherit
+  // URL Parameters থেকে Messages Tab ও Contact Email হ্যান্ডল করা
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    const contactParam = searchParams.get("contact");
+
+    if (tabParam === "messages") {
+      setActiveTab("messages");
+    }
+
+    if (contactParam) {
+      const cleanContact = decodeURIComponent(contactParam);
+      setActiveChatEmail(cleanContact);
+      setConversations((prev) => {
+        if (!prev.includes(cleanContact)) {
+          return [cleanContact, ...prev];
+        }
+        return prev;
+      });
+    }
+  }, [searchParams]);
+
+  // Realtime Messages Subscription
+  useEffect(() => {
+    if (!user?.email) return;
+
+    const channel = supabase
+      .channel("realtime:direct_messages")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "direct_messages",
+        },
+        (payload) => {
+          const newMsg = payload.new as ChatMessage;
+          if (
+            newMsg.sender_email === user.email ||
+            newMsg.receiver_email === user.email
+          ) {
+            setChatMessages((prev) => {
+              if (prev.some((m) => m.id === newMsg.id)) return prev;
+              return [...prev, newMsg];
+            });
+
+            const otherEmail =
+              newMsg.sender_email === user.email
+                ? newMsg.receiver_email
+                : newMsg.sender_email;
+
+            setConversations((prev) => {
+              if (!prev.includes(otherEmail)) {
+                return [otherEmail, ...prev];
+              }
+              return prev;
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  // নতুন মেসেজ আসলে নিচে স্ক্রোল করা
+  useEffect(() => {
+    if (activeTab === "messages") {
+      chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatMessages, activeTab]);
+
   const activeSelectedCategory = categories.find(
     (c) => c.name.toLowerCase() === category.toLowerCase()
   );
 
-  // Membership Duration Calculator (Years, Months, Days)
+  // মেম্বারশিপের বয়স হিসেব (বছর, মাস ও দিন)
   const getMembershipDuration = (createdAt?: string) => {
     if (!createdAt) return "1 day";
     const start = new Date(createdAt);
@@ -251,12 +326,15 @@ export default function BuyerDashboard() {
           )
         );
         if (contacts.length > 0) {
-          setConversations(contacts);
-          if (!contacts.includes(activeChatEmail)) setActiveChatEmail(contacts[0]);
+          setConversations((prev) => Array.from(new Set([...contacts, ...prev])));
+          // URL-এ আগে থেকে কোনো কন্টাক্ট না থাকলে তবেই প্রথমটি সেট করবে
+          if (!searchParams.get("contact")) {
+            setActiveChatEmail(contacts[0]);
+          }
         }
       }
-    } catch {
-      // Fallback
+    } catch (err) {
+      console.error("Error loading chat messages:", err);
     }
   };
 
@@ -264,31 +342,36 @@ export default function BuyerDashboard() {
     e.preventDefault();
     if (!typedMessage.trim() || !user || !user.email) return;
 
+    const messageText = typedMessage.trim();
+    setTypedMessage("");
+
     const newMsg: ChatMessage = {
       id: Date.now(),
       sender_email: user.email,
       receiver_email: activeChatEmail,
-      message: typedMessage.trim(),
+      message: messageText,
       created_at: new Date().toISOString(),
     };
 
+    // অপটিমিস্টিক আপডেট
     setChatMessages((prev) => [...prev, newMsg]);
-    setTypedMessage("");
 
     try {
-      await supabase.from("direct_messages").insert([
+      const { error } = await supabase.from("direct_messages").insert([
         {
           sender_email: user.email,
           receiver_email: activeChatEmail,
-          message: newMsg.message,
+          message: messageText,
         },
       ]);
-    } catch (err) {
+      if (error) throw error;
+    } catch (err: any) {
       console.error("Message send error:", err);
+      alert(`Could not deliver message: ${err.message || "Please make sure direct_messages table exists in Supabase"}`);
     }
   };
 
-  // 2-Step Product Submission (Seller flow: seller_name != Official Store)
+  // 2-Step Product Submission (Seller Flow)
   const handleProductStepOneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!category) {
@@ -317,8 +400,8 @@ export default function BuyerDashboard() {
         discount_until: computedDiscountUntil,
         image_url: autoCategoryImageUrl,
         description: description.trim(),
-        seller_id: user.id, // Authenticated Seller ID
-        seller_name: shopName, // Merchant Shop Name (NOT Official Store)
+        seller_id: user.id,
+        seller_name: shopName,
       };
 
       if (editingProductId) {
@@ -356,7 +439,6 @@ export default function BuyerDashboard() {
       const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
       if (error) throw error;
 
-      // Refresh list
       const { data: updatedProdList } = await supabase
         .from("products")
         .select("*")
@@ -449,14 +531,28 @@ export default function BuyerDashboard() {
   const fullName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Valued Customer";
   const country = user?.user_metadata?.country || "International";
 
-  const rawLevel = user?.user_metadata?.buyer_level || (orders.length > 0 ? Math.min(orders.length + 1, 10) : 1);
-  const currentBuyerLevel = Math.min(Math.max(Number(rawLevel) || 1, 1), 10);
-  const levelDetails = BUYER_LEVELS[currentBuyerLevel];
-
   const completedOrders = orders.filter((o) => o.payment_status === "completed" || o.status === "completed" || o.status === "Paid");
   const totalSpent = completedOrders.reduce((sum, o) => sum + (Number(o.amount || o.price) || 0), 0);
   const registeredDate = user?.created_at ? user.created_at.split("T")[0] : "2026-01-01";
   const membershipDurationText = getMembershipDuration(user?.created_at);
+
+  // স্বয়ংক্রিয় লেভেল গণনা (অর্ডারের সংখ্যা অনুযায়ী) অথবা ম্যানুয়াল অ্যাডমিন ওভাররাইড
+  const calculateAutoLevel = (count: number) => {
+    if (count >= 2500) return 10;
+    if (count >= 1000) return 9;
+    if (count >= 500) return 8;
+    if (count >= 250) return 7;
+    if (count >= 100) return 6;
+    if (count >= 50) return 5;
+    if (count >= 25) return 4;
+    if (count >= 10) return 3;
+    if (count >= 3) return 2;
+    return 1;
+  };
+
+  const manualLevel = user?.user_metadata?.buyer_level || user?.user_metadata?.seller_level;
+  const currentBuyerLevel = manualLevel ? Number(manualLevel) : calculateAutoLevel(completedOrders.length);
+  const levelDetails = BUYER_LEVELS[currentBuyerLevel] || BUYER_LEVELS[1];
 
   const activeMessages = chatMessages.filter(
     (m) =>
@@ -512,7 +608,7 @@ export default function BuyerDashboard() {
           </p>
         </div>
 
-        {/* 2-Column Responsive Layout */}
+        {/* 2-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
           {/* LEFT CONTENT (8 COLS) */}
@@ -677,7 +773,7 @@ export default function BuyerDashboard() {
               </>
             )}
 
-            {/* VIEW 2: "MY PRODUCTS" - 2-STEP SYSTEM IDENTICAL TO /4517 */}
+            {/* VIEW 2: "MY PRODUCTS" (2-STEP SYSTEM IDENTICAL TO /4517) */}
             {activeTab === "products" && (
               <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
@@ -709,7 +805,6 @@ export default function BuyerDashboard() {
                   </div>
                 </div>
 
-                {/* 2-STEP PRODUCT CREATION MODAL / PANEL (EXACTLY AS /4517) */}
                 {showAddProductModal && (
                   <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-6">
                     <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -748,7 +843,6 @@ export default function BuyerDashboard() {
                           />
                         </div>
 
-                        {/* Category Dropdown with Automatic Category Photo Preview */}
                         <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
                           <label className="block text-xs font-semibold text-slate-300">
                             Category & Product Icon
@@ -812,7 +906,6 @@ export default function BuyerDashboard() {
                           </div>
                         </div>
 
-                        {/* Discount Duration Controls */}
                         {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (
                           <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
                             <span className="block text-xs font-bold text-sky-400">Discount Timer / Duration</span>
@@ -881,7 +974,6 @@ export default function BuyerDashboard() {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {/* Option 1: Automatic Delivery */}
                           <div
                             onClick={() => setDeliveryType("auto")}
                             className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
@@ -905,7 +997,6 @@ export default function BuyerDashboard() {
                             </p>
                           </div>
 
-                          {/* Option 2: Manual Delivery */}
                           <div
                             onClick={() => setDeliveryType("manual")}
                             className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
@@ -930,7 +1021,6 @@ export default function BuyerDashboard() {
                           </div>
                         </div>
 
-                        {/* If Automatic Delivery: Codes input */}
                         {deliveryType === "auto" ? (
                           <div className="space-y-2 bg-slate-900 border border-slate-800 rounded-xl p-4">
                             <div className="flex items-center justify-between mb-1">
@@ -977,7 +1067,7 @@ export default function BuyerDashboard() {
                   </div>
                 )}
 
-                {/* Products Table (Screenshot Layout) */}
+                {/* Products Table */}
                 <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
                   <table className="w-full text-left text-xs text-slate-300">
                     <thead className="bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
@@ -1038,7 +1128,7 @@ export default function BuyerDashboard() {
                               <td className="p-3.5 text-right">
                                 <button
                                   type="button"
-                                  onClick={() => alert(`Product #${p.id} editor options.`)}
+                                  onClick={() => alert(`Product #${p.id} options`)}
                                   className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white transition cursor-pointer"
                                 >
                                   Action ▾
@@ -1101,12 +1191,13 @@ export default function BuyerDashboard() {
               </div>
             )}
 
-            {/* VIEW 4: MESSENGER */}
+            {/* VIEW 4: MESSENGER (REALTIME CHAT) */}
             {activeTab === "messages" && (
               <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl h-[520px] flex flex-col md:flex-row">
-                <div className="w-full md:w-56 bg-slate-950 border-r border-slate-800 p-3 space-y-2 overflow-y-auto">
+                {/* Left Conversations Sidebar */}
+                <div className="w-full md:w-60 bg-slate-950 border-r border-slate-800 p-3 space-y-2 overflow-y-auto shrink-0">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-2">
-                    Conversations
+                    Conversations ({conversations.length})
                   </span>
                   {conversations.map((contactEmail) => (
                     <button
@@ -1118,39 +1209,44 @@ export default function BuyerDashboard() {
                           : "text-slate-300 hover:bg-slate-900"
                       }`}
                     >
-                      <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-[10px]">
+                      <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
                         {contactEmail.charAt(0).toUpperCase()}
                       </div>
-                      <span className="truncate flex-1">{contactEmail.split("@")[0]}</span>
+                      <span className="truncate flex-1 font-mono text-[11px]">{contactEmail.split("@")[0]}</span>
                     </button>
                   ))}
                 </div>
 
+                {/* Right Messenger Chat Window */}
                 <div className="flex-1 flex flex-col justify-between bg-slate-900/50">
                   <div className="p-3.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
                       <span className="text-xs font-bold text-white font-mono">{activeChatEmail}</span>
                     </div>
-                    <span className="text-[10px] text-slate-500">Direct In-Site Messaging</span>
+                    <span className="text-[10px] text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded">
+                      Direct Messaging
+                    </span>
                   </div>
 
                   <div className="flex-1 p-4 overflow-y-auto space-y-3">
                     {activeMessages.length === 0 ? (
-                      <div className="h-full flex items-center justify-center text-xs text-slate-500">
-                        No messages exchanged yet. Send a message below to start chatting.
+                      <div className="h-full flex flex-col items-center justify-center text-xs text-slate-500 space-y-2">
+                        <span className="text-2xl">💬</span>
+                        <p>No messages exchanged with this user yet.</p>
+                        <p className="text-[10px] text-slate-600">Type a message below to start the conversation.</p>
                       </div>
                     ) : (
                       activeMessages.map((msg, i) => (
                         <div
-                          key={i}
+                          key={msg.id || i}
                           className={`flex ${msg.sender_email === user.email ? "justify-end" : "justify-start"}`}
                         >
                           <div
                             className={`max-w-[75%] p-3 rounded-2xl text-xs leading-relaxed ${
                               msg.sender_email === user.email
-                                ? "bg-sky-500 text-white rounded-br-none"
-                                : "bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none"
+                                ? "bg-sky-500 text-white rounded-br-none shadow-md"
+                                : "bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-md"
                             }`}
                           >
                             <p>{msg.message}</p>
@@ -1161,6 +1257,7 @@ export default function BuyerDashboard() {
                         </div>
                       ))
                     )}
+                    <div ref={chatBottomRef} />
                   </div>
 
                   <form onSubmit={handleSendMessage} className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
@@ -1174,7 +1271,7 @@ export default function BuyerDashboard() {
                     <button
                       type="submit"
                       disabled={!typedMessage.trim()}
-                      className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl transition cursor-pointer"
+                      className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md"
                     >
                       Send →
                     </button>
@@ -1610,5 +1707,19 @@ export default function BuyerDashboard() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function BuyerDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center text-sky-400 font-mono text-sm">
+          Loading Inskeys Account Console...
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
   );
 }
