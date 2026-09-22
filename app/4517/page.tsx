@@ -50,7 +50,7 @@ export default function SecretAdminPortal() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
 
-  // Product Form States (No separate image upload needed)
+  // Product Form States
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
@@ -114,7 +114,6 @@ export default function SecretAdminPortal() {
     const { data } = await supabase.from("categories").select("*").order("name");
     if (data) {
       setCategories(data);
-      if (data.length > 0 && !category) setCategory(data[0].name);
     }
   };
 
@@ -128,7 +127,6 @@ export default function SecretAdminPortal() {
     if (data) setTickets(data);
   };
 
-  // Get active category object & its image URL automatically
   const activeSelectedCategory = categories.find(
     (c) => c.name.toLowerCase() === category.toLowerCase()
   );
@@ -153,14 +151,17 @@ export default function SecretAdminPortal() {
     return data.publicUrl;
   };
 
-  // Step 1: Save Basic Info (Auto-attaches Category Image)
   const handleProductStepOneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!category) {
+      setMessage("Please select a valid product category.");
+      return;
+    }
+
     setSubmitting(true);
     setMessage("");
 
     try {
-      // Direct assignment of Category Photo
       const autoCategoryImageUrl = activeSelectedCategory?.image_url || null;
 
       let computedDiscountUntil: string | null = null;
@@ -205,7 +206,6 @@ export default function SecretAdminPortal() {
     }
   };
 
-  // Step 2: Finalize Delivery Method
   const handleProductStepTwoSubmit = async () => {
     if (!editingProductId) return;
     setSubmitting(true);
@@ -234,6 +234,7 @@ export default function SecretAdminPortal() {
   const resetProductForm = () => {
     setEditingProductId(null);
     setTitle("");
+    setCategory("");
     setPrice("");
     setDiscountPrice("");
     setDiscountDurationType("none");
@@ -295,7 +296,6 @@ export default function SecretAdminPortal() {
         const { error } = await supabase.from("categories").update(payload).eq("id", editingCategoryId);
         if (error) throw error;
 
-        // Auto sync updated category image to all existing products under this category
         if (finalCatImageUrl) {
           await supabase
             .from("products")
@@ -377,7 +377,7 @@ export default function SecretAdminPortal() {
             </div>
             <h1 className="text-lg font-bold text-white">Administrative Key</h1>
             <p className="text-xs text-slate-400">
-              Enter your master key to access the control panel
+              Enter master key to access the control panel
             </p>
           </div>
 
@@ -536,7 +536,7 @@ export default function SecretAdminPortal() {
 
           {products.length === 0 ? (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
-              No products found. Click "Add New Product" to create your first listing.
+              No products listed yet. Click "Add New Product" to create your first listing.
             </div>
           ) : (
             <div className="space-y-2">
@@ -546,7 +546,7 @@ export default function SecretAdminPortal() {
                   : 0;
 
                 const hasDiscount = p.discount_price && p.discount_price < p.price;
-                const discountPercent = hasDiscount
+                const discountPercent = hasDiscount && p.price > 0
                   ? Math.round(((p.price - p.discount_price!) / p.price) * 100)
                   : null;
 
@@ -626,7 +626,7 @@ export default function SecretAdminPortal() {
         </div>
       )}
 
-      {/* TAB 2: ADD / EDIT PRODUCT (AUTOMATIC PHOTO BINDING) */}
+      {/* TAB 2: ADD / EDIT PRODUCT */}
       {activeTab === "add_product" && (
         <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -660,17 +660,17 @@ export default function SecretAdminPortal() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Discord Nitro 1 Month Global"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
 
-              {/* Category Dropdown + Real-Time Category Photo Preview */}
+              {/* Category Dropdown with Clean Placeholder */}
               <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
                 <label className="block text-xs font-semibold text-slate-300">
-                  Category & Automatic Product Image
+                  Category & Product Icon
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-slate-900 rounded-xl overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shrink-0 flex items-center justify-center">
                     {activeSelectedCategory?.image_url ? (
                       <img
                         src={activeSelectedCategory.image_url}
@@ -678,23 +678,25 @@ export default function SecretAdminPortal() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-2xl">🎮</span>
+                      <span className="text-slate-600 text-xs font-mono">No Icon</span>
                     )}
                   </div>
                   <div className="flex-1 space-y-1">
                     <select
+                      required
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
                     >
+                      <option value="" disabled>-- Select a Category --</option>
                       {categories.map((c) => (
                         <option key={c.id} value={c.name}>
                           {c.name}
                         </option>
                       ))}
                     </select>
-                    <p className="text-[11px] text-sky-400">
-                      ✓ এই ক্যাটাগরির নির্ধারিত ছবিটি স্বয়ংক্রিয়ভাবে প্রোডাক্টের থাম্বনেইল হিসেবে সেট হয়ে গেছে। আলাদা কোনো ছবি আপলোড করতে হবে না।
+                    <p className="text-[11px] text-slate-500">
+                      Product image will automatically inherit the official icon of the selected category.
                     </p>
                   </div>
                 </div>
@@ -710,7 +712,7 @@ export default function SecretAdminPortal() {
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="9.99"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
                   />
                 </div>
                 <div>
@@ -721,7 +723,7 @@ export default function SecretAdminPortal() {
                     value={discountPrice}
                     onChange={(e) => setDiscountPrice(e.target.value)}
                     placeholder="7.99"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
                   />
                 </div>
               </div>
@@ -738,7 +740,7 @@ export default function SecretAdminPortal() {
                         onChange={(e) => setDiscountDurationType(e.target.value as any)}
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
                       >
-                        <option value="none">No Expiry Date (Until turned off)</option>
+                        <option value="none">No Expiry Date (Until manually changed)</option>
                         <option value="lifetime">Lifetime Deal</option>
                         <option value="custom">Set Specific Days</option>
                       </select>
@@ -767,8 +769,8 @@ export default function SecretAdminPortal() {
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Redemption instructions and key features..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white"
+                  placeholder="Redemption instructions, region limitations, and key details..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
 
@@ -800,7 +802,7 @@ export default function SecretAdminPortal() {
                   onClick={() => setDeliveryType("auto")}
                   className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
                     deliveryType === "auto"
-                      ? "bg-sky-500/10 border-sky-500"
+                      ? "bg-sky-500/10 border-sky-500 ring-1 ring-sky-500/50"
                       : "bg-slate-950 border-slate-800 hover:border-slate-700"
                   }`}
                 >
@@ -815,7 +817,7 @@ export default function SecretAdminPortal() {
                   </div>
                   <h4 className="text-sm font-bold text-white">Automatic Delivery</h4>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    License keys/vouchers are delivered instantly to buyer screen right after payment.
+                    License keys/vouchers are delivered instantly to buyer's screen right after payment confirmation.
                   </p>
                 </div>
 
@@ -824,7 +826,7 @@ export default function SecretAdminPortal() {
                   onClick={() => setDeliveryType("manual")}
                   className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
                     deliveryType === "manual"
-                      ? "bg-amber-500/10 border-amber-500"
+                      ? "bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50"
                       : "bg-slate-950 border-slate-800 hover:border-slate-700"
                   }`}
                 >
@@ -839,7 +841,7 @@ export default function SecretAdminPortal() {
                   </div>
                   <h4 className="text-sm font-bold text-white">Manual Delivery</h4>
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    You fulfill the order manually. A <strong>🕒 Manual Delivery</strong> badge will appear on the storefront.
+                    You fulfill the order manually. A <strong>🕒 Manual Delivery</strong> badge will appear on storefront.
                   </p>
                 </div>
               </div>
@@ -865,7 +867,7 @@ export default function SecretAdminPortal() {
                 </div>
               ) : (
                 <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
-                  🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual fulfillment.
+                  🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual dispatch.
                 </div>
               )}
 
@@ -891,7 +893,7 @@ export default function SecretAdminPortal() {
         </div>
       )}
 
-      {/* TAB 3: CATEGORIES (Manage Category & Image) */}
+      {/* TAB 3: CATEGORIES */}
       {activeTab === "categories" && (
         <div className="space-y-6">
           <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">

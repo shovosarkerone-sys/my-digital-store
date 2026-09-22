@@ -6,7 +6,7 @@ import Image from "next/image";
 export default function AboutPage() {
   const stats = [
     { label: "Orders Delivered", value: "10,000+", change: "+99.8% Success Rate" },
-    { label: "Escrow Protection", value: "100%", change: "24-36h Safety Hold" },
+    { label: "Buyer Protection", value: "100%", change: "36-Hour Safety Hold" },
     { label: "Catalog Products", value: "500+", change: "Growing Daily" },
     { label: "Registered Traders", value: "5,000+", change: "Worldwide Users" },
   ];
@@ -76,7 +76,7 @@ export default function AboutPage() {
             Your Premier Destination for Digital Entertainment
           </h1>
           <p className="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            No matter your platform—PC, console, or mobile—Inskeys connects verified sellers and global buyers with unbeatable prices, secure crypto payments, and guaranteed buyer escrow protection.
+            No matter your platform—PC, console, or mobile—Inskeys connects verified sellers and global buyers with unbeatable prices, secure crypto payments, and guaranteed 36-Hour Buyer Protection.
           </p>
 
           <div className="flex items-center justify-center gap-3 pt-3">
@@ -126,7 +126,7 @@ export default function AboutPage() {
               A Transparent, High-Speed Marketplace Built for Everyone
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Inskeys was founded to eliminate excessive middleman commissions and payment hurdles in digital trading. Whether you are buying games or managing a high-volume merchant store, we provide an automated, dispute-free environment.
+              Inskeys was founded to eliminate excessive middleman commissions and payment hurdles in digital trading. Whether you are buying games or managing a high-volume merchant store, we provide an automated, dispute-free environment backed by strict buyer safety standards.
             </p>
           </div>
 
@@ -138,7 +138,7 @@ export default function AboutPage() {
                 <h3 className="text-xs font-bold text-white uppercase tracking-wide">For Buyers</h3>
               </div>
               <ul className="text-xs text-slate-400 space-y-2 leading-relaxed">
-                <li>• <strong>Escrow Protection:</strong> Payment is safely held for 24 to 36 hours until you verify your code.</li>
+                <li>• <strong>36-Hour Buyer Protection:</strong> Funds are securely held for 36 hours until you verify and activate your code.</li>
                 <li>• <strong>Instant & Flexible:</strong> Immediate automated delivery or transparent manual order fulfillment.</li>
                 <li>• <strong>Direct Crypto Checkout:</strong> Pay instantly with your preferred crypto with low network fees.</li>
               </ul>
