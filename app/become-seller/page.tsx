@@ -1,36 +1,228 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-const COUNTRIES = [
-  "Bangladesh",
-  "India",
-  "Pakistan",
-  "United States",
-  "United Kingdom",
-  "Saudi Arabia",
-  "United Arab Emirates",
-  "Canada",
-  "Malaysia",
-  "Kuwait",
-  "Qatar",
-  "Australia",
-  "Germany",
-  "Singapore",
-  "Other",
+// Complete Global ISO Country List with Country Codes for Flags
+const ALL_COUNTRIES = [
+  { name: "Afghanistan", code: "af" },
+  { name: "Albania", code: "al" },
+  { name: "Algeria", code: "dz" },
+  { name: "Andorra", code: "ad" },
+  { name: "Angola", code: "ao" },
+  { name: "Antigua and Barbuda", code: "ag" },
+  { name: "Argentina", code: "ar" },
+  { name: "Armenia", code: "am" },
+  { name: "Australia", code: "au" },
+  { name: "Austria", code: "at" },
+  { name: "Azerbaijan", code: "az" },
+  { name: "Bahamas", code: "bs" },
+  { name: "Bahrain", code: "bh" },
+  { name: "Bangladesh", code: "bd" },
+  { name: "Barbados", code: "bb" },
+  { name: "Belarus", code: "by" },
+  { name: "Belgium", code: "be" },
+  { name: "Belize", code: "bz" },
+  { name: "Benin", code: "bj" },
+  { name: "Bhutan", code: "bt" },
+  { name: "Bolivia", code: "bo" },
+  { name: "Bosnia and Herzegovina", code: "ba" },
+  { name: "Botswana", code: "bw" },
+  { name: "Brazil", code: "br" },
+  { name: "Brunei", code: "bn" },
+  { name: "Bulgaria", code: "bg" },
+  { name: "Burkina Faso", code: "bf" },
+  { name: "Burundi", code: "bi" },
+  { name: "Cabo Verde", code: "cv" },
+  { name: "Cambodia", code: "kh" },
+  { name: "Cameroon", code: "cm" },
+  { name: "Canada", code: "ca" },
+  { name: "Central African Republic", code: "cf" },
+  { name: "Chad", code: "td" },
+  { name: "Chile", code: "cl" },
+  { name: "China", code: "cn" },
+  { name: "Colombia", code: "co" },
+  { name: "Comoros", code: "km" },
+  { name: "Congo", code: "cg" },
+  { name: "Costa Rica", code: "cr" },
+  { name: "Croatia", code: "hr" },
+  { name: "Cuba", code: "cu" },
+  { name: "Cyprus", code: "cy" },
+  { name: "Czech Republic", code: "cz" },
+  { name: "Denmark", code: "dk" },
+  { name: "Djibouti", code: "dj" },
+  { name: "Dominica", code: "dm" },
+  { name: "Dominican Republic", code: "do" },
+  { name: "Ecuador", code: "ec" },
+  { name: "Egypt", code: "eg" },
+  { name: "El Salvador", code: "sv" },
+  { name: "Equatorial Guinea", code: "gq" },
+  { name: "Eritrea", code: "er" },
+  { name: "Estonia", code: "ee" },
+  { name: "Eswatini", code: "sz" },
+  { name: "Ethiopia", code: "et" },
+  { name: "Fiji", code: "fj" },
+  { name: "Finland", code: "fi" },
+  { name: "France", code: "fr" },
+  { name: "Gabon", code: "ga" },
+  { name: "Gambia", code: "gm" },
+  { name: "Georgia", code: "ge" },
+  { name: "Germany", code: "de" },
+  { name: "Ghana", code: "gh" },
+  { name: "Greece", code: "gr" },
+  { name: "Grenada", code: "gd" },
+  { name: "Guatemala", code: "gt" },
+  { name: "Guinea", code: "gn" },
+  { name: "Guyana", code: "gy" },
+  { name: "Haiti", code: "ht" },
+  { name: "Honduras", code: "hn" },
+  { name: "Hungary", code: "hu" },
+  { name: "Iceland", code: "is" },
+  { name: "India", code: "in" },
+  { name: "Indonesia", code: "id" },
+  { name: "Iran", code: "ir" },
+  { name: "Iraq", code: "iq" },
+  { name: "Ireland", code: "ie" },
+  { name: "Israel", code: "il" },
+  { name: "Italy", code: "it" },
+  { name: "Jamaica", code: "jm" },
+  { name: "Japan", code: "jp" },
+  { name: "Jordan", code: "jo" },
+  { name: "Kazakhstan", code: "kz" },
+  { name: "Kenya", code: "ke" },
+  { name: "Kiribati", code: "ki" },
+  { name: "Kuwait", code: "kw" },
+  { name: "Kyrgyzstan", code: "kg" },
+  { name: "Laos", code: "la" },
+  { name: "Latvia", code: "lv" },
+  { name: "Lebanon", code: "lb" },
+  { name: "Lesotho", code: "ls" },
+  { name: "Liberia", code: "lr" },
+  { name: "Libya", code: "ly" },
+  { name: "Liechtenstein", code: "li" },
+  { name: "Lithuania", code: "lt" },
+  { name: "Luxembourg", code: "lu" },
+  { name: "Madagascar", code: "mg" },
+  { name: "Malawi", code: "mw" },
+  { name: "Malaysia", code: "my" },
+  { name: "Maldives", code: "mv" },
+  { name: "Mali", code: "ml" },
+  { name: "Malta", code: "mt" },
+  { name: "Marshall Islands", code: "mh" },
+  { name: "Mauritania", code: "mr" },
+  { name: "Mauritius", code: "mu" },
+  { name: "Mexico", code: "mx" },
+  { name: "Micronesia", code: "fm" },
+  { name: "Moldova", code: "md" },
+  { name: "Monaco", code: "mc" },
+  { name: "Mongolia", code: "mn" },
+  { name: "Montenegro", code: "me" },
+  { name: "Morocco", code: "ma" },
+  { name: "Mozambique", code: "mz" },
+  { name: "Myanmar", code: "mm" },
+  { name: "Namibia", code: "na" },
+  { name: "Nauru", code: "nr" },
+  { name: "Nepal", code: "np" },
+  { name: "Netherlands", code: "nl" },
+  { name: "New Zealand", code: "nz" },
+  { name: "Nicaragua", code: "ni" },
+  { name: "Niger", code: "ne" },
+  { name: "Nigeria", code: "ng" },
+  { name: "North Korea", code: "kp" },
+  { name: "North Macedonia", code: "mk" },
+  { name: "Norway", code: "no" },
+  { name: "Oman", code: "om" },
+  { name: "Pakistan", code: "pk" },
+  { name: "Palau", code: "pw" },
+  { name: "Palestine", code: "ps" },
+  { name: "Panama", code: "pa" },
+  { name: "Papua New Guinea", code: "pg" },
+  { name: "Paraguay", code: "py" },
+  { name: "Peru", code: "pe" },
+  { name: "Philippines", code: "ph" },
+  { name: "Poland", code: "pl" },
+  { name: "Portugal", code: "pt" },
+  { name: "Qatar", code: "qa" },
+  { name: "Romania", code: "ro" },
+  { name: "Russia", code: "ru" },
+  { name: "Rwanda", code: "rw" },
+  { name: "Saint Kitts and Nevis", code: "kn" },
+  { name: "Saint Lucia", code: "lc" },
+  { name: "Saint Vincent and the Grenadines", code: "vc" },
+  { name: "Samoa", code: "ws" },
+  { name: "San Marino", code: "sm" },
+  { name: "Sao Tome and Principe", code: "st" },
+  { name: "Saudi Arabia", code: "sa" },
+  { name: "Senegal", code: "sn" },
+  { name: "Serbia", code: "rs" },
+  { name: "Seychelles", code: "sc" },
+  { name: "Sierra Leone", code: "sl" },
+  { name: "Singapore", code: "sg" },
+  { name: "Slovakia", code: "sk" },
+  { name: "Slovenia", code: "si" },
+  { name: "Solomon Islands", code: "sb" },
+  { name: "Somalia", code: "so" },
+  { name: "South Africa", code: "za" },
+  { name: "South Korea", code: "kr" },
+  { name: "South Sudan", code: "ss" },
+  { name: "Spain", code: "es" },
+  { name: "Sri Lanka", code: "lk" },
+  { name: "Sudan", code: "sd" },
+  { name: "Suriname", code: "sr" },
+  { name: "Sweden", code: "se" },
+  { name: "Switzerland", code: "ch" },
+  { name: "Syria", code: "sy" },
+  { name: "Taiwan", code: "tw" },
+  { name: "Tajikistan", code: "tj" },
+  { name: "Tanzania", code: "tz" },
+  { name: "Thailand", code: "th" },
+  { name: "Timor-Leste", code: "tl" },
+  { name: "Togo", code: "tg" },
+  { name: "Tonga", code: "to" },
+  { name: "Trinidad and Tobago", code: "tt" },
+  { name: "Tunisia", code: "tn" },
+  { name: "Turkey", code: "tr" },
+  { name: "Turkmenistan", code: "tm" },
+  { name: "Tuvalu", code: "tv" },
+  { name: "Uganda", code: "ug" },
+  { name: "Ukraine", code: "ua" },
+  { name: "United Arab Emirates", code: "ae" },
+  { name: "United Kingdom", code: "gb" },
+  { name: "United States", code: "us" },
+  { name: "Uruguay", code: "uy" },
+  { name: "Uzbekistan", code: "uz" },
+  { name: "Vanuatu", code: "vu" },
+  { name: "Vatican City", code: "va" },
+  { name: "Venezuela", code: "ve" },
+  { name: "Vietnam", code: "vn" },
+  { name: "Yemen", code: "ye" },
+  { name: "Zambia", code: "zm" },
+  { name: "Zimbabwe", code: "zw" }
 ];
 
 export default function BecomeSellerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+
+  // Form Fields
   const [shopName, setShopName] = useState("");
-  const [country, setCountry] = useState("Bangladesh");
+  const [selectedCountry, setSelectedCountry] = useState(
+    ALL_COUNTRIES.find((c) => c.name === "Bangladesh") || ALL_COUNTRIES[0]
+  );
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const [description, setDescription] = useState("");
+  const [documentType, setDocumentType] = useState<"National ID Card" | "Passport" | "Driver's License">("National ID Card");
+  const [documentNumber, setDocumentNumber] = useState("");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentPreview, setDocumentPreview] = useState<string | null>(null);
+
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -60,7 +252,10 @@ export default function BecomeSellerPage() {
       }
 
       if (user.user_metadata?.country) {
-        setCountry(user.user_metadata.country);
+        const matched = ALL_COUNTRIES.find(
+          (c) => c.name.toLowerCase() === user.user_metadata.country.toLowerCase()
+        );
+        if (matched) setSelectedCountry(matched);
       }
 
       setLoading(false);
@@ -68,6 +263,42 @@ export default function BecomeSellerPage() {
 
     checkAuthAndSeller();
   }, [router]);
+
+  // Click outside to close country dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsCountryDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        setErrorMsg("Document file size must not exceed 8MB.");
+        return;
+      }
+      setDocumentFile(file);
+      setDocumentPreview(URL.createObjectURL(file));
+      setErrorMsg("");
+    }
+  };
+
+  const uploadDocumentToStorage = async (file: File) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `kyc/${user.id}_${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage
+      .from("product-images")
+      .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+    if (error) throw error;
+    const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
+    return data.publicUrl;
+  };
 
   const handleGoogleSignIn = async () => {
     setSubmitting(true);
@@ -96,17 +327,31 @@ export default function BecomeSellerPage() {
       return;
     }
 
+    if (!documentNumber.trim()) {
+      setErrorMsg("Please enter your official identification document number.");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg("");
 
     try {
+      let finalDocUrl = null;
+      if (documentFile) {
+        finalDocUrl = await uploadDocumentToStorage(documentFile);
+      }
+
       const { error } = await supabase.from("sellers").insert([
         {
           id: user.id,
           shop_name: shopName.trim(),
-          country: country,
+          country: selectedCountry.name,
           description: description.trim(),
           seller_level: "Level 1 Verified Merchant",
+          document_type: documentType,
+          document_number: documentNumber.trim(),
+          document_url: finalDocUrl,
+          verification_status: "pending",
         },
       ]);
 
@@ -121,6 +366,10 @@ export default function BecomeSellerPage() {
     }
   };
 
+  const filteredCountries = ALL_COUNTRIES.filter((c) =>
+    c.name.toLowerCase().includes(countrySearchQuery.toLowerCase())
+  );
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-sans text-sm">
@@ -130,8 +379,9 @@ export default function BecomeSellerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6 selection:bg-sky-500 selection:text-white">
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-10 shadow-2xl space-y-8">
+    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6 md:p-10 selection:bg-sky-500 selection:text-white">
+      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+        
         {/* Brand Header with Transparent Logo */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-5">
           <Link href="/" className="flex items-center gap-2.5">
@@ -160,14 +410,14 @@ export default function BecomeSellerPage() {
         <div className="space-y-1.5">
           <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700/60 text-slate-300 text-[11px] font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-            Merchant Onboarding
+            Merchant Onboarding & KYC
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-white">
-            Register as a Merchant
+            Register as a Verified Merchant
           </h1>
           <p className="text-xs text-slate-400 leading-relaxed">
             {user
-              ? "Create your merchant profile to list digital vouchers, license keys, and game assets across the platform."
+              ? "Submit your store credentials and legal identity details to begin listing digital keys across Inskeys."
               : "Sign in with your Google account to start selling digital products and license keys."}
           </p>
         </div>
@@ -181,13 +431,17 @@ export default function BecomeSellerPage() {
         {/* View if User Not Logged In */}
         {!user ? (
           <div className="space-y-5 py-2">
-            <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-5 text-center space-y-3">
-              <div className="text-3xl">🔐</div>
+            <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 mx-auto flex items-center justify-center shadow-lg shadow-sky-950/50">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                </svg>
+              </div>
               <h3 className="text-sm font-bold text-slate-200">
-                Merchant Authentication Required
+                Merchant Identity Authentication
               </h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                To protect marketplace integrity and manage merchant payouts safely, merchants must verify their identity.
+              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                To safeguard buyer funds and adhere to global marketplace compliance, all merchants must authenticate before opening a storefront.
               </p>
             </div>
 
@@ -237,53 +491,186 @@ export default function BecomeSellerPage() {
               </span>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-200 mb-1.5">
-                Store / Brand Name
-              </label>
-              <input
-                type="text"
-                required
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                placeholder="e.g. Apex Codes, Global Voucher Store"
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-              />
+            {/* Store Information */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                  Store / Brand Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={shopName}
+                  onChange={(e) => setShopName(e.target.value)}
+                  placeholder="e.g. Apex Codes, Global Voucher Store"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                />
+              </div>
+
+              {/* Custom Searchable Country Selector with Official Flags */}
+              <div className="relative" ref={dropdownRef}>
+                <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                  Operating Country
+                </label>
+                
+                {/* Trigger Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCountryDropdownOpen(!isCountryDropdownOpen);
+                    setCountrySearchQuery("");
+                  }}
+                  className="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white flex items-center justify-between transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <img
+                      src={`https://flagcdn.com/w40/${selectedCountry.code}.png`}
+                      alt={selectedCountry.name}
+                      className="w-5 h-3.5 object-cover rounded-xs shrink-0"
+                    />
+                    <span className="truncate font-medium">{selectedCountry.name}</span>
+                  </div>
+                  <svg className="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu with Live Search Filter */}
+                {isCountryDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 space-y-2">
+                    <div className="p-1">
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder="Search country..."
+                        value={countrySearchQuery}
+                        onChange={(e) => setCountrySearchQuery(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
+
+                    <div className="max-h-56 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                      {filteredCountries.length === 0 ? (
+                        <div className="p-3 text-center text-xs text-slate-500">
+                          No country found
+                        </div>
+                      ) : (
+                        filteredCountries.map((c) => (
+                          <div
+                            key={c.code}
+                            onClick={() => {
+                              setSelectedCountry(c);
+                              setIsCountryDropdownOpen(false);
+                            }}
+                            className={`p-2 rounded-xl flex items-center gap-2.5 text-xs cursor-pointer transition ${
+                              selectedCountry.code === c.code
+                                ? "bg-sky-500 text-white font-bold"
+                                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                            }`}
+                          >
+                            <img
+                              src={`https://flagcdn.com/w40/${c.code}.png`}
+                              alt={c.name}
+                              className="w-5 h-3.5 object-cover rounded-xs shrink-0"
+                            />
+                            <span className="truncate">{c.name}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                  Store Description{" "}
+                  <span className="text-slate-500 font-normal">(Optional)</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Provide a brief overview of the products or licenses you offer..."
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                />
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-200 mb-1.5">
-                Operating Country
-              </label>
-              <select
-                value={country}
-                onChange={(e) => setCountry(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition cursor-pointer"
-              >
-                {COUNTRIES.map((c) => (
-                  <option key={c} value={c} className="bg-slate-900 text-white">
-                    {c}
-                  </option>
-                ))}
-              </select>
+            {/* KYC & Identity Verification Section */}
+            <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2.5">
+                <span className="text-sky-400 text-sm">🪪</span>
+                <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                  Identity Verification (KYC)
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Document Type
+                  </label>
+                  <select
+                    value={documentType}
+                    onChange={(e) => setDocumentType(e.target.value as any)}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                  >
+                    <option value="National ID Card">National ID Card (NID)</option>
+                    <option value="Passport">International Passport</option>
+                    <option value="Driver's License">Driver's License</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                    Document / NID Number
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={documentNumber}
+                    onChange={(e) => setDocumentNumber(e.target.value)}
+                    placeholder="Enter document ID number"
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-300 mb-1">
+                  Upload Document Photo / Scan (Front Side)
+                </label>
+                <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 rounded-xl p-3">
+                  <div className="w-14 h-14 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center shrink-0">
+                    {documentPreview ? (
+                      <img src={documentPreview} alt="Doc Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-slate-600 text-[10px]">No File</span>
+                    )}
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    <input
+                      type="file"
+                      id="doc-upload"
+                      accept="image/*,application/pdf"
+                      onChange={handleDocumentChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="doc-upload"
+                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
+                    >
+                      {documentPreview ? "Change Document" : "Choose File"}
+                    </label>
+                    <p className="text-[10px] text-slate-500">Supports JPG, PNG, WEBP, or PDF (Max 8MB)</p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-200 mb-1.5">
-                Store Description{" "}
-                <span className="text-slate-500 font-normal">(Optional)</span>
-              </label>
-              <textarea
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Provide a brief overview of the products or licenses you offer..."
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
-              />
-            </div>
-
-            {/* Merchant Compliance & Buyer Protection Agreement Card */}
-            <div className="bg-slate-950/70 border border-slate-800/90 rounded-xl p-4 sm:p-5 space-y-3.5">
+            {/* Merchant Compliance & Buyer Protection Agreement */}
+            <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-3">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 border-b border-slate-800/80 pb-2.5">
                 <svg
                   className="w-4 h-4 text-sky-400 shrink-0"
@@ -306,7 +693,7 @@ export default function BecomeSellerPage() {
                   <span className="text-slate-600 mt-0.5">•</span>
                   <span>
                     <strong className="text-slate-200">36-Hour Buyer Protection Hold:</strong>{" "}
-                    All sales payouts remain safely held for 36 hours post-fulfillment to guarantee code validity and eliminate chargebacks.
+                    All sales payouts remain safely held for 36 hours post-fulfillment to guarantee code validity and eliminate disputes.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
@@ -322,7 +709,7 @@ export default function BecomeSellerPage() {
                     <strong className="text-slate-200">
                       Anti-Circumvention Policy:
                     </strong>{" "}
-                    Exchanging direct off-platform contact info (Email, Telegram, WhatsApp) or requesting external payments will result in immediate account termination.
+                    Exchanging direct off-platform contact info (Email, Telegram, WhatsApp) or requesting external payments will result in permanent store suspension.
                   </span>
                 </li>
               </ul>
@@ -337,7 +724,7 @@ export default function BecomeSellerPage() {
                     className="mt-0.5 w-4 h-4 rounded bg-slate-900 border-slate-700 text-sky-500 focus:ring-sky-500/30 cursor-pointer"
                   />
                   <span className="text-xs text-slate-300 group-hover:text-white transition leading-snug">
-                    I acknowledge and agree to comply with the Merchant Terms, 36-Hour Buyer Protection Policy, and Platform Security Guidelines.
+                    I verify that my submitted identification is accurate and agree to comply with the Merchant Terms and 36-Hour Buyer Protection Policy.
                   </span>
                 </label>
               </div>
@@ -349,8 +736,8 @@ export default function BecomeSellerPage() {
               className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-semibold text-xs rounded-xl transition shadow-lg shadow-sky-950/40 cursor-pointer"
             >
               {submitting
-                ? "Submitting Application..."
-                : "Complete Merchant Registration"}
+                ? "Submitting Application & Documents..."
+                : "Submit Merchant Application"}
             </button>
           </form>
         )}
