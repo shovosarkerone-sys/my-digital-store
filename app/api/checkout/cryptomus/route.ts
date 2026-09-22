@@ -47,16 +47,14 @@ export async function POST(req: Request) {
       delivery_content: product.description || "Thank you for your purchase from Inskeys!",
     });
 
-    // ৪. Cryptomus পেমেন্ট পেলোড ও সিগনেচার তৈরি
+    // ৪. Cryptomus পেমেন্ট পেলোড ও সিগনেচার তৈরি (উভয় ভ্যারিয়েবল নাম সাপোর্ট করবে)
     const merchantId = process.env.CRYPTOMUS_MERCHANT_ID;
-    const apiKey = process.env.CRYPTOMUS_PAYMENT_KEY;
+    const apiKey = process.env.CRYPTOMUS_PAYMENT_KEY || process.env.CRYPTOMUS_API_KEY;
 
-    // যদি পেমেন্ট কি না থাকে, তবে ডেভেলপার ফ্রেন্ডলি মেসেজ দেবে
     if (!merchantId || !apiKey) {
       return NextResponse.json(
         {
-          error:
-            "Payment gateway is being configured. Please contact support at contact@inskeys.com",
+          error: "Payment gateway is being configured. Please contact support at contact@inskeys.com",
         },
         { status: 503 }
       );
