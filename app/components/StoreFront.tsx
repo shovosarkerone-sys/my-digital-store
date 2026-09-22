@@ -45,6 +45,8 @@ export default function StoreFront({
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isCategoriesMenuOpen, setIsCategoriesMenuOpen] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 30;
 
   const productsSectionRef = useRef<HTMLElement>(null);
 
@@ -88,7 +90,6 @@ export default function StoreFront({
     };
   }, []);
 
-  // Filter & Search Logic
   const filteredProducts = useMemo(() => {
     let result = [...initialProducts];
 
@@ -124,6 +125,12 @@ export default function StoreFront({
       .slice(0, 6);
   }, [initialProducts, searchQuery]);
 
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const displayedProducts = filteredProducts.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const visibleCategories = showAllCategories
     ? categories
     : categories.slice(0, 12);
@@ -153,7 +160,6 @@ export default function StoreFront({
 
   return (
     <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
-      {/* Header Bar */}
       <header className="sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 md:px-8 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -219,7 +225,6 @@ export default function StoreFront({
         </div>
       </header>
 
-      {/* Backdrop */}
       {isMenuOpen && (
         <div
           onClick={() => setIsMenuOpen(false)}
@@ -227,7 +232,6 @@ export default function StoreFront({
         />
       )}
 
-      {/* Navigation Drawer (আগের মতো মেনু বহাল রাখা হয়েছে) */}
       <aside
         className={`fixed top-0 left-0 bottom-0 z-50 w-72 bg-slate-900 border-r border-slate-800 p-5 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
@@ -400,10 +404,7 @@ export default function StoreFront({
         </nav>
       </aside>
 
-      {/* Main Container */}
       <main className="p-4 sm:p-6 md:p-10 max-w-5xl mx-auto w-full space-y-10">
-        
-        {/* Hero Section */}
         <div className="flex flex-col items-center justify-center text-center space-y-4 pt-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold">
             🛡️ 36-Hour Buyer Protection Guarantee
@@ -421,7 +422,6 @@ export default function StoreFront({
             </p>
           </div>
 
-          {/* Live Search Bar with Form & Action Button */}
           <div className="relative w-full max-w-2xl text-left mt-2">
             <form onSubmit={handleSearchSubmit} className="relative flex items-center">
               <input
@@ -453,7 +453,6 @@ export default function StoreFront({
               </button>
             </form>
 
-            {/* Instant Suggestions Dropdown */}
             {isSearchFocused && searchQuery.trim().length > 0 && (
               <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-40 divide-y divide-slate-800/70">
                 {instantSuggestions.length > 0 ? (
@@ -532,7 +531,6 @@ export default function StoreFront({
           </div>
         </div>
 
-        {/* Categories Grid (ক্লিক করলেই মাউস স্ক্রল ছাড়াই সরাসরি নিচে প্রোডাক্ট সেকশনে চলে যাবে) */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -608,8 +606,7 @@ export default function StoreFront({
           </div>
         </section>
 
-        {/* Products Showcase */}
-        <section ref={productsSectionRef} className="space-y-4 pt-2">
+        <section ref={productsSectionRef} className="space-y-4">
           <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
             <div>
               <h2 className="text-lg font-bold text-white">
@@ -630,17 +627,8 @@ export default function StoreFront({
           </div>
 
           {filteredProducts.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-sm space-y-2">
-              <p>No products found matching your criteria.</p>
-              <button
-                onClick={() => {
-                  setSelectedCategoryFilter("all");
-                  setSearchQuery("");
-                }}
-                className="px-4 py-2 bg-sky-500 text-white text-xs font-bold rounded-xl cursor-pointer"
-              >
-                View All Marketplace Items
-              </button>
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-sm">
+              No products found matching your search.
             </div>
           ) : (
             <div className="space-y-2.5 sm:space-y-3">
