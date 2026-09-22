@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // ১. প্রোডাক্ট ডেটা সংগ্রহ
     const { data: product, error: prodError } = await supabase
       .from("products")
       .select("*")
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
+    // ২. প্রাইস নির্ধারণ
     const finalAmount =
       product.discount_price && product.discount_price < product.price
         ? product.discount_price
@@ -41,6 +43,7 @@ export async function POST(req: Request) {
     const orderId = `ORDER_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://inskeys.com";
 
+    // ৩. orders টেবিলে pending অর্ডার এন্ট্রি
     await supabase.from("orders").insert({
       user_email: buyerEmail.trim(),
       product_id: product.id,
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
       delivery_content: product.description || "Thank you for your purchase from Inskeys!",
     });
 
-    // Cryptomus এর নিয়ম অনুযায়ী কিগুলো অবশ্যই অ্যালফাবেটিক্যালি সাজাতে হবে
+    // ৪. Cryptomus পেলোড (Alphabetical order এ সাজানো)
     const payload = {
       amount: Number(finalAmount).toFixed(2),
       currency: "USD",
@@ -63,14 +66,17 @@ export async function POST(req: Request) {
       url_return: `${siteUrl}/order/success?order_id=${orderId}`,
     };
 
-    const payloadJson = JSON.stringify(payload);
+    // স্ল্যাশ স্কেপিং ঠিক করার জন্য .replace() যুক্ত করা হয়েছে
+    const payloadJson = JSON.stringify(payload).replace(/\\\//g, "/");
     const base64Payload = Buffer.from(payloadJson).toString("base64");
 
+    // ৫. MD5 সিগনেচার তৈরি
     const sign = crypto
       .createHash("md5")
       .update(base64Payload + apiKey)
       .digest("hex");
 
+    // ৬. Cryptomus API কল
     const res = await fetch("https://api.cryptomus.com/v1/payment", {
       method: "POST",
       headers: {
