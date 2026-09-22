@@ -31,18 +31,22 @@ function AuthForm() {
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("redirect") || "/";
 
-  const [isSignUp, setIsSignUp] = useState(false);
+  // Views: "login" | "signup" | "verify_signup" | "forgot_request" | "forgot_verify"
+  const [authView, setAuthView] = useState<
+    "login" | "signup" | "verify_signup" | "forgot_request" | "forgot_verify"
+  >("login");
+
   const [fullName, setFullName] = useState("");
   const [country, setCountry] = useState("Bangladesh");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [showOtpScreen, setShowOtpScreen] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Continue with Google অথেন্টিকেশন হ্যান্ডলার
   const handleGoogleAuth = async () => {
     setLoading(true);
     setErrorMsg("");
@@ -68,8 +72,8 @@ function AuthForm() {
     setSuccessMsg("");
 
     try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
+      if (authView === "signup") {
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -82,10 +86,10 @@ function AuthForm() {
 
         if (error) throw error;
 
-        setShowOtpScreen(true);
+        setAuthView("verify_signup");
         setSuccessMsg("Verification code sent to your email!");
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
@@ -102,13 +106,13 @@ function AuthForm() {
     }
   };
 
-  const handleVerifyOtp = async (e: React.FormEvent) => {
+  const handleVerifySignupOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
 
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
+      const { error } = await supabase.auth.verifyOtp({
         email,
         token: otpCode.trim(),
         type: "signup",
@@ -128,17 +132,79 @@ function AuthForm() {
     }
   };
 
+  // Password Reset: Request 6-digit OTP
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) {
+      setErrorMsg("Please provide your registered email address.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
+      if (error) throw error;
+
+      setAuthView("forgot_verify");
+      setSuccessMsg("A 6-digit password reset code has been dispatched to your email.");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to send reset code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Password Reset: Confirm 6-digit OTP & update password
+  const handleConfirmPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    try {
+      // 1. Verify recovery OTP
+      const { error: otpError } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token: otpCode.trim(),
+        type: "recovery",
+      });
+
+      if (otpError) throw otpError;
+
+      // 2. Set new password
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) throw updateError;
+
+      setSuccessMsg("Password updated successfully! Logging you in...");
+      setTimeout(() => {
+        router.push(redirectUrl);
+        router.refresh();
+      }, 1200);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to reset password. Please check the code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+      {/* Header with Transparent Logo */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center shrink-0">
+        <Link href="/" className="flex items-center gap-2.5">
+          <div className="shrink-0">
             <Image
               src="/icon.png"
               alt="Inskeys"
-              width={32}
-              height={32}
-              className="w-full h-full object-cover"
+              width={34}
+              height={34}
+              className="w-8 h-8 object-contain bg-transparent"
             />
           </div>
           <span className="font-black text-base tracking-tight text-white">
@@ -150,8 +216,9 @@ function AuthForm() {
         </Link>
       </div>
 
-      {showOtpScreen ? (
-        <form onSubmit={handleVerifyOtp} className="space-y-4">
+      {/* VIEW 1: SIGNUP EMAIL OTP VERIFICATION */}
+      {authView === "verify_signup" && (
+        <form onSubmit={handleVerifySignupOtp} className="space-y-4">
           <div className="text-center space-y-2">
             <span className="text-3xl">📩</span>
             <h2 className="text-lg font-black text-white">Enter 6-Digit Code</h2>
@@ -193,39 +260,170 @@ function AuthForm() {
 
           <button
             type="button"
-            onClick={() => setShowOtpScreen(false)}
+            onClick={() => setAuthView("signup")}
             className="w-full text-center text-xs text-slate-500 hover:text-slate-300 py-1 cursor-pointer"
           >
             ← Back to Sign Up
           </button>
         </form>
-      ) : (
+      )}
+
+      {/* VIEW 2: FORGOT PASSWORD - REQUEST OTP */}
+      {authView === "forgot_request" && (
+        <form onSubmit={handleRequestPasswordReset} className="space-y-4">
+          <div className="text-center space-y-2">
+            <span className="text-3xl">🔑</span>
+            <h2 className="text-lg font-black text-white">Reset Password</h2>
+            <p className="text-xs text-slate-400">
+              Enter your registered email address to receive a 6-digit recovery code.
+            </p>
+          </div>
+
+          {errorMsg && (
+            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              {errorMsg}
+            </div>
+          )}
+          {successMsg && (
+            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              {successMsg}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              Registered Email
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-sky-950 cursor-pointer"
+          >
+            {loading ? "Sending Code..." : "Send 6-Digit Reset Code"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setErrorMsg("");
+              setSuccessMsg("");
+              setAuthView("login");
+            }}
+            className="w-full text-center text-xs text-slate-500 hover:text-slate-300 py-1 cursor-pointer"
+          >
+            ← Back to Log In
+          </button>
+        </form>
+      )}
+
+      {/* VIEW 3: FORGOT PASSWORD - CONFIRM OTP & SET NEW PASSWORD */}
+      {authView === "forgot_verify" && (
+        <form onSubmit={handleConfirmPasswordReset} className="space-y-4">
+          <div className="text-center space-y-2">
+            <span className="text-3xl">🛡️</span>
+            <h2 className="text-lg font-black text-white">Set New Password</h2>
+            <p className="text-xs text-slate-400">
+              Enter the 6-digit code sent to <strong className="text-sky-400">{email}</strong> and your new password.
+            </p>
+          </div>
+
+          {errorMsg && (
+            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20">
+              {errorMsg}
+            </div>
+          )}
+          {successMsg && (
+            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              {successMsg}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 text-center">
+              6-Digit Recovery Code
+            </label>
+            <input
+              type="text"
+              required
+              maxLength={6}
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
+              placeholder="123456"
+              className="w-full text-center tracking-[10px] text-2xl font-mono bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl py-2.5 text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              New Password
+            </label>
+            <input
+              type="password"
+              required
+              minLength={6}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="•••••••• (Min 6 chars)"
+              className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-950 cursor-pointer"
+          >
+            {loading ? "Updating Password..." : "Update Password & Log In"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAuthView("forgot_request")}
+            className="w-full text-center text-xs text-slate-500 hover:text-slate-300 py-1 cursor-pointer"
+          >
+            ← Resend Code / Change Email
+          </button>
+        </form>
+      )}
+
+      {/* VIEW 4 & 5: MAIN LOGIN & SIGNUP FORMS */}
+      {(authView === "login" || authView === "signup") && (
         <>
           <div className="grid grid-cols-2 gap-1 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
             <button
               type="button"
               onClick={() => {
-                setIsSignUp(false);
+                setAuthView("login");
                 setErrorMsg("");
                 setSuccessMsg("");
               }}
               className={`py-2.5 rounded-xl transition cursor-pointer ${
-                !isSignUp
+                authView === "login"
                   ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              Login
+              Log In
             </button>
             <button
               type="button"
               onClick={() => {
-                setIsSignUp(true);
+                setAuthView("signup");
                 setErrorMsg("");
                 setSuccessMsg("");
               }}
               className={`py-2.5 rounded-xl transition cursor-pointer ${
-                isSignUp
+                authView === "signup"
                   ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
                   : "text-slate-400 hover:text-white"
               }`}
@@ -236,10 +434,10 @@ function AuthForm() {
 
           <div>
             <h1 className="text-xl font-black text-white">
-              {isSignUp ? "Create Verified Account" : "Welcome Back"}
+              {authView === "signup" ? "Create Verified Account" : "Welcome Back"}
             </h1>
             <p className="text-xs text-slate-400 mt-1">
-              {isSignUp
+              {authView === "signup"
                 ? "Enter your details or continue with your Google account."
                 : "Sign in to access your buyer or seller panel."}
             </p>
@@ -256,7 +454,7 @@ function AuthForm() {
             </div>
           )}
 
-          {/* Continue with Google বাটন */}
+          {/* Google Auth Button */}
           <button
             type="button"
             disabled={loading}
@@ -284,7 +482,6 @@ function AuthForm() {
             <span>Continue with Google</span>
           </button>
 
-          {/* মার্জিত ডিভাইডার */}
           <div className="relative flex items-center justify-center">
             <div className="w-full border-t border-slate-800"></div>
             <span className="bg-slate-900 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase absolute">
@@ -293,7 +490,7 @@ function AuthForm() {
           </div>
 
           <form onSubmit={handleAuth} className="space-y-4">
-            {isSignUp && (
+            {authView === "signup" && (
               <>
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 mb-1.5">
@@ -343,9 +540,24 @@ function AuthForm() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Password
+                </label>
+                {authView === "login" && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setErrorMsg("");
+                      setSuccessMsg("");
+                      setAuthView("forgot_request");
+                    }}
+                    className="text-[11px] text-sky-400 hover:text-sky-300 hover:underline cursor-pointer"
+                  >
+                    Forgot your password?
+                  </button>
+                )}
+              </div>
               <input
                 type="password"
                 required
@@ -364,9 +576,9 @@ function AuthForm() {
             >
               {loading
                 ? "Processing..."
-                : isSignUp
+                : authView === "signup"
                 ? "Send 6-Digit Code"
-                : "Sign In"}
+                : "Log In"}
             </button>
           </form>
         </>
