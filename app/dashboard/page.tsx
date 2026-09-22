@@ -512,11 +512,11 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
-        <div className="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-        <span className="text-xs font-mono text-sky-400 tracking-wider animate-soft-pulse">
-          Establishing Secure Account Session...
-        </span>
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="relative w-14 h-14">
+          <div className="absolute inset-0 rounded-full border-2 border-sky-500/20"></div>
+          <div className="absolute inset-0 rounded-full border-2 border-t-sky-500 animate-spin"></div>
+        </div>
       </div>
     );
   }
@@ -1704,11 +1704,11 @@ export default function BuyerDashboard() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center space-y-4">
-          <div className="w-10 h-10 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin"></div>
-          <span className="text-xs font-mono text-sky-400 tracking-wider animate-soft-pulse">
-            Establishing Secure Account Session...
-          </span>
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+          <div className="relative w-14 h-14">
+            <div className="absolute inset-0 rounded-full border-2 border-sky-500/20"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-t-sky-500 animate-spin"></div>
+          </div>
         </div>
       }
     >
