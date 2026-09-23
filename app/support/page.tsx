@@ -87,13 +87,13 @@ export default function SupportPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white p-4 sm:p-6 md:p-10 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white selection:bg-sky-500 selection:text-white p-4 sm:p-6 md:p-10 font-sans transition-colors duration-200">
       <div className="max-w-4xl mx-auto space-y-8">
         
         {/* Navigation Bar */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex items-center justify-center shrink-0">
               <Image
                 src="/icon.png"
                 alt="Inskeys"
@@ -102,7 +102,7 @@ export default function SupportPage() {
                 className="w-full h-full object-contain transition-transform group-hover:scale-105"
               />
             </div>
-            <span className="font-bold text-base tracking-tight text-white">
+            <span className="font-bold text-base tracking-tight text-slate-900 dark:text-white">
               Inskeys
             </span>
           </Link>
@@ -111,14 +111,14 @@ export default function SupportPage() {
             {currentUser && (
               <Link
                 href="/dashboard?tab=support"
-                className="text-xs text-sky-400 hover:text-white bg-sky-500/10 border border-sky-500/20 px-3.5 py-1.5 rounded-xl transition font-medium"
+                className="text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-white bg-sky-500/10 border border-sky-500/20 px-3.5 py-1.5 rounded-xl transition font-medium"
               >
                 My Support Desk →
               </Link>
             )}
             <Link
               href="/"
-              className="text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl transition"
+              className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-1.5 rounded-xl transition"
             >
               ← Storefront
             </Link>
@@ -127,46 +127,46 @@ export default function SupportPage() {
 
         {/* Hero Section */}
         <div className="space-y-2 text-center max-w-xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>24/7 Concierge & Escrow Mediation</span>
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></span>
+            <span>24/7 Concierge & Buyer Protection Mediation</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             How can our desk assist you?
           </h1>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
             Record your inquiry directly with the Inskeys customer safety team. Fast, audited, and cryptographic resolution.
           </p>
         </div>
 
         {/* Support Ticket Submission Card */}
-        <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+        <div className="bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm dark:shadow-2xl relative overflow-hidden backdrop-blur-xl transition-colors">
           <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3 relative z-10">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 relative z-10">
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                 Submit Support Ticket
               </h2>
-              <p className="text-[11px] text-slate-400 mt-0.5">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                 Available for buyers, merchants, and registered members.
               </p>
             </div>
-            <span className="text-xs font-mono bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-1 rounded-lg">
+            <span className="text-xs font-mono bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-2.5 py-1 rounded-lg font-semibold">
               {currentUser ? "Authenticated Member" : "Guest Client"}
             </span>
           </div>
 
           {submittedTicketId && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs rounded-2xl space-y-1.5 relative z-10 animate-in fade-in">
+            <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 dark:text-emerald-300 text-xs rounded-2xl space-y-1.5 relative z-10 animate-in fade-in">
               <span className="font-bold text-sm block">✓ Inquiry Dispatched to Support Desk!</span>
               <p className="leading-relaxed">
-                Your Tracking Reference is <strong className="font-mono text-white">#{submittedTicketId}</strong>. A concierge agent has been assigned to mediate your case.
+                Your Tracking Reference is <strong className="font-mono text-slate-900 dark:text-white">#{submittedTicketId}</strong>. A concierge agent has been assigned to mediate your case.
               </p>
               {currentUser && (
                 <Link
                   href="/dashboard?tab=support"
-                  className="inline-block mt-1 text-sky-400 font-bold hover:underline"
+                  className="inline-block mt-1 text-sky-600 dark:text-sky-400 font-bold hover:underline"
                 >
                   View Live Response in Dashboard Support Tab →
                 </Link>
@@ -175,7 +175,7 @@ export default function SupportPage() {
           )}
 
           {errorMsg && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl relative z-10">
+            <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs rounded-xl relative z-10 font-medium">
               ⚠️ {errorMsg}
             </div>
           )}
@@ -183,7 +183,7 @@ export default function SupportPage() {
           <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   Your Full Name
                 </label>
                 <input
@@ -192,12 +192,12 @@ export default function SupportPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. John Doe"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                   Email Address for Updates
                 </label>
                 <input
@@ -206,13 +206,13 @@ export default function SupportPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner font-mono"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Subject / Order Identifier
               </label>
               <input
@@ -221,12 +221,12 @@ export default function SupportPage() {
                 value={ticketSubject}
                 onChange={(e) => setTicketSubject(e.target.value)}
                 placeholder="e.g. Order #10492 - Code activation inquiry"
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Message & Issue Details
               </label>
               <textarea
@@ -235,7 +235,7 @@ export default function SupportPage() {
                 value={ticketMessage}
                 onChange={(e) => setTicketMessage(e.target.value)}
                 placeholder="Describe your issue with voucher code, payment reference, or redemption error..."
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition shadow-inner"
               />
             </div>
 
@@ -243,7 +243,7 @@ export default function SupportPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full sm:w-auto px-8 py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-sky-950 flex items-center justify-center gap-2"
+                className="w-full sm:w-auto px-8 py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20 flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -260,17 +260,17 @@ export default function SupportPage() {
 
         {/* FAQ Knowledge Base */}
         <div className="space-y-3">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
             Frequently Asked Questions
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {faqs.map((f, i) => (
               <div
                 key={i}
-                className="bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-1.5"
+                className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-1.5 shadow-sm transition-colors"
               >
-                <h4 className="text-xs font-bold text-slate-200">{f.q}</h4>
-                <p className="text-[11px] text-slate-400 leading-relaxed">{f.a}</p>
+                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{f.q}</h4>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">{f.a}</p>
               </div>
             ))}
           </div>
