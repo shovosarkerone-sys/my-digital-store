@@ -27,7 +27,6 @@ export default function ProductDetailPage() {
       if (!productId) return;
 
       try {
-        // ১. প্রোডাক্ট ডাটা লোড
         const { data, error } = await supabase
           .from("products")
           .select("*")
@@ -41,13 +40,11 @@ export default function ProductDetailPage() {
 
         setProduct(data);
 
-        // ভিউ কাউন্ট ১ বৃদ্ধি
         await supabase
           .from("products")
           .update({ views: (data.views || 0) + 1 })
           .eq("id", data.id);
 
-        // ২. সেলারের ইমেইল ফেচ
         if (data.seller_id) {
           const { data: sellerData } = await supabase
             .from("sellers")
@@ -60,7 +57,6 @@ export default function ProductDetailPage() {
           }
         }
 
-        // ৩. লগইন করা বায়ারের ইমেইল অটো-ফিল
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -113,7 +109,6 @@ export default function ProductDetailPage() {
     );
   }
 
-  // স্টক ক্যালকুলেশন
   const stockCount = product.voucher_codes
     ? product.voucher_codes
         .split("\n")
@@ -125,7 +120,6 @@ export default function ProductDetailPage() {
   const isAvailable = isManual ? true : stockCount > 0;
   const isOfficial = !product.seller_id || product.seller_name === "Official Store";
 
-  // ডিসকাউন্ট ক্যালকুলেশন
   const hasDiscount = Boolean(
     product.discount_price &&
     product.discount_price < product.price &&
@@ -137,13 +131,11 @@ export default function ProductDetailPage() {
       ? Math.round(((product.price - product.discount_price) / product.price) * 100)
       : null;
 
-  // হোয়াটসঅ্যাপ ইউআরএল (Updated Number)
   const whatsappMessage = encodeURIComponent(
     `Hello Inskeys, I would like to purchase: "${product.title}" (Price: $${finalPrice} USD). Is it available?`
   );
   const whatsappUrl = `https://wa.me/8801797362397?text=${whatsappMessage}`;
 
-  // পেমেন্ট চেকআউট হ্যান্ডলার
   const handleProceedPayment = async () => {
     const emailToUse = buyerEmail.trim() || currentUserEmail;
     if (!emailToUse || !emailToUse.includes("@")) {
@@ -181,7 +173,8 @@ export default function ProductDetailPage() {
         {/* হেডার */}
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 rounded-lg overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center shrink-0">
+            {/* Inskeys লোগো ট্রান্সপারেন্ট করা হয়েছে */}
+            <div className="w-8 h-8 flex items-center justify-center shrink-0">
               <Image
                 src="/icon.png"
                 alt="Inskeys"
@@ -203,7 +196,6 @@ export default function ProductDetailPage() {
           </Link>
         </div>
 
-        {/* প্রোডাক্ট কার্ড */}
         <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-8 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -233,7 +225,6 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
-          {/* প্রোডাক্ট বিবরণ ও অ্যাকশন */}
           <div className="flex flex-col justify-between space-y-6 relative z-10">
             <div className="space-y-4">
               <div>
@@ -245,7 +236,6 @@ export default function ProductDetailPage() {
                 </h1>
               </div>
 
-              {/* সেলার পরিচিতি ও ডেলিভারি ব্যাজ */}
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {isOfficial ? (
                   <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2.5 py-1 rounded-lg font-bold inline-flex items-center gap-1.5">
@@ -275,7 +265,6 @@ export default function ProductDetailPage() {
                   </Link>
                 )}
 
-                {/* সেলারের সাথে চ্যাট বাটন */}
                 {!isOfficial && (
                   <Link
                     href={`/dashboard?tab=messages&contact=${encodeURIComponent(sellerEmail)}`}
@@ -315,8 +304,8 @@ export default function ProductDetailPage() {
                 <div>
                   <span className="text-xs text-slate-400 uppercase font-semibold block">Total Price</span>
                   {hasDiscount && (
-                    <span className="text-[11px] text-rose-400 font-bold">
-                      🔥 Special Limited Offer
+                    <span className="text-[11px] text-emerald-400 font-bold">
+                      Special Limited Offer
                     </span>
                   )}
                 </div>
@@ -341,7 +330,6 @@ export default function ProductDetailPage() {
                 </div>
               </div>
 
-              {/* ডেসক্রিপশন */}
               <div className="space-y-1.5">
                 <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
                   Product Description & Redemption
@@ -351,7 +339,6 @@ export default function ProductDetailPage() {
                 </p>
               </div>
 
-              {/* বায়ার সুরক্ষা নোটিশ */}
               <div className="flex items-center gap-2 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span>🛡️</span>
                 <span>
@@ -360,7 +347,6 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* বাই বাটন */}
             <div className="space-y-3 pt-2">
               <button
                 type="button"
@@ -372,11 +358,10 @@ export default function ProductDetailPage() {
                     : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
                 }`}
               >
-                {/* ⚡ ইমোজি রিমুভ করা হয়েছে */}
-                <span>{isAvailable ? `Pay with Crypto ($${finalPrice})` : "Out of Stock"}</span>
+                {/* টাকার পরিমাণ রিমুভ করা হয়েছে */}
+                <span>{isAvailable ? "Pay with Crypto" : "Out of Stock"}</span>
               </button>
 
-              {/* আপডেট করা WhatsApp বাটন */}
               <a
                 href={whatsappUrl}
                 target="_blank"
@@ -390,23 +375,21 @@ export default function ProductDetailPage() {
                 >
                   <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
                 </svg>
-                <span>Buy via WhatsApp (+880 1797-362397)</span>
+                {/* নাম্বার রিমুভ করা হয়েছে */}
+                <span>Buy via WhatsApp</span>
               </a>
             </div>
           </div>
         </div>
       </div>
 
-      {/* প্রিমিয়াম ক্রিপ্টমুস পেমেন্ট গেটওয়ে মডাল */}
       {isPaymentModalOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 relative overflow-hidden text-left">
-            {/* ব্যাকগ্রাউন্ড গ্লো */}
             <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
             <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 relative z-10">
               <div className="flex items-center gap-3">
-                {/* অরিজিনাল লোগো ট্রান্সপারেন্ট করা হয়েছে (সাদা বক্স সরানো হয়েছে) */}
                 <div className="w-10 h-10 flex items-center justify-center shrink-0">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -441,7 +424,6 @@ export default function ProductDetailPage() {
               </button>
             </div>
 
-            {/* অ্যামাউন্ট ও আইটেম সামারি */}
             <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between relative z-10">
               <div className="min-w-0 pr-3 space-y-1">
                 <span className="text-[11px] text-slate-400 block truncate">{product.title}</span>
@@ -450,7 +432,6 @@ export default function ProductDetailPage() {
               <span className="text-xl font-black text-blue-400 font-mono">${finalPrice} USD</span>
             </div>
 
-            {/* ক্রিপ্টো ডেলিভারি ইমেইল ফিল্ড */}
             <div className="space-y-4 relative z-10">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
@@ -469,7 +450,6 @@ export default function ProductDetailPage() {
                 </span>
               </div>
 
-              {/* সাপোর্টেড কারেন্সি ব্যাজ */}
               <div className="pt-1">
                 <span className="block text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">
                   Accepted Networks
@@ -488,7 +468,6 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* সাবমিট বাটন */}
               <div className="pt-2">
                 <button
                   type="button"
