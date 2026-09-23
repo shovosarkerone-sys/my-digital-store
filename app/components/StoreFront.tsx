@@ -40,13 +40,17 @@ export default function StoreFront({
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isSeller, setIsSeller] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [sortOption, setSortOption] = useState<string>("latest"); // নতুন ফিল্টার স্টেট
+  const [sortOption, setSortOption] = useState<string>("latest");
   const [showAllCategories, setShowAllCategories] = useState<boolean>(false);
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isCategoriesMenuOpen, setIsCategoriesMenuOpen] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 30;
+
+  // থিম ড্রপডাউনের জন্য নতুন স্টেট
+  const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState<boolean>(false);
+  const [currentTheme, setCurrentTheme] = useState<string>("system");
 
   useEffect(() => {
     async function checkUserStatus() {
@@ -88,11 +92,9 @@ export default function StoreFront({
     };
   }, []);
 
-  // Smart Multi-Keyword Search & Sorting Logic
   const filteredProducts = useMemo(() => {
     let result = [...initialProducts];
 
-    // ১. সার্চ ফিল্টারিং
     const cleanQuery = searchQuery.trim().toLowerCase();
     if (cleanQuery) {
       const searchWords = cleanQuery.split(/\s+/).filter(Boolean);
@@ -102,9 +104,7 @@ export default function StoreFront({
       });
     }
 
-    // ২. সর্টিং / ড্রপডাউন ফিল্টারিং
     result.sort((a, b) => {
-      // অফার প্রাইস থাকলে সেটি দিয়ে হিসাব করবে, না থাকলে রেগুলার প্রাইস
       const priceA = a.discount_price && a.discount_price < a.price && (!a.discount_until || new Date(a.discount_until) > new Date()) ? a.discount_price : a.price;
       const priceB = b.discount_price && b.discount_price < b.price && (!b.discount_until || new Date(b.discount_until) > new Date()) ? b.discount_price : b.price;
 
@@ -119,14 +119,13 @@ export default function StoreFront({
           return priceB - priceA;
         case "latest":
         default:
-          return b.id - a.id; // নতুন প্রোডাক্টগুলো আগে
+          return b.id - a.id;
       }
     });
 
     return result;
   }, [initialProducts, searchQuery, sortOption]);
 
-  // Live Instant Suggestions
   const instantSuggestions = useMemo(() => {
     const cleanQuery = searchQuery.trim().toLowerCase();
     if (!cleanQuery) return [];
@@ -268,37 +267,33 @@ export default function StoreFront({
           </button>
         </div>
 
-        <nav className="space-y-4 flex-1 overflow-y-auto pr-1">
-          <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-              Merchant Center
-            </span>
-            {isSeller ? (
-              <Link
-                href="/seller-dashboard"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-sky-400 bg-sky-500/10 border border-sky-500/20 hover:bg-sky-500/20 transition"
-              >
-                <span>Seller Dashboard</span>
-                <span>→</span>
-              </Link>
-            ) : (
-              <Link
-                href="/become-seller"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 bg-slate-900 border border-slate-800 hover:text-white transition"
-              >
-                <span>Become a Seller</span>
-                <span>→</span>
-              </Link>
-            )}
-          </div>
-
+        <nav className="space-y-4 flex-1 overflow-y-auto pr-1 flex flex-col">
           <div>
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2 px-2">
               Browse Menu
             </span>
             <div className="space-y-2">
+              {/* Become a Seller / Dashboard (All Products এর মতো ডিজাইন) */}
+              {isSeller ? (
+                <Link
+                  href="/seller-dashboard"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 text-white shadow-lg shadow-sky-500/30 transition cursor-pointer"
+                >
+                  <span>Seller Dashboard</span>
+                  <span>→</span>
+                </Link>
+              ) : (
+                <Link
+                  href="/become-seller"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-sky-500 text-white shadow-lg shadow-sky-500/30 transition cursor-pointer"
+                >
+                  <span>Become a Seller</span>
+                  <span>→</span>
+                </Link>
+              )}
+
               <Link
                 href="/products"
                 onClick={() => setIsMenuOpen(false)}
@@ -359,8 +354,9 @@ export default function StoreFront({
             </div>
           </div>
 
-          {!currentUser && (
-            <div className="pt-4 border-t border-slate-800">
+          {/* Bottom Section (Log In & Theme Dropdown) */}
+          <div className="mt-auto pt-4 space-y-4 border-t border-slate-800">
+            {!currentUser && (
               <Link
                 href="/auth"
                 onClick={() => setIsMenuOpen(false)}
@@ -368,8 +364,54 @@ export default function StoreFront({
               >
                 Log In / Register
               </Link>
+            )}
+
+            {/* Theme Dropdown */}
+            <div>
+              <button
+                type="button"
+                onClick={() => setIsThemeDropdownOpen(!isThemeDropdownOpen)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-200 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm">
+                    {currentTheme === 'light' ? '☀️' : currentTheme === 'dark' ? '🌙' : '💻'}
+                  </span>
+                  <span>Theme: {currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1)}</span>
+                </div>
+                <span className="text-[10px] text-slate-400">{isThemeDropdownOpen ? "▲" : "▼"}</span>
+              </button>
+
+              {isThemeDropdownOpen && (
+                <div className="mt-2 space-y-1 bg-slate-950/60 rounded-xl p-2 border border-slate-800/80">
+                  <button
+                    onClick={() => { setCurrentTheme("light"); setIsThemeDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer ${
+                      currentTheme === 'light' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <span>☀️</span> Light
+                  </button>
+                  <button
+                    onClick={() => { setCurrentTheme("dark"); setIsThemeDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer ${
+                      currentTheme === 'dark' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <span>🌙</span> Dark
+                  </button>
+                  <button
+                    onClick={() => { setCurrentTheme("system"); setIsThemeDropdownOpen(false); }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition cursor-pointer ${
+                      currentTheme === 'system' ? 'bg-sky-500/20 text-sky-400' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                    }`}
+                  >
+                    <span>💻</span> System Default
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </nav>
       </aside>
 
@@ -553,7 +595,7 @@ export default function StoreFront({
           </div>
         </section>
 
-        {/* Products Showcase (এখানে ড্রপডাউন যুক্ত করা হয়েছে) */}
+        {/* Products Showcase */}
         <section className="space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-slate-800/80 pt-6">
             <div>
@@ -563,13 +605,13 @@ export default function StoreFront({
               </p>
             </div>
             
-            {/* Sorting Dropdown Filter */}
+            {/* Sorting Dropdown */}
             <div className="relative w-full sm:w-auto">
               <select
                 value={sortOption}
                 onChange={(e) => {
                   setSortOption(e.target.value);
-                  setCurrentPage(1); // ফিল্টার চেঞ্জ করলে প্রথম পেজে ফিরে আসবে
+                  setCurrentPage(1);
                 }}
                 className="w-full sm:w-auto appearance-none bg-slate-900/90 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-semibold py-2.5 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-1 focus:ring-sky-500 transition cursor-pointer shadow-sm"
               >
