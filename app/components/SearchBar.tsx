@@ -35,7 +35,7 @@ export default function SearchBar() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // লাইভ ড্রপডাউন সাজেশন (মাল্টি-কীওয়ার্ড টোকেনাইজড সার্চ)
+  // লাইভ ড্রপডাউন সাজেশন (মাল্টি-কীওয়ার্ড টোকেনাইজড সার্চ)
   useEffect(() => {
     const searchProducts = async () => {
       const clean = query.trim();
@@ -97,13 +97,13 @@ export default function SearchBar() {
     const clean = query.trim();
     if (!clean) return;
 
-    setIsOpen(false); // ড্রপডাউন বন্ধ করবে
+    setIsOpen(false);
     router.push(`/products?search=${encodeURIComponent(clean)}`);
   };
 
   return (
     <div ref={containerRef} className="relative w-full max-w-lg mx-auto">
-      {/* ফর্ম দিয়ে র‍্যাপ করা হয়েছে যাতে কীবোর্ডের Enter কাজ করে */}
+      {/* ফর্ম দিয়ে র‍্যাপ করা হয়েছে যাতে কীবোর্ডের Enter কাজ করে */}
       <form onSubmit={handleManualSearch} className="relative flex items-center">
         <input
           type="text"
@@ -111,7 +111,7 @@ export default function SearchBar() {
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.trim() && setIsOpen(true)}
           placeholder="Search game keys, gift cards, software..."
-          className="w-full bg-slate-900/90 border border-slate-800 rounded-full pl-5 pr-28 py-2 text-xs md:text-sm text-white focus:outline-none focus:border-sky-500 transition shadow-inner placeholder:text-slate-500"
+          className="w-full bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-full pl-5 pr-28 py-2 text-xs md:text-sm text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition shadow-xs dark:shadow-inner placeholder:text-slate-400 dark:placeholder:text-slate-500"
         />
 
         {query && (
@@ -122,13 +122,13 @@ export default function SearchBar() {
               setResults([]);
               setIsOpen(false);
             }}
-            className="absolute right-28 text-xs text-slate-500 hover:text-white transition cursor-pointer"
+            className="absolute right-28 text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-white transition cursor-pointer"
           >
             ✕
           </button>
         )}
 
-        {/* সাবমিট বাটন (ক্লিক করলে বা Enter চাপলে কাজ করবে) */}
+        {/* সাবমিট বাটন */}
         <button
           type="submit"
           className="absolute right-1 top-1 bottom-1 px-4 bg-sky-500 hover:bg-sky-600 text-white text-xs font-bold rounded-full flex items-center gap-1.5 shadow-md transition active:scale-95 cursor-pointer"
@@ -142,13 +142,13 @@ export default function SearchBar() {
 
       {/* Live Dropdown Results */}
       {isOpen && (
-        <div className="absolute left-0 right-0 top-full mt-2 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden z-50 divide-y divide-slate-800/60 max-h-80 overflow-y-auto">
+        <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-2xl overflow-hidden z-50 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-80 overflow-y-auto transition-colors">
           {loading ? (
-            <div className="p-4 text-center text-xs text-slate-400 font-medium">
+            <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
               Searching marketplace...
             </div>
           ) : results.length === 0 ? (
-            <div className="p-4 text-center text-xs text-slate-500 font-medium">
+            <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
               No products found for "{query}".
             </div>
           ) : (
@@ -164,30 +164,30 @@ export default function SearchBar() {
                   key={item.id}
                   href={`/product/${item.id}`}
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center gap-3 p-3 hover:bg-slate-800/80 transition group"
+                  className="flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800/80 transition group"
                 >
                   {item.image_url ? (
                     <img
                       src={item.image_url}
                       alt={item.title || "Product"}
-                      className="w-10 h-10 object-cover rounded-lg border border-slate-800 shrink-0"
+                      className="w-10 h-10 object-cover rounded-lg border border-slate-200 dark:border-slate-800 shrink-0"
                     />
                   ) : (
-                    <div className="w-10 h-10 bg-slate-800 rounded-lg flex items-center justify-center text-xs text-slate-500 shrink-0">
+                    <div className="w-10 h-10 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-xs text-slate-400 dark:text-slate-500 shrink-0">
                       🎮
                     </div>
                   )}
 
                   <div className="min-w-0 flex-1 text-left">
-                    <p className="text-xs font-semibold text-white truncate group-hover:text-sky-400 transition">
+                    <p className="text-xs font-semibold text-slate-900 dark:text-white truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition">
                       {item.title}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] text-slate-400 uppercase font-bold">
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-bold">
                         {item.category || "Item"}
                       </span>
                       {item.delivery_type === "manual" && (
-                        <span className="text-[9px] px-1.5 py-0.2 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded font-semibold">
+                        <span className="text-[9px] px-1.5 py-0.2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded font-semibold">
                           🕒 Manual
                         </span>
                       )}
@@ -197,15 +197,15 @@ export default function SearchBar() {
                   <div className="text-right shrink-0">
                     {hasDiscount ? (
                       <div className="flex flex-col items-end">
-                        <span className="text-[10px] line-through text-slate-500">
+                        <span className="text-[10px] line-through text-slate-400 dark:text-slate-500">
                           ${item.price}
                         </span>
-                        <span className="text-xs font-bold text-emerald-400">
+                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
                           ${item.discount_price}
                         </span>
                       </div>
                     ) : (
-                      <span className="text-xs font-bold text-sky-400">
+                      <span className="text-xs font-bold text-sky-600 dark:text-sky-400">
                         ${item.price}
                       </span>
                     )}

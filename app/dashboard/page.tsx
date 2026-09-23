@@ -15,16 +15,16 @@ interface LevelInfo {
 }
 
 const BUYER_LEVELS: Record<number, LevelInfo> = {
-  1: { level: 1, title: "Newbie", badgeColor: "bg-slate-800 border-slate-700", textColor: "text-slate-300", icon: "🌱" },
-  2: { level: 2, title: "Rookie", badgeColor: "bg-blue-500/10 border-blue-500/20", textColor: "text-blue-400", icon: "🎮" },
-  3: { level: 3, title: "Gamer", badgeColor: "bg-emerald-500/10 border-emerald-500/20", textColor: "text-emerald-400", icon: "🕹️" },
-  4: { level: 4, title: "Pro Gamer", badgeColor: "bg-sky-500/10 border-sky-500/30", textColor: "text-sky-400", icon: "⚡" },
-  5: { level: 5, title: "Master", badgeColor: "bg-indigo-500/10 border-indigo-500/30", textColor: "text-indigo-400", icon: "🔮" },
-  6: { level: 6, title: "Veteran", badgeColor: "bg-amber-500/10 border-amber-500/30", textColor: "text-amber-400", icon: "🎖️" },
-  7: { level: 7, title: "Champion", badgeColor: "bg-yellow-500/15 border-yellow-500/40", textColor: "text-yellow-400", icon: "🏆" },
-  8: { level: 8, title: "Elite", badgeColor: "bg-cyan-500/15 border-cyan-500/40", textColor: "text-cyan-400", icon: "💎" },
-  9: { level: 9, title: "Legend", badgeColor: "bg-rose-500/15 border-rose-500/40", textColor: "text-rose-400", icon: "🔥" },
-  10: { level: 10, title: "Immortal", badgeColor: "bg-amber-400/20 border-amber-400/50", textColor: "text-amber-300", icon: "👑" },
+  1: { level: 1, title: "Newbie", badgeColor: "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700", textColor: "text-slate-700 dark:text-slate-300", icon: "🌱" },
+  2: { level: 2, title: "Rookie", badgeColor: "bg-blue-500/10 border-blue-500/20", textColor: "text-blue-600 dark:text-blue-400", icon: "🎮" },
+  3: { level: 3, title: "Gamer", badgeColor: "bg-emerald-500/10 border-emerald-500/20", textColor: "text-emerald-600 dark:text-emerald-400", icon: "🕹️" },
+  4: { level: 4, title: "Pro Gamer", badgeColor: "bg-sky-500/10 border-sky-500/30", textColor: "text-sky-600 dark:text-sky-400", icon: "⚡" },
+  5: { level: 5, title: "Master", badgeColor: "bg-indigo-500/10 border-indigo-500/30", textColor: "text-indigo-600 dark:text-indigo-400", icon: "🔮" },
+  6: { level: 6, title: "Veteran", badgeColor: "bg-amber-500/10 border-amber-500/30", textColor: "text-amber-600 dark:text-amber-400", icon: "🎖️" },
+  7: { level: 7, title: "Champion", badgeColor: "bg-yellow-500/15 border-yellow-500/40", textColor: "text-yellow-600 dark:text-yellow-400", icon: "🏆" },
+  8: { level: 8, title: "Elite", badgeColor: "bg-cyan-500/15 border-cyan-500/40", textColor: "text-cyan-600 dark:text-cyan-400", icon: "💎" },
+  9: { level: 9, title: "Legend", badgeColor: "bg-rose-500/15 border-rose-500/40", textColor: "text-rose-600 dark:text-rose-400", icon: "🔥" },
+  10: { level: 10, title: "Immortal", badgeColor: "bg-amber-400/20 border-amber-400/50", textColor: "text-amber-600 dark:text-amber-300", icon: "👑" },
 };
 
 interface Order {
@@ -269,7 +269,7 @@ function DashboardContent() {
     (c) => c.name.toLowerCase() === category.toLowerCase()
   );
 
-  // মেম্বারশিপের বয়স হিসেব (বছর, মাস ও দিন)
+  // মেম্বারশিপের বয়স হিসেব
   const getMembershipDuration = (createdAt?: string) => {
     if (!createdAt) return "1 day";
     const start = new Date(createdAt);
@@ -512,7 +512,7 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors duration-200">
         <div className="relative w-14 h-14">
           <div className="absolute inset-0 rounded-full border-2 border-sky-500/20"></div>
           <div className="absolute inset-0 rounded-full border-2 border-t-sky-500 animate-spin"></div>
@@ -553,9 +553,9 @@ function DashboardContent() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white selection:bg-sky-500 selection:text-white transition-colors duration-200">
       {/* Top Header */}
-      <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-slate-200 dark:border-slate-900 bg-white/80 dark:bg-slate-950/80 backdrop-blur sticky top-0 z-50 transition-colors duration-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="shrink-0">
@@ -567,7 +567,7 @@ function DashboardContent() {
                 className="w-8 h-8 object-contain bg-transparent"
               />
             </div>
-            <span className="font-extrabold text-lg tracking-tight text-white">
+            <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
               Inskeys
             </span>
           </Link>
@@ -575,13 +575,13 @@ function DashboardContent() {
           <div className="flex items-center gap-3 text-xs">
             <Link
               href="/"
-              className="text-slate-300 hover:text-white bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl transition"
+              className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-1.5 rounded-xl transition"
             >
               ← Home
             </Link>
             <button
               onClick={handleLogout}
-              className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-xl transition cursor-pointer font-bold"
+              className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 border border-rose-500/20 px-3 py-1.5 rounded-xl transition cursor-pointer font-bold"
             >
               Log Out
             </button>
@@ -592,10 +592,10 @@ function DashboardContent() {
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">
+          <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
             Dashboard
           </h1>
-          <p className="text-xs text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Manage your digital orders, identity verification, and buyer security.
           </p>
         </div>
@@ -611,20 +611,20 @@ function DashboardContent() {
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Profile Card */}
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                     <div className="flex items-start gap-3.5">
-                      <div className="w-14 h-14 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                      <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-2xl shrink-0 shadow-inner">
                         {levelDetails.icon}
                       </div>
                       <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-sm font-black text-white truncate">
+                          <h3 className="text-sm font-black text-slate-900 dark:text-white truncate">
                             {fullName}
                           </h3>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-400">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></span>
                             Verified user
                           </span>
                           <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold ${levelDetails.badgeColor} ${levelDetails.textColor}`}>
@@ -635,61 +635,61 @@ function DashboardContent() {
                     </div>
 
                     {/* Feedback Mini Stats */}
-                    <div className="grid grid-cols-2 gap-2 bg-slate-950/70 p-2.5 rounded-2xl border border-slate-800/80 text-[11px]">
+                    <div className="grid grid-cols-2 gap-2 bg-slate-50 dark:bg-slate-950/70 p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800/80 text-[11px]">
                       <div>
-                        <span className="text-slate-500 block text-[10px]">Positive feedbacks</span>
-                        <strong className="text-emerald-400 font-bold">100% (5.0)</strong>
+                        <span className="text-slate-400 dark:text-slate-500 block text-[10px]">Positive feedbacks</span>
+                        <strong className="text-emerald-600 dark:text-emerald-400 font-bold">100% (5.0)</strong>
                       </div>
                       <div>
-                        <span className="text-slate-500 block text-[10px]">Negative feedbacks</span>
-                        <strong className="text-slate-400 font-bold">0</strong>
+                        <span className="text-slate-400 dark:text-slate-500 block text-[10px]">Negative feedbacks</span>
+                        <strong className="text-slate-600 dark:text-slate-400 font-bold">0</strong>
                       </div>
                     </div>
 
                     {/* Metadata & Membership Duration */}
-                    <div className="space-y-1.5 text-xs text-slate-400 pt-1 border-t border-slate-800/80 font-medium">
+                    <div className="space-y-1.5 text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-slate-800/80 font-medium">
                       <div className="flex justify-between">
                         <span>Registered:</span>
                         <div className="text-right">
-                          <strong className="text-slate-200 font-mono block">{registeredDate}</strong>
-                          <span className="text-[10px] text-sky-400 font-semibold block">({membershipDurationText})</span>
+                          <strong className="text-slate-700 dark:text-slate-200 font-mono block">{registeredDate}</strong>
+                          <span className="text-[10px] text-sky-600 dark:text-sky-400 font-semibold block">({membershipDurationText})</span>
                         </div>
                       </div>
                       <div className="flex justify-between pt-1">
                         <span>Successful transactions:</span>
-                        <strong className="text-sky-400 font-bold">{completedOrders.length}</strong>
+                        <strong className="text-sky-600 dark:text-sky-400 font-bold">{completedOrders.length}</strong>
                       </div>
                       <div className="flex justify-between">
                         <span>Tier status:</span>
-                        <strong className="text-slate-200">{levelDetails.title}</strong>
+                        <strong className="text-slate-700 dark:text-slate-200">{levelDetails.title}</strong>
                       </div>
                     </div>
                   </div>
 
                   {/* System Messages */}
-                  <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 space-y-3 flex flex-col justify-between shadow-xl">
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 space-y-3 flex flex-col justify-between shadow-sm dark:shadow-xl transition-colors">
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                        <span className="text-xs font-bold text-white uppercase tracking-wider">
+                      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                           System Messages
                         </span>
-                        <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+                        <span className="w-2 h-2 rounded-full bg-sky-500 dark:bg-sky-400 animate-ping"></span>
                       </div>
 
-                      <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-1 text-xs text-amber-300">
+                      <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-1 text-xs text-amber-700 dark:text-amber-300">
                         <span className="font-bold block">🛡️ 36-Hour Buyer Protection Active</span>
-                        <p className="text-[11px] leading-relaxed text-amber-300/80">
+                        <p className="text-[11px] leading-relaxed text-amber-800/80 dark:text-amber-300/80">
                           All orders are held under safety guarantee until activation code validity is fully confirmed.
                         </p>
                       </div>
 
-                      <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl text-[11px] text-slate-400">
+                      <div className="p-3 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/80 rounded-2xl text-[11px] text-slate-500 dark:text-slate-400">
                         No critical alerts or account dispute notices at the moment.
                       </div>
                     </div>
 
-                    <div className="text-[11px] text-slate-500 text-right font-mono">
-                      Location: <strong className="text-slate-300">{country}</strong>
+                    <div className="text-[11px] text-slate-400 dark:text-slate-500 text-right font-mono">
+                      Location: <strong className="text-slate-700 dark:text-slate-300">{country}</strong>
                     </div>
                   </div>
                 </div>
@@ -699,7 +699,7 @@ function DashboardContent() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("feedbacks")}
-                    className="p-3.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer shadow-md"
+                    className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer shadow-sm"
                   >
                     <span>🛡️</span>
                     <span>Feedback records</span>
@@ -708,7 +708,7 @@ function DashboardContent() {
                   <button
                     type="button"
                     onClick={() => setActiveTab("messages")}
-                    className="p-3.5 bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition cursor-pointer shadow-md"
+                    className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer shadow-sm"
                   >
                     <span>💬</span>
                     <span>Private messages</span>
@@ -716,21 +716,21 @@ function DashboardContent() {
                 </div>
 
                 {/* Recent Purchases */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-5 space-y-3 shadow-xl">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 space-y-3 shadow-sm dark:shadow-xl transition-colors">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                       Recent Orders ({orders.slice(0, 3).length})
                     </h3>
                     <button
                       onClick={() => setActiveTab("transactions")}
-                      className="text-xs text-sky-400 hover:underline cursor-pointer"
+                      className="text-xs text-sky-600 dark:text-sky-400 hover:underline cursor-pointer"
                     >
                       View All Transactions →
                     </button>
                   </div>
 
                   {orders.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-slate-500">
+                    <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500">
                       No purchase records found yet.
                     </div>
                   ) : (
@@ -738,10 +738,10 @@ function DashboardContent() {
                       {orders.slice(0, 3).map((ord) => (
                         <div
                           key={ord.id}
-                          className="p-3 bg-slate-950 border border-slate-800/80 rounded-2xl flex items-center justify-between gap-3 text-xs"
+                          className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 rounded-2xl flex items-center justify-between gap-3 text-xs"
                         >
                           <div className="min-w-0">
-                            <h4 className="font-bold text-white truncate">
+                            <h4 className="font-bold text-slate-900 dark:text-white truncate">
                               {ord.product_title || `Order #${ord.id}`}
                             </h4>
                             <span className="text-[11px] text-slate-500 font-mono">
@@ -751,8 +751,8 @@ function DashboardContent() {
                           <span
                             className={`px-2 py-0.5 rounded-full font-bold uppercase text-[9px] shrink-0 ${
                               ord.payment_status === "completed" || ord.status === "Paid"
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                             }`}
                           >
                             {ord.payment_status || ord.status || "Pending"}
@@ -767,11 +767,11 @@ function DashboardContent() {
 
             {/* VIEW 2: "MY PRODUCTS" */}
             {activeTab === "products" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-6 shadow-xl">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm dark:shadow-xl transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
                   <div>
-                    <h2 className="text-xl font-black text-white">My products</h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white">My products</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Manage your digital vouchers, code stock, and pricing as a merchant.
                     </p>
                   </div>
@@ -783,14 +783,14 @@ function DashboardContent() {
                         resetProductForm();
                         setShowAddProductModal(true);
                       }}
-                      className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow-lg transition cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer flex items-center gap-1.5"
                     >
                       <span>Add New Product</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => alert("Product inventory exported to CSV format.")}
-                      className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition cursor-pointer"
+                      className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl border border-slate-200 dark:border-slate-700 transition cursor-pointer"
                     >
                       Export CSV
                     </button>
@@ -798,13 +798,13 @@ function DashboardContent() {
                 </div>
 
                 {showAddProductModal && (
-                  <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 space-y-6">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-6">
+                    <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                       <div>
-                        <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                           Add New Product Listing
                         </h3>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
                           {productStep === 1 ? "Step 1 of 2: Product Information" : "Step 2 of 2: Delivery Method Setup"}
                         </span>
                       </div>
@@ -814,7 +814,7 @@ function DashboardContent() {
                           resetProductForm();
                           setShowAddProductModal(false);
                         }}
-                        className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
+                        className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white px-2.5 py-1 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -823,23 +823,23 @@ function DashboardContent() {
                     {productStep === 1 && (
                       <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
                         <div>
-                          <label className="block text-xs font-semibold text-slate-300 mb-1">Product Title</label>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Product Title</label>
                           <input
                             type="text"
                             required
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="e.g. PUBG Mobile 60 UC Global Pin"
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                           />
                         </div>
 
-                        <div className="p-4 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
-                          <label className="block text-xs font-semibold text-slate-300">
+                        <div className="p-4 bg-slate-100/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                             Category & Product Icon
                           </label>
                           <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shrink-0 flex items-center justify-center">
+                            <div className="w-16 h-16 bg-slate-200 dark:bg-slate-950 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0 flex items-center justify-center">
                               {activeSelectedCategory?.image_url ? (
                                 <img
                                   src={activeSelectedCategory.image_url}
@@ -847,7 +847,7 @@ function DashboardContent() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-slate-600 text-xs font-mono">No Icon</span>
+                                <span className="text-slate-400 dark:text-slate-600 text-xs font-mono">No Icon</span>
                               )}
                             </div>
                             <div className="flex-1 space-y-1">
@@ -855,7 +855,7 @@ function DashboardContent() {
                                 required
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                               >
                                 <option value="" disabled>-- Select a Category --</option>
                                 {categories.map((c) => (
@@ -873,7 +873,7 @@ function DashboardContent() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Regular Price (USD $)</label>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Regular Price (USD $)</label>
                             <input
                               type="number"
                               step="0.01"
@@ -881,32 +881,32 @@ function DashboardContent() {
                               value={price}
                               onChange={(e) => setPrice(e.target.value)}
                               placeholder="9.99"
-                              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs font-semibold text-slate-300 mb-1">Discount Price (USD $ - Optional)</label>
+                            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Discount Price (USD $ - Optional)</label>
                             <input
                               type="number"
                               step="0.01"
                               value={discountPrice}
                               onChange={(e) => setDiscountPrice(e.target.value)}
                               placeholder="7.99"
-                              className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                             />
                           </div>
                         </div>
 
                         {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (
-                          <div className="p-3 bg-slate-900/60 border border-slate-800 rounded-xl space-y-3">
-                            <span className="block text-xs font-bold text-sky-400">Discount Timer / Duration</span>
+                          <div className="p-3 bg-slate-100/60 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
+                            <span className="block text-xs font-bold text-sky-600 dark:text-sky-400">Discount Timer / Duration</span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div>
-                                <label className="block text-xs text-slate-400 mb-1">Offer Type</label>
+                                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Offer Type</label>
                                 <select
                                   value={discountDurationType}
                                   onChange={(e) => setDiscountDurationType(e.target.value as any)}
-                                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                                 >
                                   <option value="none">No Expiry Date (Until manually changed)</option>
                                   <option value="lifetime">Lifetime Deal</option>
@@ -915,14 +915,14 @@ function DashboardContent() {
                               </div>
                               {discountDurationType === "custom" && (
                                 <div>
-                                  <label className="block text-xs text-slate-400 mb-1">Number of Days Active</label>
+                                  <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Number of Days Active</label>
                                   <input
                                     type="number"
                                     min="1"
                                     max="365"
                                     value={discountDays}
                                     onChange={(e) => setDiscountDays(e.target.value)}
-                                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                                   />
                                 </div>
                               )}
@@ -931,14 +931,14 @@ function DashboardContent() {
                         )}
 
                         <div>
-                          <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                          <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Description</label>
                           <textarea
                             rows={3}
                             required
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Redemption instructions, region limitations, and key details..."
-                            className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                           />
                         </div>
 
@@ -946,7 +946,7 @@ function DashboardContent() {
                           <button
                             type="submit"
                             disabled={submittingProduct}
-                            className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950 flex items-center gap-2"
+                            className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-md shadow-sky-500/20 flex items-center gap-2"
                           >
                             <span>{submittingProduct ? "Saving..." : "Next: Set Delivery Method →"}</span>
                           </button>
@@ -957,8 +957,8 @@ function DashboardContent() {
                     {productStep === 2 && (
                       <div className="space-y-6">
                         <div>
-                          <h4 className="text-base font-bold text-white mb-1">How will this product be delivered?</h4>
-                          <p className="text-xs text-slate-400">
+                          <h4 className="text-base font-bold text-slate-900 dark:text-white mb-1">How will this product be delivered?</h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
                             Select fulfillment method for <strong>{title}</strong>.
                           </p>
                         </div>
@@ -969,7 +969,7 @@ function DashboardContent() {
                             className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
                               deliveryType === "auto"
                                 ? "bg-sky-500/10 border-sky-500 ring-1 ring-sky-500/50"
-                                : "bg-slate-900 border-slate-800 hover:border-slate-700"
+                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -981,8 +981,8 @@ function DashboardContent() {
                                 className="cursor-pointer text-sky-500"
                               />
                             </div>
-                            <h4 className="text-sm font-bold text-white">Automatic Delivery</h4>
-                            <p className="text-xs text-slate-400 leading-relaxed">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Automatic Delivery</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                               License keys/vouchers are delivered instantly to buyer's screen right after payment confirmation.
                             </p>
                           </div>
@@ -992,7 +992,7 @@ function DashboardContent() {
                             className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
                               deliveryType === "manual"
                                 ? "bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50"
-                                : "bg-slate-900 border-slate-800 hover:border-slate-700"
+                                : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -1004,20 +1004,20 @@ function DashboardContent() {
                                 className="cursor-pointer text-amber-500"
                               />
                             </div>
-                            <h4 className="text-sm font-bold text-white">Manual Delivery</h4>
-                            <p className="text-xs text-slate-400 leading-relaxed">
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Manual Delivery</h4>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                               You fulfill the order manually. A <strong>🕒 Manual Delivery</strong> badge will appear on storefront.
                             </p>
                           </div>
                         </div>
 
                         {deliveryType === "auto" ? (
-                          <div className="space-y-2 bg-slate-900 border border-slate-800 rounded-xl p-4">
+                          <div className="space-y-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
                             <div className="flex items-center justify-between mb-1">
-                              <label className="block text-xs font-semibold text-slate-300">
+                              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                                 Voucher / License Codes (One code per line)
                               </label>
-                              <span className="text-xs font-mono text-sky-400">
+                              <span className="text-xs font-mono text-sky-600 dark:text-sky-400">
                                 Stock: {voucherCodes.split("\n").filter((c) => c.trim()).length} codes
                               </span>
                             </div>
@@ -1026,11 +1026,11 @@ function DashboardContent() {
                               value={voucherCodes}
                               onChange={(e) => setVoucherCodes(e.target.value)}
                               placeholder="CODE-XXXXX-1111&#10;CODE-YYYYY-2222"
-                              className="w-full font-mono bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none"
+                              className="w-full font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
                             />
                           </div>
                         ) : (
-                          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
+                          <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-700 dark:text-amber-300">
                             🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual dispatch.
                           </div>
                         )}
@@ -1039,7 +1039,7 @@ function DashboardContent() {
                           <button
                             type="button"
                             onClick={() => setProductStep(1)}
-                            className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                            className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                           >
                             ← Back to Details
                           </button>
@@ -1047,7 +1047,7 @@ function DashboardContent() {
                             type="button"
                             disabled={submittingProduct}
                             onClick={handleProductStepTwoSubmit}
-                            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-emerald-950"
+                            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-md shadow-emerald-500/20"
                           >
                             {submittingProduct ? "Finalizing..." : "Complete & Publish Product ✓"}
                           </button>
@@ -1058,9 +1058,9 @@ function DashboardContent() {
                 )}
 
                 {/* Products Table */}
-                <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-950">
-                  <table className="w-full text-left text-xs text-slate-300">
-                    <thead className="bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                  <table className="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                    <thead className="bg-slate-50 dark:bg-slate-900/80 text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-800">
                       <tr>
                         <th className="p-3.5">ID</th>
                         <th className="p-3.5">Product name</th>
@@ -1071,10 +1071,10 @@ function DashboardContent() {
                         <th className="p-3.5 text-right">Action</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60 font-medium">
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800/60 font-medium">
                       {myProducts.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-10 text-center text-xs text-slate-500">
+                          <td colSpan={7} className="p-10 text-center text-xs text-slate-400 dark:text-slate-500">
                             No products in inventory. Click "Add New Product" to list your digital assets.
                           </td>
                         </tr>
@@ -1085,33 +1085,33 @@ function DashboardContent() {
                             : 0;
 
                           return (
-                            <tr key={p.id} className="hover:bg-slate-900/40 transition">
-                              <td className="p-3.5 font-mono text-slate-400">#{p.id}</td>
+                            <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/40 transition">
+                              <td className="p-3.5 font-mono text-slate-500 dark:text-slate-400">#{p.id}</td>
                               <td className="p-3.5">
                                 <div className="space-y-0.5">
-                                  <span className="text-[10px] text-slate-500 block">{p.category}</span>
-                                  <span className="font-bold text-white hover:text-sky-400 transition block truncate max-w-xs">
+                                  <span className="text-[10px] text-slate-400 dark:text-slate-500 block">{p.category}</span>
+                                  <span className="font-bold text-slate-900 dark:text-white hover:text-sky-600 dark:hover:text-sky-400 transition block truncate max-w-xs">
                                     {p.title}
                                   </span>
                                 </div>
                               </td>
-                              <td className="p-3.5 text-center font-bold text-slate-200">
+                              <td className="p-3.5 text-center font-bold text-slate-800 dark:text-slate-200">
                                 {p.sold_count || 0}
                               </td>
                               <td className="p-3.5 text-center">
                                 {p.delivery_type === "manual" ? (
-                                  <span className="text-amber-400 font-bold text-[11px]">🕒 Manual</span>
+                                  <span className="text-amber-600 dark:text-amber-400 font-bold text-[11px]">🕒 Manual</span>
                                 ) : (
-                                  <span className={`font-bold ${availableCount > 0 ? "text-emerald-400" : "text-rose-400"}`}>
+                                  <span className={`font-bold ${availableCount > 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
                                     {availableCount}
                                   </span>
                                 )}
                               </td>
-                              <td className="p-3.5 font-bold text-sky-400">
+                              <td className="p-3.5 font-bold text-sky-600 dark:text-sky-400">
                                 ${p.price.toFixed(2)} USD
                               </td>
                               <td className="p-3.5">
-                                <span className="inline-flex items-center gap-1 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[10px] text-slate-400 font-mono">
+                                <span className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded text-[10px] text-slate-600 dark:text-slate-400 font-mono">
                                   <span>🪙 Cryptomus</span>
                                 </span>
                               </td>
@@ -1119,7 +1119,7 @@ function DashboardContent() {
                                 <button
                                   type="button"
                                   onClick={() => alert(`Product #${p.id} options`)}
-                                  className="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-[11px] font-bold text-slate-300 hover:text-white transition cursor-pointer"
+                                  className="px-2.5 py-1 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
                                 >
                                   Action ▾
                                 </button>
@@ -1136,44 +1136,44 @@ function DashboardContent() {
 
             {/* VIEW 3: FEEDBACK RECORDS */}
             {activeTab === "feedbacks" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <div>
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                       Feedback Records
                     </h2>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Ratings and customer reviews from verified transactions.
                     </p>
                   </div>
-                  <span className="text-xs px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-bold">
+                  <span className="text-xs px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full font-bold">
                     100% Positive
                   </span>
                 </div>
 
                 <div className="space-y-3">
-                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 font-bold">★★★★★</span>
-                        <strong className="text-xs text-white">Fast & genuine code delivery!</strong>
+                        <span className="text-emerald-500 dark:text-emerald-400 font-bold">★★★★★</span>
+                        <strong className="text-xs text-slate-900 dark:text-white">Fast & genuine code delivery!</strong>
                       </div>
-                      <span className="text-[10px] text-slate-500 font-mono">Verified Buyer</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Verified Buyer</span>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                       "Code worked instantly upon payment confirmation. 36-hour safety hold gives complete peace of mind."
                     </p>
                   </div>
 
-                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-1.5">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-1.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-emerald-400 font-bold">★★★★★</span>
-                        <strong className="text-xs text-white">Trustworthy merchant</strong>
+                        <span className="text-emerald-500 dark:text-emerald-400 font-bold">★★★★★</span>
+                        <strong className="text-xs text-slate-900 dark:text-white">Trustworthy merchant</strong>
                       </div>
-                      <span className="text-[10px] text-slate-500 font-mono">Verified Buyer</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Verified Buyer</span>
                     </div>
-                    <p className="text-xs text-slate-400 leading-relaxed">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                       "Clean interface and immediate receipt. Would definitely purchase again!"
                     </p>
                   </div>
@@ -1183,10 +1183,10 @@ function DashboardContent() {
 
             {/* VIEW 4: MESSENGER (REALTIME CHAT) */}
             {activeTab === "messages" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl h-[520px] flex flex-col md:flex-row">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl dark:shadow-2xl h-[520px] flex flex-col md:flex-row transition-colors">
                 {/* Left Conversations Sidebar */}
-                <div className="w-full md:w-60 bg-slate-950 border-r border-slate-800 p-3 space-y-2 overflow-y-auto shrink-0">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block px-2">
+                <div className="w-full md:w-60 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 p-3 space-y-2 overflow-y-auto shrink-0">
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block px-2">
                     Conversations ({conversations.length})
                   </span>
                   {conversations.map((contactEmail) => (
@@ -1195,11 +1195,11 @@ function DashboardContent() {
                       onClick={() => setActiveChatEmail(contactEmail)}
                       className={`w-full text-left p-2.5 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center gap-2.5 ${
                         activeChatEmail === contactEmail
-                          ? "bg-sky-500 text-white shadow-md shadow-sky-950"
-                          : "text-slate-300 hover:bg-slate-900"
+                          ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900"
                       }`}
                     >
-                      <div className="w-7 h-7 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 flex items-center justify-center font-bold text-[10px] shrink-0 text-slate-800 dark:text-white">
                         {contactEmail.charAt(0).toUpperCase()}
                       </div>
                       <span className="truncate flex-1 font-mono text-[11px]">{contactEmail.split("@")[0]}</span>
@@ -1208,23 +1208,23 @@ function DashboardContent() {
                 </div>
 
                 {/* Right Messenger Chat Window */}
-                <div className="flex-1 flex flex-col justify-between bg-slate-900/50">
-                  <div className="p-3.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex-1 flex flex-col justify-between bg-white dark:bg-slate-900/50">
+                  <div className="p-3.5 bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                      <span className="text-xs font-bold text-white font-mono">{activeChatEmail}</span>
+                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse"></div>
+                      <span className="text-xs font-bold text-slate-900 dark:text-white font-mono">{activeChatEmail}</span>
                     </div>
-                    <span className="text-[10px] text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded">
+                    <span className="text-[10px] text-sky-600 dark:text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded">
                       Direct Messaging
                     </span>
                   </div>
 
-                  <div className="flex-1 p-4 overflow-y-auto space-y-3">
+                  <div className="flex-1 p-4 overflow-y-auto space-y-3 bg-white dark:bg-transparent">
                     {activeMessages.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center text-xs text-slate-500 space-y-2">
+                      <div className="h-full flex flex-col items-center justify-center text-xs text-slate-400 dark:text-slate-500 space-y-2">
                         <span className="text-2xl">💬</span>
                         <p>No messages exchanged with this user yet.</p>
-                        <p className="text-[10px] text-slate-600">Type a message below to start the conversation.</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-600">Type a message below to start the conversation.</p>
                       </div>
                     ) : (
                       activeMessages.map((msg, i) => (
@@ -1236,7 +1236,7 @@ function DashboardContent() {
                             className={`max-w-[75%] p-3 rounded-2xl text-xs leading-relaxed ${
                               msg.sender_email === user.email
                                 ? "bg-sky-500 text-white rounded-br-none shadow-md"
-                                : "bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-md"
+                                : "bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 rounded-bl-none shadow-sm"
                             }`}
                           >
                             <p>{msg.message}</p>
@@ -1250,18 +1250,18 @@ function DashboardContent() {
                     <div ref={chatBottomRef} />
                   </div>
 
-                  <form onSubmit={handleSendMessage} className="p-3 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+                  <form onSubmit={handleSendMessage} className="p-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
                     <input
                       type="text"
                       value={typedMessage}
                       onChange={(e) => setTypedMessage(e.target.value)}
                       placeholder={`Type a message to ${activeChatEmail.split("@")[0]}...`}
-                      className="flex-1 bg-slate-900 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none"
+                      className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none"
                     />
                     <button
                       type="submit"
                       disabled={!typedMessage.trim()}
-                      className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md"
+                      className="px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-40 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20"
                     >
                       Send →
                     </button>
@@ -1272,18 +1272,18 @@ function DashboardContent() {
 
             {/* VIEW 5: TRANSACTIONS */}
             {activeTab === "transactions" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Transaction History ({orders.length})
                   </h2>
-                  <span className="text-xs text-sky-400 font-mono">
+                  <span className="text-xs text-sky-600 dark:text-sky-400 font-mono">
                     Total Volume: ${totalSpent.toFixed(2)} USD
                   </span>
                 </div>
 
                 {orders.length === 0 ? (
-                  <div className="p-12 text-center text-xs text-slate-500">
+                  <div className="p-12 text-center text-xs text-slate-400 dark:text-slate-500">
                     No transactions recorded on this account.
                   </div>
                 ) : (
@@ -1291,23 +1291,23 @@ function DashboardContent() {
                     {orders.map((ord) => (
                       <div
                         key={ord.id}
-                        className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-2.5"
+                        className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2.5"
                       >
                         <div className="flex items-center justify-between">
-                          <h4 className="text-xs font-bold text-white">
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white">
                             {ord.product_title || `Product #${ord.product_id}`}
                           </h4>
-                          <span className="text-xs font-black text-sky-400">
+                          <span className="text-xs font-black text-sky-600 dark:text-sky-400">
                             ${ord.amount || ord.price || 0} USD
                           </span>
                         </div>
-                        <div className="flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-800/60 pt-2 font-mono">
+                        <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800/60 pt-2 font-mono">
                           <span>Order ID: {ord.payment_id || `#${ord.id}`}</span>
                           <span
                             className={`px-2 py-0.5 rounded font-bold uppercase ${
                               ord.payment_status === "completed" || ord.status === "Paid"
-                                ? "text-emerald-400 bg-emerald-500/10"
-                                : "text-amber-400 bg-amber-500/10"
+                                ? "text-emerald-600 dark:text-emerald-400 bg-emerald-500/10"
+                                : "text-amber-600 dark:text-amber-400 bg-amber-500/10"
                             }`}
                           >
                             {ord.payment_status || ord.status || "Pending"}
@@ -1322,30 +1322,30 @@ function DashboardContent() {
 
             {/* VIEW 6: FINANCIAL */}
             {activeTab === "financial" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Financial & Wallet Summary
                   </h2>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Cryptocurrency gateway transactions and buyer protection balance.
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
                       Total Volume Paid
                     </span>
-                    <h3 className="text-2xl font-black text-sky-400 font-mono mt-1">
+                    <h3 className="text-2xl font-black text-sky-600 dark:text-sky-400 font-mono mt-1">
                       ${totalSpent.toFixed(2)} USD
                     </h3>
                   </div>
-                  <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl">
+                    <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase">
                       Buyer Protection Balance
                     </span>
-                    <h3 className="text-2xl font-black text-emerald-400 font-mono mt-1">
+                    <h3 className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1">
                       100% Protected
                     </h3>
                   </div>
@@ -1355,33 +1355,33 @@ function DashboardContent() {
 
             {/* VIEW 7: PROFILE */}
             {activeTab === "profile" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Profile & Identity
                   </h2>
                 </div>
 
                 <div className="space-y-3 text-xs">
-                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Registered Name</span>
-                    <strong className="text-white text-sm">{fullName}</strong>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Registered Name</span>
+                    <strong className="text-slate-900 dark:text-white text-sm">{fullName}</strong>
                   </div>
-                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Authenticated Email</span>
-                    <strong className="text-sky-400 font-mono">{user?.email}</strong>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Authenticated Email</span>
+                    <strong className="text-sky-600 dark:text-sky-400 font-mono">{user?.email}</strong>
                   </div>
-                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Country / Region</span>
-                    <strong className="text-white">{country}</strong>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Country / Region</span>
+                    <strong className="text-slate-900 dark:text-white">{country}</strong>
                   </div>
-                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Membership Duration</span>
-                    <strong className="text-sky-400">{membershipDurationText}</strong>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Membership Duration</span>
+                    <strong className="text-sky-600 dark:text-sky-400">{membershipDurationText}</strong>
                   </div>
-                  <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
-                    <span className="text-slate-400 block text-[10px]">Account Tier Status</span>
-                    <strong className="text-emerald-400">Level {levelDetails.level} — {levelDetails.title}</strong>
+                  <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Account Tier Status</span>
+                    <strong className="text-emerald-600 dark:text-emerald-400">Level {levelDetails.level} — {levelDetails.title}</strong>
                   </div>
                 </div>
               </div>
@@ -1389,25 +1389,25 @@ function DashboardContent() {
 
             {/* VIEW 8: DISPUTE CENTER */}
             {activeTab === "dispute" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Dispute Center & Safety Hold
                   </h2>
-                  <p className="text-xs text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Report faulty codes or activate your 36-Hour Buyer Protection refund inquiry.
                   </p>
                 </div>
 
-                <div className="p-6 bg-slate-950 border border-slate-800 rounded-2xl text-center space-y-3">
+                <div className="p-6 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-center space-y-3">
                   <div className="text-3xl">🛡️</div>
-                  <h4 className="text-xs font-bold text-white">No Open Disputes</h4>
-                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">No Open Disputes</h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
                     If an activation key is invalid or delivery is delayed, you can initiate a claim within 36 hours of payment.
                   </p>
                   <button
                     onClick={() => setActiveTab("support")}
-                    className="inline-block px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer"
+                    className="inline-block px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20"
                   >
                     Open Dispute Ticket →
                   </button>
@@ -1417,24 +1417,24 @@ function DashboardContent() {
 
             {/* VIEW 9: SECURITY & SETTINGS */}
             {activeTab === "security" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Security & Authentication Settings
                   </h2>
                 </div>
 
-                <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3 text-xs">
+                <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 text-xs">
                   <div className="flex items-center justify-between">
                     <div>
-                      <strong className="text-white block">Password Security</strong>
-                      <span className="text-[11px] text-slate-400">
+                      <strong className="text-slate-900 dark:text-white block">Password Security</strong>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
                         Reset your account password via 6-digit OTP
                       </span>
                     </div>
                     <Link
                       href="/auth"
-                      className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-bold text-[11px] transition"
+                      className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-bold text-[11px] transition"
                     >
                       Update
                     </Link>
@@ -1445,13 +1445,13 @@ function DashboardContent() {
 
             {/* VIEW 10: DISCOUNT VOUCHERS */}
             {activeTab === "vouchers" && (
-              <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                <div className="border-b border-slate-800 pb-3">
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+              <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Discount Vouchers & Promotions
                   </h2>
                 </div>
-                <div className="p-8 text-center text-xs text-slate-500">
+                <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500">
                   No promotional coupon codes currently applied to this account.
                 </div>
               </div>
@@ -1460,100 +1460,100 @@ function DashboardContent() {
             {/* VIEW 11: SUPPORT DESK */}
             {activeTab === "support" && (
               <div className="space-y-6">
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                   <div>
-                    <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                    <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                       Submit Support Ticket
                     </h2>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Need help with an activation key or order? Submit your request below.
                     </p>
                   </div>
 
                   {ticketActionMsg && (
-                    <div className="p-3 rounded-xl text-xs bg-slate-950 border border-slate-800 text-slate-200">
+                    <div className="p-3 rounded-xl text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200">
                       {ticketActionMsg}
                     </div>
                   )}
 
                   <form onSubmit={handleTicketSubmit} className="space-y-3.5">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Subject</label>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Subject</label>
                       <input
                         type="text"
                         required
                         value={ticketSubject}
                         onChange={(e) => setTicketSubject(e.target.value)}
                         placeholder="e.g. Code activation issue"
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition"
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Order ID (Optional)</label>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Order ID (Optional)</label>
                       <input
                         type="text"
                         value={ticketOrderId}
                         onChange={(e) => setTicketOrderId(e.target.value)}
                         placeholder="e.g. #1024"
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none transition"
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-3.5 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-semibold text-slate-300 mb-1">Problem Description</label>
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Problem Description</label>
                       <textarea
                         rows={4}
                         required
                         value={ticketMessage}
                         onChange={(e) => setTicketMessage(e.target.value)}
                         placeholder="Describe your issue with code or receipt details..."
-                        className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none transition"
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition"
                       />
                     </div>
 
                     <button
                       type="submit"
                       disabled={submittingTicket}
-                      className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-sky-950"
+                      className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20"
                     >
                       {submittingTicket ? "Submitting Ticket..." : "Submit Ticket to Desk"}
                     </button>
                   </form>
                 </div>
 
-                <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 space-y-3 shadow-xl">
-                  <h3 className="text-sm font-bold text-white">Your Support History ({tickets.length})</h3>
+                <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-3 shadow-sm dark:shadow-xl transition-colors">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Your Support History ({tickets.length})</h3>
                   {tickets.length === 0 ? (
-                    <div className="p-8 text-center text-xs text-slate-500">
+                    <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500">
                       No support tickets found on your account.
                     </div>
                   ) : (
                     <div className="space-y-2.5">
                       {tickets.map((t) => (
-                        <div key={t.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2">
+                        <div key={t.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-white truncate max-w-[200px] sm:max-w-xs">{t.subject}</span>
+                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-xs">{t.subject}</span>
                             <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                               t.status === "resolved"
-                                ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                                 : t.status === "in_progress"
-                                ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                                : "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                                ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                                : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
                             }`}>
                               {t.status}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-400 bg-slate-900 p-2.5 rounded-xl border border-slate-800">
+                          <p className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
                             {t.message}
                           </p>
                           {t.admin_reply && (
-                            <div className="p-2.5 rounded-xl bg-sky-950/30 border border-sky-800/40 text-xs text-sky-200 space-y-1">
-                              <span className="text-[10px] font-bold text-sky-400 block">Inskeys Support Desk Reply:</span>
+                            <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/40 text-xs text-sky-800 dark:text-sky-200 space-y-1">
+                              <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 block">Inskeys Support Desk Reply:</span>
                               <p>{t.admin_reply}</p>
                             </div>
                           )}
-                          <div className="text-[10px] text-slate-500 font-mono">
+                          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                             Ticket ID: #{t.id} • {new Date(t.created_at).toLocaleDateString()}
                           </div>
                         </div>
@@ -1567,15 +1567,15 @@ function DashboardContent() {
           </div>
 
           {/* RIGHT SIDEBAR MENU */}
-          <aside className="lg:col-span-4 bg-slate-900/90 border border-slate-800 rounded-3xl p-3 sm:p-4 space-y-1 shadow-2xl sticky top-24">
+          <aside className="lg:col-span-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-3 sm:p-4 space-y-1 shadow-xl dark:shadow-2xl sticky top-24 transition-colors">
             
             <button
               type="button"
               onClick={() => setActiveTab("dashboard")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "dashboard"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">⊞</span>
@@ -1587,8 +1587,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("transactions")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "transactions"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">🔁</span>
@@ -1600,8 +1600,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("financial")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "financial"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">💳</span>
@@ -1613,8 +1613,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("products")}
               className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "products"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <div className="flex items-center gap-3">
@@ -1622,7 +1622,7 @@ function DashboardContent() {
                 <span>Products</span>
               </div>
               {myProducts.length > 0 && (
-                <span className="bg-slate-950 text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-800">
+                <span className="bg-slate-100 dark:bg-slate-950 text-sky-600 dark:text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">
                   {myProducts.length}
                 </span>
               )}
@@ -1633,8 +1633,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("profile")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "profile"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">👤</span>
@@ -1646,8 +1646,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("dispute")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "dispute"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">🛡️</span>
@@ -1659,8 +1659,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("security")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "security"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">⚙️</span>
@@ -1672,8 +1672,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("vouchers")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "vouchers"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">🎟️</span>
@@ -1685,8 +1685,8 @@ function DashboardContent() {
               onClick={() => setActiveTab("support")}
               className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
                 activeTab === "support"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <span className="text-base">🎫</span>
@@ -1704,7 +1704,7 @@ export default function BuyerDashboard() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors duration-200">
           <div className="relative w-14 h-14">
             <div className="absolute inset-0 rounded-full border-2 border-sky-500/20"></div>
             <div className="absolute inset-0 rounded-full border-2 border-t-sky-500 animate-spin"></div>

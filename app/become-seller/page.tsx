@@ -402,7 +402,7 @@ export default function BecomeSellerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center text-slate-400 font-sans text-sm">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-500 dark:text-slate-400 font-sans text-sm transition-colors duration-200">
         Verifying account status...
       </div>
     );
@@ -411,24 +411,24 @@ export default function BecomeSellerPage() {
   // Application Pending Screen
   if (applicationSubmitted) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6 selection:bg-sky-500 selection:text-white">
-        <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 mx-auto flex items-center justify-center text-2xl font-bold shadow-lg shadow-amber-950/40">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex items-center justify-center p-4 sm:p-6 selection:bg-sky-500 selection:text-white transition-colors duration-200">
+        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-xl dark:shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 dark:text-amber-400 mx-auto flex items-center justify-center text-2xl font-bold shadow-lg shadow-amber-500/10">
             ⏳
           </div>
           <div className="space-y-2">
-            <h2 className="text-xl font-bold text-white">Application Under Review</h2>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Application Under Review</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Your merchant application and identity documents have been submitted securely. Our compliance team will review your details shortly.
             </p>
           </div>
-          <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl text-xs text-slate-400 space-y-1 text-left font-mono">
-            <div>Status: <span className="text-amber-400 font-bold uppercase">Pending Verification</span></div>
-            <div>Safety: <span className="text-sky-400 font-bold">36-Hour Buyer Protection Standard</span></div>
+          <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs text-slate-600 dark:text-slate-400 space-y-1 text-left font-mono">
+            <div>Status: <span className="text-amber-600 dark:text-amber-400 font-bold uppercase">Pending Verification</span></div>
+            <div>Safety: <span className="text-sky-600 dark:text-sky-400 font-bold">36-Hour Buyer Protection Standard</span></div>
           </div>
           <Link
             href="/"
-            className="block w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition"
+            className="block w-full py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-bold text-xs rounded-xl transition border border-slate-200 dark:border-slate-700"
           >
             ← Return to Home
           </Link>
@@ -438,11 +438,11 @@ export default function BecomeSellerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 sm:p-6 md:p-10 selection:bg-sky-500 selection:text-white">
-      <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex items-center justify-center p-4 sm:p-6 md:p-10 selection:bg-sky-500 selection:text-white transition-colors duration-200">
+      <div className="w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl dark:shadow-2xl space-y-8">
         
         {/* Brand Header with Transparent Logo */}
-        <div className="flex items-center justify-between border-b border-slate-800 pb-5">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-5">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="shrink-0">
               <Image
@@ -453,13 +453,13 @@ export default function BecomeSellerPage() {
                 className="w-8 h-8 object-contain bg-transparent"
               />
             </div>
-            <span className="font-bold text-base tracking-tight text-white">
+            <span className="font-bold text-base tracking-tight text-slate-900 dark:text-white">
               Inskeys
             </span>
           </Link>
           <Link
             href="/dashboard"
-            className="text-xs text-slate-400 hover:text-white transition font-medium"
+            className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition font-medium"
           >
             ← Buyer Account
           </Link>
@@ -467,14 +467,14 @@ export default function BecomeSellerPage() {
 
         {/* Header Text */}
         <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-800 border border-slate-700/60 text-slate-300 text-[11px] font-medium">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-[11px] font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
             Merchant Onboarding & KYC
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Register as a Verified Merchant
           </h1>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
             {user
               ? "Submit your store credentials and legal identity details to begin listing digital keys across Inskeys."
               : "Sign in with your Google account to start selling digital products and license keys."}
@@ -482,7 +482,7 @@ export default function BecomeSellerPage() {
         </div>
 
         {errorMsg && (
-          <div className="p-3.5 rounded-xl text-xs bg-rose-500/10 text-rose-300 border border-rose-500/20 leading-relaxed">
+          <div className="p-3.5 rounded-xl text-xs bg-rose-500/10 text-rose-600 dark:text-rose-300 border border-rose-500/20 leading-relaxed">
             {errorMsg}
           </div>
         )}
@@ -490,16 +490,16 @@ export default function BecomeSellerPage() {
         {/* View if User Not Logged In */}
         {!user ? (
           <div className="space-y-5 py-2">
-            <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 text-center space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 mx-auto flex items-center justify-center shadow-lg shadow-sky-950/50">
+            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-600 dark:text-sky-400 mx-auto flex items-center justify-center shadow-md">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
                 </svg>
               </div>
-              <h3 className="text-sm font-bold text-slate-200">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-200">
                 Merchant Identity Authentication
               </h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
                 To safeguard buyer funds and adhere to global marketplace compliance, all merchants must authenticate before opening a storefront.
               </p>
             </div>
@@ -508,7 +508,7 @@ export default function BecomeSellerPage() {
               type="button"
               disabled={submitting}
               onClick={handleGoogleSignIn}
-              className="w-full py-3 px-4 bg-slate-950 hover:bg-slate-850 hover:border-slate-700 border border-slate-800 disabled:opacity-50 text-white font-semibold text-xs rounded-xl transition flex items-center justify-center gap-3 cursor-pointer shadow-sm"
+              className="w-full py-3 px-4 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 border border-slate-200 dark:border-slate-800 disabled:opacity-50 text-slate-800 dark:text-white font-semibold text-xs rounded-xl transition flex items-center justify-center gap-3 cursor-pointer shadow-sm"
             >
               <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path
@@ -534,7 +534,7 @@ export default function BecomeSellerPage() {
             <div className="text-center">
               <Link
                 href="/auth?redirect=/become-seller"
-                className="text-xs text-slate-500 hover:text-sky-400 transition"
+                className="text-xs text-slate-500 hover:text-sky-600 dark:hover:text-sky-400 transition"
               >
                 Prefer using email & password? Click here to Log In
               </Link>
@@ -543,9 +543,9 @@ export default function BecomeSellerPage() {
         ) : (
           /* Merchant Onboarding Form */
           <form onSubmit={handleRegisterSeller} className="space-y-5">
-            <div className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl flex items-center justify-between text-xs">
-              <span className="text-slate-400">Authenticated as:</span>
-              <span className="text-sky-400 font-mono font-semibold">
+            <div className="p-3 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between text-xs">
+              <span className="text-slate-500 dark:text-slate-400">Authenticated as:</span>
+              <span className="text-sky-600 dark:text-sky-400 font-mono font-semibold">
                 {user.email}
               </span>
             </div>
@@ -553,7 +553,7 @@ export default function BecomeSellerPage() {
             {/* Store Information */}
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                   Store / Brand Name
                 </label>
                 <input
@@ -562,13 +562,13 @@ export default function BecomeSellerPage() {
                   value={shopName}
                   onChange={(e) => setShopName(e.target.value)}
                   placeholder="e.g. Apex Codes, Global Voucher Store"
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
                 />
               </div>
 
               {/* Country Selector with Flags */}
               <div className="relative" ref={dropdownRef}>
-                <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                   Operating Country
                 </label>
                 
@@ -578,7 +578,7 @@ export default function BecomeSellerPage() {
                     setIsCountryDropdownOpen(!isCountryDropdownOpen);
                     setCountrySearchQuery("");
                   }}
-                  className="w-full bg-slate-950 border border-slate-800 hover:border-slate-700 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white flex items-center justify-between transition cursor-pointer"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white flex items-center justify-between transition cursor-pointer"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <img
@@ -594,7 +594,7 @@ export default function BecomeSellerPage() {
                 </button>
 
                 {isCountryDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-2 space-y-2">
+                  <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl p-2 space-y-2">
                     <div className="p-1">
                       <input
                         type="text"
@@ -602,13 +602,13 @@ export default function BecomeSellerPage() {
                         placeholder="Search country..."
                         value={countrySearchQuery}
                         onChange={(e) => setCountrySearchQuery(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                        className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
                       />
                     </div>
 
-                    <div className="max-h-56 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin scrollbar-thumb-slate-700">
+                    <div className="max-h-56 overflow-y-auto space-y-0.5 pr-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
                       {filteredCountries.length === 0 ? (
-                        <div className="p-3 text-center text-xs text-slate-500">
+                        <div className="p-3 text-center text-xs text-slate-400">
                           No country found
                         </div>
                       ) : (
@@ -622,7 +622,7 @@ export default function BecomeSellerPage() {
                             className={`p-2 rounded-xl flex items-center gap-2.5 text-xs cursor-pointer transition ${
                               selectedCountry.code === c.code
                                 ? "bg-sky-500 text-white font-bold"
-                                : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                                : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white"
                             }`}
                           >
                             <img
@@ -640,38 +640,38 @@ export default function BecomeSellerPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-200 mb-1.5">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">
                   Store Description{" "}
-                  <span className="text-slate-500 font-normal">(Optional)</span>
+                  <span className="text-slate-400 dark:text-slate-500 font-normal">(Optional)</span>
                 </label>
                 <textarea
                   rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Provide a brief overview of the products or licenses you offer..."
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
                 />
               </div>
             </div>
 
-            {/* KYC & Identity Verification (3 Document Types + Front & Back) */}
-            <div className="bg-slate-950/60 border border-slate-800 rounded-2xl p-5 space-y-4">
-              <div className="flex items-center gap-2 border-b border-slate-800/80 pb-2.5">
-                <span className="text-sky-400 text-sm">🪪</span>
-                <span className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+            {/* KYC & Identity Verification */}
+            <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4">
+              <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-2.5">
+                <span className="text-sky-600 dark:text-sky-400 text-sm">🪪</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                   Identity Verification (KYC)
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Select Document Type
                   </label>
                   <select
                     value={documentType}
                     onChange={(e) => setDocumentType(e.target.value as any)}
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                   >
                     <option value="National ID Card (NID)">National ID Card (NID)</option>
                     <option value="International Passport">International Passport</option>
@@ -680,7 +680,7 @@ export default function BecomeSellerPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Document Number
                   </label>
                   <input
@@ -689,7 +689,7 @@ export default function BecomeSellerPage() {
                     value={documentNumber}
                     onChange={(e) => setDocumentNumber(e.target.value)}
                     placeholder="Enter ID / Document number"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500"
                   />
                 </div>
               </div>
@@ -697,16 +697,16 @@ export default function BecomeSellerPage() {
               {/* Both Front and Back Upload Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 {/* 1. Front Side */}
-                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
-                  <span className="block text-xs font-medium text-slate-300">
+                <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 shadow-sm">
+                  <span className="block text-xs font-medium text-slate-700 dark:text-slate-300">
                     Front Side Photo
                   </span>
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center shrink-0">
+                    <div className="w-14 h-14 bg-slate-100 dark:bg-slate-950 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center shrink-0">
                       {frontPreview ? (
                         <img src={frontPreview} alt="Front Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-slate-600 text-[10px]">No File</span>
+                        <span className="text-slate-400 dark:text-slate-600 text-[10px]">No File</span>
                       )}
                     </div>
                     <div className="flex-1 space-y-1 min-w-0">
@@ -719,26 +719,26 @@ export default function BecomeSellerPage() {
                       />
                       <label
                         htmlFor="doc-front-upload"
-                        className="inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold rounded-lg cursor-pointer transition"
+                        className="inline-block px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-semibold rounded-lg cursor-pointer transition border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
                       >
                         {frontPreview ? "Change Front" : "Upload Front"}
                       </label>
-                      <p className="text-[10px] text-slate-500 truncate">JPG, PNG, PDF (Max 8MB)</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">JPG, PNG, PDF (Max 8MB)</p>
                     </div>
                   </div>
                 </div>
 
                 {/* 2. Back Side */}
-                <div className="p-3 bg-slate-900 border border-slate-800 rounded-xl space-y-2">
-                  <span className="block text-xs font-medium text-slate-300">
+                <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-2 shadow-sm">
+                  <span className="block text-xs font-medium text-slate-700 dark:text-slate-300">
                     Back Side Photo
                   </span>
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 bg-slate-950 rounded-lg overflow-hidden border border-slate-800 flex items-center justify-center shrink-0">
+                    <div className="w-14 h-14 bg-slate-100 dark:bg-slate-950 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 flex items-center justify-center shrink-0">
                       {backPreview ? (
                         <img src={backPreview} alt="Back Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-slate-600 text-[10px]">No File</span>
+                        <span className="text-slate-400 dark:text-slate-600 text-[10px]">No File</span>
                       )}
                     </div>
                     <div className="flex-1 space-y-1 min-w-0">
@@ -751,11 +751,11 @@ export default function BecomeSellerPage() {
                       />
                       <label
                         htmlFor="doc-back-upload"
-                        className="inline-block px-3 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] font-semibold rounded-lg cursor-pointer transition"
+                        className="inline-block px-3 py-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[11px] font-semibold rounded-lg cursor-pointer transition border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-white"
                       >
                         {backPreview ? "Change Back" : "Upload Back"}
                       </label>
-                      <p className="text-[10px] text-slate-500 truncate">JPG, PNG, PDF (Max 8MB)</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">JPG, PNG, PDF (Max 8MB)</p>
                     </div>
                   </div>
                 </div>
@@ -763,10 +763,10 @@ export default function BecomeSellerPage() {
             </div>
 
             {/* Merchant Compliance & Buyer Protection Agreement */}
-            <div className="bg-slate-950/70 border border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-200 border-b border-slate-800/80 pb-2.5">
+            <div className="bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800/90 rounded-2xl p-4 sm:p-5 space-y-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-800/80 pb-2.5">
                 <svg
-                  className="w-4 h-4 text-sky-400 shrink-0"
+                  className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth="2"
@@ -781,25 +781,25 @@ export default function BecomeSellerPage() {
                 <span>Merchant Code of Conduct & Buyer Protection Terms</span>
               </div>
 
-              <ul className="space-y-2 text-[11px] text-slate-400 leading-relaxed">
+              <ul className="space-y-2 text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <span className="text-slate-600 mt-0.5">•</span>
+                  <span className="text-slate-400 dark:text-slate-600 mt-0.5">•</span>
                   <span>
-                    <strong className="text-slate-200">36-Hour Buyer Protection Hold:</strong>{" "}
+                    <strong className="text-slate-800 dark:text-slate-200">36-Hour Buyer Protection Hold:</strong>{" "}
                     All sales payouts remain safely held for 36 hours post-fulfillment to guarantee code validity and eliminate disputes.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-slate-600 mt-0.5">•</span>
+                  <span className="text-slate-400 dark:text-slate-600 mt-0.5">•</span>
                   <span>
-                    <strong className="text-slate-200">Platform Integrity:</strong>{" "}
+                    <strong className="text-slate-800 dark:text-slate-200">Platform Integrity:</strong>{" "}
                     All customer resolutions and digital deliveries must remain strictly within the Inskeys platform.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-slate-600 mt-0.5">•</span>
+                  <span className="text-slate-400 dark:text-slate-600 mt-0.5">•</span>
                   <span>
-                    <strong className="text-slate-200">
+                    <strong className="text-slate-800 dark:text-slate-200">
                       Anti-Circumvention Policy:
                     </strong>{" "}
                     Exchanging direct off-platform contact info (Email, Telegram, WhatsApp) or requesting external payments will result in permanent store suspension.
@@ -807,16 +807,16 @@ export default function BecomeSellerPage() {
                 </li>
               </ul>
 
-              <div className="pt-2 border-t border-slate-800/80">
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80">
                 <label className="flex items-start gap-3 cursor-pointer group select-none">
                   <input
                     type="checkbox"
                     required
                     checked={agreeTerms}
                     onChange={(e) => setAgreeTerms(e.target.checked)}
-                    className="mt-0.5 w-4 h-4 rounded bg-slate-900 border-slate-700 text-sky-500 focus:ring-sky-500/30 cursor-pointer"
+                    className="mt-0.5 w-4 h-4 rounded bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-sky-500 focus:ring-sky-500/30 cursor-pointer"
                   />
-                  <span className="text-xs text-slate-300 group-hover:text-white transition leading-snug">
+                  <span className="text-xs text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white transition leading-snug">
                     I verify that my submitted identification is accurate and agree to comply with the Merchant Terms and 36-Hour Buyer Protection Policy.
                   </span>
                 </label>
@@ -826,7 +826,7 @@ export default function BecomeSellerPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-semibold text-xs rounded-xl transition shadow-lg shadow-sky-950/40 cursor-pointer"
+              className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-semibold text-xs rounded-xl transition shadow-md shadow-sky-500/20 cursor-pointer"
             >
               {submitting
                 ? "Submitting Application & Documents..."
