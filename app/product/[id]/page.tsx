@@ -47,7 +47,7 @@ export default function ProductDetailPage() {
           .update({ views: (data.views || 0) + 1 })
           .eq("id", data.id);
 
-        // ২. সেলারের ইমেইল ফেচ (যাতে চ্যাটে সরাসরি লিঙ্ক করা যায়)
+        // ২. সেলারের ইমেইল ফেচ
         if (data.seller_id) {
           const { data: sellerData } = await supabase
             .from("sellers")
@@ -137,13 +137,13 @@ export default function ProductDetailPage() {
       ? Math.round(((product.price - product.discount_price) / product.price) * 100)
       : null;
 
-  // হোয়াটসঅ্যাপ ইউআরএল (Secondary Option)
+  // হোয়াটসঅ্যাপ ইউআরএল
   const whatsappMessage = encodeURIComponent(
     `Hello Inskeys, I would like to purchase: "${product.title}" (Price: $${finalPrice} USD). Is it available?`
   );
   const whatsappUrl = `https://wa.me/8801797302397?text=${whatsappMessage}`;
 
-  // পেমেন্ট চেকআউট হ্যান্ডলার (Only Cryptomus)
+  // পেমেন্ট চেকআউট হ্যান্ডলার
   const handleProceedPayment = async () => {
     const emailToUse = buyerEmail.trim() || currentUserEmail;
     if (!emailToUse || !emailToUse.includes("@")) {
@@ -373,7 +373,7 @@ export default function ProductDetailPage() {
                 }`}
               >
                 <span>⚡</span>
-                <span>{isAvailable ? `Pay with Crypto / Binance ($${finalPrice})` : "Out of Stock"}</span>
+                <span>{isAvailable ? `Pay with Crypto ($${finalPrice})` : "Out of Stock"}</span>
               </button>
 
               <a
@@ -469,8 +469,8 @@ export default function ProductDetailPage() {
                 </span>
                 <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono font-bold text-slate-400">
                   <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">USDT</span>
-                  <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">Binance Pay</span>
                   <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">BTC</span>
+                  <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">ETH</span>
                   <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">TRC20</span>
                 </div>
               </div>
