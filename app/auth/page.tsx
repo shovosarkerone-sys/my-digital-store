@@ -194,9 +194,9 @@ function AuthForm() {
   };
 
   return (
-    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+    <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl dark:shadow-2xl space-y-6 transition-colors duration-200">
       {/* Header with Transparent Logo */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
         <Link href="/" className="flex items-center gap-2.5">
           <div className="shrink-0">
             <Image
@@ -207,11 +207,11 @@ function AuthForm() {
               className="w-8 h-8 object-contain bg-transparent"
             />
           </div>
-          <span className="font-black text-base tracking-tight text-white">
+          <span className="font-black text-base tracking-tight text-slate-900 dark:text-white">
             Inskeys
           </span>
         </Link>
-        <Link href="/" className="text-xs text-slate-400 hover:text-white transition">
+        <Link href="/" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition">
           ← Home
         </Link>
       </div>
@@ -221,19 +221,19 @@ function AuthForm() {
         <form onSubmit={handleVerifySignupOtp} className="space-y-4">
           <div className="text-center space-y-2">
             <span className="text-3xl">📩</span>
-            <h2 className="text-lg font-black text-white">Enter 6-Digit Code</h2>
-            <p className="text-xs text-slate-400">
-              Check your inbox at <span className="text-sky-400 font-mono">{email}</span>
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">Enter 6-Digit Code</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Check your inbox at <span className="text-sky-600 dark:text-sky-400 font-mono font-bold">{email}</span>
             </p>
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20">
               {errorMsg}
             </div>
           )}
           {successMsg && (
-            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               {successMsg}
             </div>
           )}
@@ -246,14 +246,14 @@ function AuthForm() {
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value)}
               placeholder="123456"
-              className="w-full text-center tracking-[10px] text-2xl font-mono bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl py-3 text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+              className="w-full text-center tracking-[10px] text-2xl font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl py-3 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-sky-950 cursor-pointer"
+            className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-sky-500/20 cursor-pointer"
           >
             {loading ? "Verifying Code..." : "Confirm & Continue"}
           </button>
@@ -261,7 +261,7 @@ function AuthForm() {
           <button
             type="button"
             onClick={() => setAuthView("signup")}
-            className="w-full text-center text-xs text-slate-500 hover:text-slate-300 py-1 cursor-pointer"
+            className="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 py-1 cursor-pointer"
           >
             ← Back to Sign Up
           </button>
@@ -273,25 +273,25 @@ function AuthForm() {
         <form onSubmit={handleRequestPasswordReset} className="space-y-4">
           <div className="text-center space-y-2">
             <span className="text-3xl">🔑</span>
-            <h2 className="text-lg font-black text-white">Reset Password</h2>
-            <p className="text-xs text-slate-400">
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">Reset Password</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Enter your registered email address to receive a 6-digit recovery code.
             </p>
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20">
               {errorMsg}
             </div>
           )}
           {successMsg && (
-            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               {successMsg}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               Registered Email
             </label>
             <input
@@ -300,14 +300,14 @@ function AuthForm() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
-              className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-sky-950 cursor-pointer"
+            className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-sky-500/20 cursor-pointer"
           >
             {loading ? "Sending Code..." : "Send 6-Digit Reset Code"}
           </button>
@@ -319,7 +319,7 @@ function AuthForm() {
               setSuccessMsg("");
               setAuthView("login");
             }}
-            className="w-full text-center text-xs text-slate-500 hover:text-slate-300 py-1 cursor-pointer"
+            className="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 py-1 cursor-pointer"
           >
             ← Back to Log In
           </button>
@@ -331,25 +331,25 @@ function AuthForm() {
         <form onSubmit={handleConfirmPasswordReset} className="space-y-4">
           <div className="text-center space-y-2">
             <span className="text-3xl">🛡️</span>
-            <h2 className="text-lg font-black text-white">Set New Password</h2>
-            <p className="text-xs text-slate-400">
-              Enter the 6-digit code sent to <strong className="text-sky-400">{email}</strong> and your new password.
+            <h2 className="text-lg font-black text-slate-900 dark:text-white">Set New Password</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Enter the 6-digit code sent to <strong className="text-sky-600 dark:text-sky-400">{email}</strong> and your new password.
             </p>
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20">
               {errorMsg}
             </div>
           )}
           {successMsg && (
-            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               {successMsg}
             </div>
           )}
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 text-center">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 text-center">
               6-Digit Recovery Code
             </label>
             <input
@@ -359,12 +359,12 @@ function AuthForm() {
               value={otpCode}
               onChange={(e) => setOtpCode(e.target.value)}
               placeholder="123456"
-              className="w-full text-center tracking-[10px] text-2xl font-mono bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl py-2.5 text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+              className="w-full text-center tracking-[10px] text-2xl font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl py-2.5 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
               New Password
             </label>
             <input
@@ -374,14 +374,14 @@ function AuthForm() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="•••••••• (Min 6 chars)"
-              className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+              className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-emerald-950 cursor-pointer"
+            className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/20 cursor-pointer"
           >
             {loading ? "Updating Password..." : "Update Password & Log In"}
           </button>
@@ -389,7 +389,7 @@ function AuthForm() {
           <button
             type="button"
             onClick={() => setAuthView("forgot_request")}
-            className="w-full text-center text-xs text-slate-500 hover:text-slate-300 py-1 cursor-pointer"
+            className="w-full text-center text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 py-1 cursor-pointer"
           >
             ← Resend Code / Change Email
           </button>
@@ -399,7 +399,7 @@ function AuthForm() {
       {/* VIEW 4 & 5: MAIN LOGIN & SIGNUP FORMS */}
       {(authView === "login" || authView === "signup") && (
         <>
-          <div className="grid grid-cols-2 gap-1 bg-slate-950 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
+          <div className="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-slate-950 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs font-bold">
             <button
               type="button"
               onClick={() => {
@@ -409,8 +409,8 @@ function AuthForm() {
               }}
               className={`py-2.5 rounded-xl transition cursor-pointer ${
                 authView === "login"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Log In
@@ -424,8 +424,8 @@ function AuthForm() {
               }}
               className={`py-2.5 rounded-xl transition cursor-pointer ${
                 authView === "signup"
-                  ? "bg-sky-500 text-white shadow-lg shadow-sky-950"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Create Account
@@ -433,10 +433,10 @@ function AuthForm() {
           </div>
 
           <div>
-            <h1 className="text-xl font-black text-white">
+            <h1 className="text-xl font-black text-slate-900 dark:text-white">
               {authView === "signup" ? "Create Verified Account" : "Welcome Back"}
             </h1>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               {authView === "signup"
                 ? "Enter your details or continue with your Google account."
                 : "Sign in to access your buyer or seller panel."}
@@ -444,12 +444,12 @@ function AuthForm() {
           </div>
 
           {errorMsg && (
-            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20">
+            <div className="p-3 rounded-xl text-xs bg-rose-500/10 text-rose-500 dark:text-rose-400 border border-rose-500/20">
               {errorMsg}
             </div>
           )}
           {successMsg && (
-            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <div className="p-3 rounded-xl text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
               {successMsg}
             </div>
           )}
@@ -459,7 +459,7 @@ function AuthForm() {
             type="button"
             disabled={loading}
             onClick={handleGoogleAuth}
-            className="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-850 hover:border-slate-700 border border-slate-800 disabled:opacity-50 text-white font-semibold text-xs rounded-xl transition flex items-center justify-center gap-3 cursor-pointer shadow-sm"
+            className="w-full py-2.5 px-4 bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-700 border border-slate-200 dark:border-slate-800 disabled:opacity-50 text-slate-800 dark:text-white font-semibold text-xs rounded-xl transition flex items-center justify-center gap-3 cursor-pointer shadow-sm"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
@@ -483,8 +483,8 @@ function AuthForm() {
           </button>
 
           <div className="relative flex items-center justify-center">
-            <div className="w-full border-t border-slate-800"></div>
-            <span className="bg-slate-900 px-3 text-[10px] font-bold tracking-wider text-slate-500 uppercase absolute">
+            <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+            <span className="bg-white dark:bg-slate-900 px-3 text-[10px] font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase absolute">
               or
             </span>
           </div>
@@ -493,7 +493,7 @@ function AuthForm() {
             {authView === "signup" && (
               <>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                     Full Name
                   </label>
                   <input
@@ -502,21 +502,21 @@ function AuthForm() {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="e.g. John Doe"
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                     Country
                   </label>
                   <select
                     value={country}
                     onChange={(e) => setCountry(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition cursor-pointer"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-sky-500 transition cursor-pointer"
                   >
                     {COUNTRIES.map((c) => (
-                      <option key={c} value={c} className="bg-slate-900 text-white">
+                      <option key={c} value={c} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                         {c}
                       </option>
                     ))}
@@ -526,7 +526,7 @@ function AuthForm() {
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Email Address
               </label>
               <input
@@ -535,13 +535,13 @@ function AuthForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-semibold text-slate-300">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Password
                 </label>
                 {authView === "login" && (
@@ -552,7 +552,7 @@ function AuthForm() {
                       setSuccessMsg("");
                       setAuthView("forgot_request");
                     }}
-                    className="text-[11px] text-sky-400 hover:text-sky-300 hover:underline cursor-pointer"
+                    className="text-[11px] text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 hover:underline cursor-pointer"
                   >
                     Forgot your password?
                   </button>
@@ -565,14 +565,14 @@ function AuthForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="•••••••• (Min 6 chars)"
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-sky-950 cursor-pointer"
+              className="w-full py-3 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition shadow-md shadow-sky-500/20 cursor-pointer"
             >
               {loading
                 ? "Processing..."
@@ -589,8 +589,8 @@ function AuthForm() {
 
 export default function AuthPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4 selection:bg-sky-500 selection:text-white">
-      <Suspense fallback={<div className="text-sky-400 font-mono text-sm">Loading...</div>}>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex items-center justify-center p-4 selection:bg-sky-500 selection:text-white transition-colors duration-200">
+      <Suspense fallback={<div className="text-sky-500 dark:text-sky-400 font-mono text-sm">Loading...</div>}>
         <AuthForm />
       </Suspense>
     </div>
