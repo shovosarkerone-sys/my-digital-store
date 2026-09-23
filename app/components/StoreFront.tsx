@@ -40,6 +40,7 @@ export default function StoreFront({
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isSeller, setIsSeller] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortOption, setSortOption] = useState<string>("latest"); // নতুন ফিল্টার স্টেট
   const [showAllCategories, setShowAllCategories] = useState<boolean>(false);
   const [isSearchFocused, setIsSearchFocused] = useState<boolean>(false);
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
@@ -87,18 +88,43 @@ export default function StoreFront({
     };
   }, []);
 
-  // Smart Multi-Keyword Tokenized Search
+  // Smart Multi-Keyword Search & Sorting Logic
   const filteredProducts = useMemo(() => {
+    let result = [...initialProducts];
+
+    // ১. সার্চ ফিল্টারিং
     const cleanQuery = searchQuery.trim().toLowerCase();
-    if (!cleanQuery) return initialProducts;
+    if (cleanQuery) {
+      const searchWords = cleanQuery.split(/\s+/).filter(Boolean);
+      result = result.filter((product) => {
+        const targetText = `${product.title} ${product.category}`.toLowerCase();
+        return searchWords.every((word) => targetText.includes(word));
+      });
+    }
 
-    const searchWords = cleanQuery.split(/\s+/).filter(Boolean);
+    // ২. সর্টিং / ড্রপডাউন ফিল্টারিং
+    result.sort((a, b) => {
+      // অফার প্রাইস থাকলে সেটি দিয়ে হিসাব করবে, না থাকলে রেগুলার প্রাইস
+      const priceA = a.discount_price && a.discount_price < a.price && (!a.discount_until || new Date(a.discount_until) > new Date()) ? a.discount_price : a.price;
+      const priceB = b.discount_price && b.discount_price < b.price && (!b.discount_until || new Date(b.discount_until) > new Date()) ? b.discount_price : b.price;
 
-    return initialProducts.filter((product) => {
-      const targetText = `${product.title} ${product.category}`.toLowerCase();
-      return searchWords.every((word) => targetText.includes(word));
+      switch (sortOption) {
+        case "name-asc":
+          return a.title.localeCompare(b.title);
+        case "name-desc":
+          return b.title.localeCompare(a.title);
+        case "price-asc":
+          return priceA - priceB;
+        case "price-desc":
+          return priceB - priceA;
+        case "latest":
+        default:
+          return b.id - a.id; // নতুন প্রোডাক্টগুলো আগে
+      }
     });
-  }, [initialProducts, searchQuery]);
+
+    return result;
+  }, [initialProducts, searchQuery, sortOption]);
 
   // Live Instant Suggestions
   const instantSuggestions = useMemo(() => {
@@ -121,7 +147,6 @@ export default function StoreFront({
     currentPage * itemsPerPage
   );
 
-  // ডিফল্ট ১২টি দেখাবে, "Show More" চাপলে সব ক্যাটাগরি নিচে দেখাবে
   const visibleCategories = showAllCategories
     ? categories
     : categories.slice(0, 12);
@@ -215,7 +240,7 @@ export default function StoreFront({
         />
       )}
 
-      {/* Navigation Drawer (ক্লিন এবং গোছানো মেনু) */}
+      {/* Navigation Drawer */}
       <aside
         className={`fixed top-0 left-0 bottom-0 z-50 w-72 bg-slate-900 border-r border-slate-800 p-5 shadow-2xl flex flex-col transition-transform duration-300 ease-in-out ${
           isMenuOpen ? "translate-x-0" : "-translate-x-full"
@@ -483,7 +508,7 @@ export default function StoreFront({
           </div>
         </div>
 
-        {/* Categories Grid (ক্লিক করলে আগের মতো ক্যাটাগরি পেজে যাবে, "All Items" নেই) */}
+        {/* Categories Grid */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
@@ -528,20 +553,41 @@ export default function StoreFront({
           </div>
         </section>
 
-        {/* Products Showcase */}
+        {/* Products Showcase (এখানে ড্রপডাউন যুক্ত করা হয়েছে) */}
         <section className="space-y-4">
-          <div className="flex items-center justify-between border-t border-slate-800/80 pt-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-t border-slate-800/80 pt-6">
             <div>
               <h2 className="text-lg font-bold text-white">All Available Products</h2>
               <p className="text-xs text-slate-500">
                 Showing {displayedProducts.length} of {filteredProducts.length} items
               </p>
             </div>
+            
+            {/* Sorting Dropdown Filter */}
+            <div className="relative w-full sm:w-auto">
+              <select
+                value={sortOption}
+                onChange={(e) => {
+                  setSortOption(e.target.value);
+                  setCurrentPage(1); // ফিল্টার চেঞ্জ করলে প্রথম পেজে ফিরে আসবে
+                }}
+                className="w-full sm:w-auto appearance-none bg-slate-900/90 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-semibold py-2.5 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-1 focus:ring-sky-500 transition cursor-pointer shadow-sm"
+              >
+                <option value="latest">Sort by: Latest Added</option>
+                <option value="price-asc">Price: Low to High</option>
+                <option value="price-desc">Price: High to Low</option>
+                <option value="name-asc">Name: A to Z</option>
+                <option value="name-desc">Name: Z to A</option>
+              </select>
+              <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none text-[10px]">
+                ▼
+              </span>
+            </div>
           </div>
 
           {displayedProducts.length === 0 ? (
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-sm">
-              No products found matching your search.
+              No products found matching your criteria.
             </div>
           ) : (
             <div className="space-y-2.5 sm:space-y-3">
@@ -599,7 +645,6 @@ export default function StoreFront({
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] pt-1">
-                          {/* Seller Identity Badge */}
                           {isOfficial ? (
                             <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1.5">
                               <span className="w-3.5 h-3.5 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0 shadow-xs">
