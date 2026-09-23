@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -30,6 +30,7 @@ export default function CategoryProductsPage() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortOption, setSortOption] = useState<string>("latest"); // নতুন ফিল্টার স্টেট
 
   useEffect(() => {
     async function loadCategoryProducts() {
@@ -49,6 +50,33 @@ export default function CategoryProductsPage() {
 
     loadCategoryProducts();
   }, [categoryName]);
+
+  // Sorting Logic (লোকাল মেমোরিতে ইনস্ট্যান্ট ফিল্টারিং)
+  const sortedProducts = useMemo(() => {
+    let result = [...products];
+
+    result.sort((a, b) => {
+      // অফার প্রাইস থাকলে সেটি দিয়ে হিসাব করবে, না থাকলে রেগুলার প্রাইস
+      const priceA = a.discount_price && a.discount_price < a.price && (!a.discount_until || new Date(a.discount_until) > new Date()) ? a.discount_price : a.price;
+      const priceB = b.discount_price && b.discount_price < b.price && (!b.discount_until || new Date(b.discount_until) > new Date()) ? b.discount_price : b.price;
+
+      switch (sortOption) {
+        case "name-asc":
+          return a.title.localeCompare(b.title);
+        case "name-desc":
+          return b.title.localeCompare(a.title);
+        case "price-asc":
+          return priceA - priceB;
+        case "price-desc":
+          return priceB - priceA;
+        case "latest":
+        default:
+          return b.id - a.id; // নতুন প্রোডাক্টগুলো আগে
+      }
+    });
+
+    return result;
+  }, [products, sortOption]);
 
   const getStockCount = (voucherCodes?: string | null) => {
     if (!voucherCodes) return 0;
@@ -105,7 +133,7 @@ export default function CategoryProductsPage() {
           <span className="text-4xl sm:text-5xl">🎮</span>
         </div>
 
-        {/* Product Listings */}
+        {/* Product Listings & Sorting Dropdown */}
         {loading ? (
           <div className="space-y-2.5 sm:space-y-3">
             {[1, 2, 3, 4].map((i) => (
@@ -137,152 +165,176 @@ export default function CategoryProductsPage() {
             No products found under "{categoryName}".
           </div>
         ) : (
-          <div className="space-y-2.5 sm:space-y-3">
-            {products.map((product) => {
-              const stock = getStockCount(product.voucher_codes);
-              const isOfficial =
-                !product.seller_id || product.seller_name === "Official Store";
-
-              // Discount calculation with expiration check
-              const hasDiscount = Boolean(
-                product.discount_price &&
-                product.discount_price < product.price &&
-                (!product.discount_until || new Date(product.discount_until) > new Date())
-              );
-              const discountPercent =
-                hasDiscount && product.price > 0
-                  ? Math.round(((product.price - product.discount_price!) / product.price) * 100)
-                  : null;
-
-              return (
-                <Link
-                  key={product.id}
-                  href={`/product/${product.id}`}
-                  className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
+          <div className="space-y-4">
+            
+            {/* Sorting Dropdown Filter */}
+            <div className="flex justify-end">
+              <div className="relative w-full sm:w-auto">
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  className="w-full sm:w-auto appearance-none bg-slate-900/90 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-semibold py-2.5 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-1 focus:ring-sky-500 transition cursor-pointer shadow-sm"
                 >
-                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                    {/* Thumbnail & Discount % Badge */}
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
-                      {product.image_url ? (
-                        <img
-                          src={product.image_url}
-                          alt={product.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                        />
-                      ) : (
-                        <span className="text-slate-600 text-xs">🎮</span>
-                      )}
+                  <option value="latest">Sort by: Latest Added</option>
+                  <option value="price-asc">Price: Low to High</option>
+                  <option value="price-desc">Price: High to Low</option>
+                  <option value="name-asc">Name: A to Z</option>
+                  <option value="name-desc">Name: Z to A</option>
+                </select>
+                <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none text-[10px]">
+                  ▼
+                </span>
+              </div>
+            </div>
 
-                      {hasDiscount && (
-                        <div className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
-                          {discountPercent}% OFF
+            {/* Sorted Products List */}
+            <div className="space-y-2.5 sm:space-y-3">
+              {sortedProducts.map((product) => {
+                const stock = getStockCount(product.voucher_codes);
+                const isOfficial =
+                  !product.seller_id || product.seller_name === "Official Store";
+
+                // Discount calculation with expiration check
+                const hasDiscount = Boolean(
+                  product.discount_price &&
+                  product.discount_price < product.price &&
+                  (!product.discount_until || new Date(product.discount_until) > new Date())
+                );
+                const discountPercent =
+                  hasDiscount && product.price > 0
+                    ? Math.round(((product.price - product.discount_price!) / product.price) * 100)
+                    : null;
+
+                return (
+                  <Link
+                    key={product.id}
+                    href={`/product/${product.id}`}
+                    className="bg-slate-900/90 border border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-lg hover:shadow-sky-500/5 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                      {/* Thumbnail & Discount % Badge */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-700/60">
+                        {product.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={product.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                          />
+                        ) : (
+                          <span className="text-slate-600 text-xs">🎮</span>
+                        )}
+
+                        {hasDiscount && (
+                          <div className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                            {discountPercent}% OFF
+                          </div>
+                        )}
+
+                        <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[9px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
+                          <span>👁️</span>
+                          <span>{product.views || 0}</span>
                         </div>
-                      )}
-
-                      <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[9px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
-                        <span>👁️</span>
-                        <span>{product.views || 0}</span>
                       </div>
-                    </div>
 
-                    {/* Title, Category & Delivery Info */}
-                    <div className="min-w-0 flex-1 space-y-1">
-                      <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
-                        {product.category}
-                      </span>
-                      <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-sky-300 transition">
-                        {product.title}
-                      </h3>
+                      {/* Title, Category & Delivery Info */}
+                      <div className="min-w-0 flex-1 space-y-1">
+                        <span className="text-[10px] font-bold text-sky-400 uppercase tracking-wider block">
+                          {product.category}
+                        </span>
+                        <h3 className="text-xs sm:text-sm font-bold text-white line-clamp-2 leading-snug group-hover:text-sky-300 transition">
+                          {product.title}
+                        </h3>
 
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] pt-1">
-                        {isOfficial ? (
-                          <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1.5">
-                            <span className="w-3.5 h-3.5 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0 shadow-xs">
-                              <svg
-                                className="w-2.5 h-2.5 text-white"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="3.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              >
-                                <polyline points="20 6 9 17 4 12" />
-                              </svg>
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[10px] pt-1">
+                          {isOfficial ? (
+                            <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1.5">
+                              <span className="w-3.5 h-3.5 rounded-full bg-[#1877F2] flex items-center justify-center shrink-0 shadow-xs">
+                                <svg
+                                  className="w-2.5 h-2.5 text-white"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="3.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                >
+                                  <polyline points="20 6 9 17 4 12" />
+                                </svg>
+                              </span>
+                              <span>Official Store</span>
                             </span>
-                            <span>Official Store</span>
-                          </span>
-                        ) : (
-                          <span className="bg-slate-800 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
-                            <span>🏪</span> {product.seller_name || "Seller"}
-                          </span>
-                        )}
+                          ) : (
+                            <span className="bg-slate-800 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-md font-semibold inline-flex items-center gap-1">
+                              <span>🏪</span> {product.seller_name || "Seller"}
+                            </span>
+                          )}
 
-                        {/* Delivery Method Badge */}
-                        {product.delivery_type === "manual" ? (
-                          <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
-                            <span>🕒</span> Manual Delivery
-                          </span>
-                        ) : (
-                          <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
-                            <span>⚡</span> Auto Delivery
-                          </span>
-                        )}
+                          {/* Delivery Method Badge */}
+                          {product.delivery_type === "manual" ? (
+                            <span className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
+                              <span>🕒</span> Manual Delivery
+                            </span>
+                          ) : (
+                            <span className="bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded-md font-bold inline-flex items-center gap-1">
+                              <span>⚡</span> Auto Delivery
+                            </span>
+                          )}
 
-                        {/* Stock (Only for Auto Delivery items) */}
-                        {product.delivery_type !== "manual" && (
+                          {/* Stock (Only for Auto Delivery items) */}
+                          {product.delivery_type !== "manual" && (
+                            <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
+                              Stock:{" "}
+                              <strong
+                                className={
+                                  stock > 0
+                                    ? "text-emerald-400 font-bold"
+                                    : "text-rose-400 font-bold"
+                                }
+                              >
+                                {stock}
+                              </strong>
+                            </span>
+                          )}
+
                           <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
-                            Stock:{" "}
-                            <strong
-                              className={
-                                stock > 0
-                                  ? "text-emerald-400 font-bold"
-                                  : "text-rose-400 font-bold"
-                              }
-                            >
-                              {stock}
+                            Sold:{" "}
+                            <strong className="text-slate-200 font-bold">
+                              {product.sold_count || 0}
                             </strong>
                           </span>
-                        )}
-
-                        <span className="bg-slate-950 px-2 py-0.5 rounded-md border border-slate-800 text-slate-400 font-medium">
-                          Sold:{" "}
-                          <strong className="text-slate-200 font-bold">
-                            {product.sold_count || 0}
-                          </strong>
-                        </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Pricing and Action */}
-                  <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
-                    <div className="text-right">
-                      <span className="text-[9px] text-slate-500 block leading-none">
-                        Price
-                      </span>
-                      {hasDiscount ? (
-                        <div className="flex items-baseline gap-1.5 justify-end">
-                          <span className="text-[11px] line-through text-slate-500">
+                    {/* Pricing and Action */}
+                    <div className="flex flex-col items-end justify-center gap-1.5 shrink-0 pl-2">
+                      <div className="text-right">
+                        <span className="text-[9px] text-slate-500 block leading-none">
+                          Price
+                        </span>
+                        {hasDiscount ? (
+                          <div className="flex items-baseline gap-1.5 justify-end">
+                            <span className="text-[11px] line-through text-slate-500">
+                              ${product.price}
+                            </span>
+                            <span className="text-xs sm:text-base font-black text-emerald-400 leading-tight">
+                              ${product.discount_price}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
                             ${product.price}
                           </span>
-                          <span className="text-xs sm:text-base font-black text-emerald-400 leading-tight">
-                            ${product.discount_price}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-xs sm:text-base font-black text-sky-400 leading-tight">
-                          ${product.price}
-                        </span>
-                      )}
+                        )}
+                      </div>
+                      <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 rounded-xl transition whitespace-nowrap shadow-md shadow-sky-950">
+                        Buy Now →
+                      </span>
                     </div>
-                    <span className="bg-sky-500 group-hover:bg-sky-600 text-white text-[10px] sm:text-xs font-bold px-2.5 sm:px-3.5 py-1.5 rounded-xl transition whitespace-nowrap shadow-md shadow-sky-950">
-                      Buy Now →
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
         )}
 
