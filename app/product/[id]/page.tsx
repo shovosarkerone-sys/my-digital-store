@@ -6,23 +6,6 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 
-interface PaymentMethod {
-  id: string;
-  name: string;
-  badge: string;
-  tag: string;
-  color: string;
-}
-
-const PAYMENT_METHODS: PaymentMethod[] = [
-  { id: "crypto", name: "Crypto (USDT / BTC / LTC)", badge: "⚡", tag: "Automated Gateway", color: "border-sky-500/30 bg-sky-500/10 text-sky-300" },
-  { id: "binance", name: "Binance Pay", badge: "🟡", tag: "Zero Fees / Instant", color: "border-amber-500/30 bg-amber-500/10 text-amber-300" },
-  { id: "bkash", name: "bKash Personal / Merchant", badge: "🌸", tag: "Instant MFS", color: "border-pink-500/30 bg-pink-500/10 text-pink-300" },
-  { id: "rocket", name: "Nagad / Rocket", badge: "🟣", tag: "Fast Checkout", color: "border-purple-500/30 bg-purple-500/10 text-purple-300" },
-  { id: "card", name: "Visa / Mastercard", badge: "💳", tag: "International", color: "border-blue-500/30 bg-blue-500/10 text-blue-300" },
-  { id: "bank", name: "Bank Wire Transfer", badge: "🏦", tag: "Direct Deposit", color: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" },
-];
-
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -35,7 +18,6 @@ export default function ProductDetailPage() {
 
   // Payment Modal States
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedMethod, setSelectedMethod] = useState<string>("crypto");
   const [buyerEmail, setBuyerEmail] = useState("");
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState("");
@@ -65,7 +47,7 @@ export default function ProductDetailPage() {
           .update({ views: (data.views || 0) + 1 })
           .eq("id", data.id);
 
-        // ২. সেলারের ইমেইল ফেচ (যাতে চ্যাটে সরাসরি লিঙ্ক করা যায়)
+        // ২. সেলারের ইমেইল ফেচ (যাতে চ্যাটে সরাসরি লিঙ্ক করা যায়)
         if (data.seller_id) {
           const { data: sellerData } = await supabase
             .from("sellers")
@@ -78,7 +60,7 @@ export default function ProductDetailPage() {
           }
         }
 
-        // ৩. লগইন করা বায়ারের ইমেইল অটো-ফিল
+        // ৩. লগইন করা বায়ারের ইমেইল অটো-ফিল
         const {
           data: { user },
         } = await supabase.auth.getUser();
@@ -140,7 +122,6 @@ export default function ProductDetailPage() {
     : 0;
 
   const isManual = product.delivery_type === "manual";
-  // ম্যানুয়াল ডেলিভারি হলে স্টক কোড লাগে না, তাই এটি সবসময় অ্যাভেইলেবল
   const isAvailable = isManual ? true : stockCount > 0;
   const isOfficial = !product.seller_id || product.seller_name === "Official Store";
 
@@ -156,47 +137,40 @@ export default function ProductDetailPage() {
       ? Math.round(((product.price - product.discount_price) / product.price) * 100)
       : null;
 
-  // হোয়াটসঅ্যাপ ইউআরএল
+  // হোয়াটসঅ্যাপ ইউআরএল (Secondary Option)
   const whatsappMessage = encodeURIComponent(
-    `Hello Inskeys, I would like to purchase: "${product.title}" (Price: $${finalPrice} USD via ${selectedMethod.toUpperCase()}). Is it available?`
+    `Hello Inskeys, I would like to purchase: "${product.title}" (Price: $${finalPrice} USD). Is it available?`
   );
   const whatsappUrl = `https://wa.me/8801797302397?text=${whatsappMessage}`;
 
-  // পেমেন্ট চেকআউট হ্যান্ডলার
+  // পেমেন্ট চেকআউট হ্যান্ডলার (Only Cryptomus)
   const handleProceedPayment = async () => {
-    // ক্রিপ্টো বা বাইন্যান্স হলে অটোমেটিক Cryptomus গেটওয়েতে পাঠাবে
-    if (selectedMethod === "crypto" || selectedMethod === "binance") {
-      const emailToUse = buyerEmail.trim() || currentUserEmail;
-      if (!emailToUse || !emailToUse.includes("@")) {
-        setPaymentError("A valid email is required to deliver your activation key.");
-        return;
+    const emailToUse = buyerEmail.trim() || currentUserEmail;
+    if (!emailToUse || !emailToUse.includes("@")) {
+      setPaymentError("A valid email is required to deliver your activation key.");
+      return;
+    }
+
+    setProcessingPayment(true);
+    setPaymentError("");
+
+    try {
+      const res = await fetch("/api/checkout/cryptomus", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, buyerEmail: emailToUse }),
+      });
+
+      const data = await res.json();
+      if (data.checkoutUrl) {
+        window.location.href = data.checkoutUrl;
+      } else {
+        setPaymentError(data.error || "Failed to initialize payment gateway.");
       }
-
-      setProcessingPayment(true);
-      setPaymentError("");
-
-      try {
-        const res = await fetch("/api/checkout/cryptomus", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ productId: product.id, buyerEmail: emailToUse }),
-        });
-
-        const data = await res.json();
-        if (data.checkoutUrl) {
-          window.location.href = data.checkoutUrl;
-        } else {
-          setPaymentError(data.error || "Failed to initialize payment gateway.");
-        }
-      } catch (err) {
-        setPaymentError("Gateway connection failed. Please try again or use WhatsApp.");
-      } finally {
-        setProcessingPayment(false);
-      }
-    } else {
-      // বিকাশ, নগদ বা ব্যাংক ট্রান্সফারের ক্ষেত্রে সরাসরি কনসিয়ার্জে কানেক্ট হবে
-      window.open(whatsappUrl, "_blank");
-      setIsPaymentModalOpen(false);
+    } catch (err) {
+      setPaymentError("Gateway connection failed. Please try again.");
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
@@ -377,7 +351,7 @@ export default function ProductDetailPage() {
                 </p>
               </div>
 
-              {/* বায়ার সুরক্ষা নোটিশ */}
+              {/* বায়ার সুরক্ষা নোটিশ */}
               <div className="flex items-center gap-2 text-[11px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 p-2.5 rounded-xl">
                 <span>🛡️</span>
                 <span>
@@ -394,12 +368,12 @@ export default function ProductDetailPage() {
                 disabled={!isAvailable}
                 className={`w-full py-3.5 rounded-2xl font-bold text-sm transition shadow-xl flex items-center justify-center gap-2 cursor-pointer ${
                   isAvailable
-                    ? "bg-sky-500 hover:bg-sky-600 text-white shadow-sky-950 active:scale-98"
+                    ? "bg-[#0052FF] hover:bg-[#0043D1] text-white shadow-blue-900/50 active:scale-98"
                     : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
                 }`}
               >
                 <span>⚡</span>
-                <span>{isAvailable ? `Buy Now ($${finalPrice}) →` : "Out of Stock"}</span>
+                <span>{isAvailable ? `Pay with Crypto / Binance ($${finalPrice})` : "Out of Stock"}</span>
               </button>
 
               <a
@@ -416,73 +390,64 @@ export default function ProductDetailPage() {
         </div>
       </div>
 
-      {/* প্রিমিয়াম পেমেন্ট গেটওয়ে মডাল */}
+      {/* প্রিমিয়াম ক্রিপ্টমুস পেমেন্ট গেটওয়ে মডাল */}
       {isPaymentModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 relative overflow-hidden text-left">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="text-base font-black text-white">Select Payment Gateway</h3>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Complete your order securely with escrow protection
-                </p>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 relative overflow-hidden text-left">
+            {/* ব্যাকগ্রাউন্ড গ্লো */}
+            <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 relative z-10">
+              <div className="flex items-center gap-3">
+                {/* অরিজিনাল লোগো (SVG Format) */}
+                <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center p-2 shadow-md shrink-0">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    className="w-full h-full text-[#0052FF]"
+                  >
+                    <path
+                      d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white leading-tight">Cryptomus Gateway</h3>
+                  <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                    Secured Blockchain Payment
+                  </p>
+                </div>
               </div>
               <button
                 onClick={() => {
                   setIsPaymentModalOpen(false);
                   setPaymentError("");
                 }}
-                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition cursor-pointer"
+                className="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-sm font-bold transition cursor-pointer shrink-0"
               >
                 ✕
               </button>
             </div>
 
             {/* অ্যামাউন্ট ও আইটেম সামারি */}
-            <div className="p-3 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between">
-              <div className="min-w-0 pr-3">
-                <span className="text-[11px] text-slate-500 block truncate">{product.title}</span>
-                <span className="text-xs font-bold text-slate-200">Total Payable</span>
+            <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-between relative z-10">
+              <div className="min-w-0 pr-3 space-y-1">
+                <span className="text-[11px] text-slate-400 block truncate">{product.title}</span>
+                <span className="text-xs font-bold text-slate-200 block">Total Payable</span>
               </div>
-              <span className="text-xl font-black text-emerald-400 font-mono">${finalPrice} USD</span>
+              <span className="text-xl font-black text-blue-400 font-mono">${finalPrice} USD</span>
             </div>
 
-            {/* গেটওয়ে সিলেক্ট বাটন তালিকা */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto pr-1">
-              {PAYMENT_METHODS.map((pm) => (
-                <button
-                  key={pm.id}
-                  type="button"
-                  onClick={() => setSelectedMethod(pm.id)}
-                  className={`p-3 rounded-2xl border text-left transition flex items-center justify-between cursor-pointer ${
-                    selectedMethod === pm.id
-                      ? "border-sky-500 bg-sky-500/10 ring-1 ring-sky-500/50"
-                      : "border-slate-800 bg-slate-950/60 hover:bg-slate-800/60"
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="text-xl shrink-0">{pm.badge}</span>
-                    <div className="min-w-0">
-                      <span className="text-xs font-bold text-white block leading-tight truncate">{pm.name}</span>
-                      <span className="text-[10px] text-slate-400 block truncate">{pm.tag}</span>
-                    </div>
-                  </div>
-                  <span
-                    className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
-                      selectedMethod === pm.id ? "border-sky-500 bg-sky-500" : "border-slate-700"
-                    }`}
-                  >
-                    {selectedMethod === pm.id && <span className="w-1.5 h-1.5 rounded-full bg-white"></span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* ক্রিপ্টো বা বাইন্যান্সের জন্য ডেলিভারি ইমেইল ফিল্ড */}
-            {(selectedMethod === "crypto" || selectedMethod === "binance") && (
-              <div className="space-y-1">
-                <label className="block text-xs font-semibold text-slate-300">
-                  Recipient Email (For instant key fulfillment)
+            {/* ক্রিপ্টো ডেলিভারি ইমেইল ফিল্ড */}
+            <div className="space-y-4 relative z-10">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Delivery Email Address <span className="text-rose-400">*</span>
                 </label>
                 <input
                   type="email"
@@ -490,36 +455,53 @@ export default function ProductDetailPage() {
                   value={buyerEmail}
                   onChange={(e) => setBuyerEmail(e.target.value)}
                   placeholder="your-email@example.com"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 font-mono"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition shadow-inner font-mono"
                 />
+                <span className="block text-[10px] text-slate-500 mt-1.5">
+                  Your activation key and receipt will be dispatched to this email.
+                </span>
               </div>
-            )}
 
-            {paymentError && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl">
-                ⚠️ {paymentError}
+              {/* সাপোর্টেড কারেন্সি ব্যাজ */}
+              <div className="pt-1">
+                <span className="block text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">
+                  Accepted Networks
+                </span>
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono font-bold text-slate-400">
+                  <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">USDT</span>
+                  <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">Binance Pay</span>
+                  <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">BTC</span>
+                  <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">TRC20</span>
+                </div>
               </div>
-            )}
 
-            {/* সাবমিট বাটন */}
-            <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                disabled={processingPayment}
-                onClick={handleProceedPayment}
-                className="w-full py-3.5 rounded-xl text-xs sm:text-sm font-bold transition shadow-lg bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white shadow-sky-950 cursor-pointer flex items-center justify-center gap-2"
-              >
-                {processingPayment ? (
-                  <span>Generating Secure Invoice...</span>
-                ) : selectedMethod === "crypto" || selectedMethod === "binance" ? (
-                  <span>Proceed to Cryptomus Gateway →</span>
-                ) : (
-                  <span>Continue with WhatsApp Verification →</span>
-                )}
-              </button>
-              <p className="text-[10px] text-center text-slate-500">
-                🔒 Cryptographic 256-bit automated transaction processing
-              </p>
+              {paymentError && (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl font-medium">
+                  ⚠️ {paymentError}
+                </div>
+              )}
+
+              {/* সাবমিট বাটন */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  disabled={processingPayment}
+                  onClick={handleProceedPayment}
+                  className="w-full py-3.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-200 bg-[#0052FF] hover:bg-[#0043D1] disabled:opacity-50 text-white shadow-lg shadow-blue-900/50 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  {processingPayment ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Connecting to Blockchain...</span>
+                    </>
+                  ) : (
+                    <span>Proceed to Cryptomus Invoice →</span>
+                  )}
+                </button>
+                <p className="text-[10px] text-center text-slate-500 mt-3 font-medium">
+                  🔒 Cryptographic 256-bit automated transaction processing
+                </p>
+              </div>
             </div>
           </div>
         </div>
