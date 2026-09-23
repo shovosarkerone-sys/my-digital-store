@@ -154,7 +154,6 @@ export default function SecretAdminPortal() {
     (c) => c.name.toLowerCase() === category.toLowerCase()
   );
 
-  // Merchant KYC Status Update Handler
   const handleUpdateSellerStatus = async (sellerId: string, status: "verified" | "rejected") => {
     try {
       const { error } = await supabase
@@ -409,27 +408,27 @@ export default function SecretAdminPortal() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-4">
-        <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-8 space-y-6 shadow-2xl">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex items-center justify-center p-4 transition-colors duration-200">
+        <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 space-y-6 shadow-xl dark:shadow-2xl">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 mx-auto flex items-center justify-center text-xl font-bold">
+            <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-500 dark:text-sky-400 mx-auto flex items-center justify-center text-xl font-bold">
               🔒
             </div>
-            <h1 className="text-lg font-bold text-white">Administrative Key</h1>
-            <p className="text-xs text-slate-400">
+            <h1 className="text-lg font-bold text-slate-900 dark:text-white">Administrative Key</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Enter master key to access the control panel
             </p>
           </div>
 
           {passwordError && (
-            <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs rounded-xl text-center">
+            <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 dark:text-rose-400 text-xs rounded-xl text-center">
               {passwordError}
             </div>
           )}
 
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Passkey
               </label>
               <input
@@ -439,20 +438,20 @@ export default function SecretAdminPortal() {
                 value={passwordInput}
                 onChange={(e) => setPasswordInput(e.target.value)}
                 placeholder="Enter access code..."
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-lg shadow-sky-950"
+              className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20"
             >
               Unlock Console →
             </button>
           </form>
 
           <div className="text-center">
-            <Link href="/" className="text-[11px] text-slate-500 hover:text-slate-400">
+            <Link href="/" className="text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400">
               ← Return to Home
             </Link>
           </div>
@@ -464,9 +463,9 @@ export default function SecretAdminPortal() {
   const pendingSellersCount = sellers.filter((s) => s.verification_status === "pending").length;
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6 transition-colors duration-200">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <Link
           href="/"
           className="flex items-center gap-3 group transition hover:opacity-95"
@@ -481,23 +480,23 @@ export default function SecretAdminPortal() {
             />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-white leading-tight group-hover:text-sky-400 transition">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white leading-tight group-hover:text-sky-500 dark:group-hover:text-sky-400 transition">
               Inskeys Admin Console
             </h1>
-            <span className="text-xs text-sky-400 font-mono">Control Center</span>
+            <span className="text-xs text-sky-600 dark:text-sky-400 font-mono">Control Center</span>
           </div>
         </Link>
 
         <div className="flex items-center gap-2">
           <Link
             href="/"
-            className="text-xs bg-slate-900 border border-slate-800 px-3.5 py-2 rounded-xl hover:text-white text-slate-400 transition"
+            className="text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl hover:text-slate-900 dark:hover:text-white text-slate-600 dark:text-slate-400 transition"
           >
             Home
           </Link>
           <button
             onClick={handleLogout}
-            className="text-xs bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 px-3 py-2 rounded-xl transition cursor-pointer"
+            className="text-xs bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 dark:text-rose-400 px-3 py-2 rounded-xl transition cursor-pointer"
             title="Lock Portal"
           >
             🔒 Lock
@@ -506,19 +505,19 @@ export default function SecretAdminPortal() {
       </div>
 
       {message && (
-        <div className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl text-xs text-amber-300">
+        <div className="p-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-amber-600 dark:text-amber-300">
           {message}
         </div>
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-800 pb-2 overflow-x-auto">
+      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab("all_products")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
             activeTab === "all_products"
-              ? "bg-slate-800 text-sky-400 border border-slate-700"
-              : "text-slate-400 hover:text-white"
+              ? "bg-slate-200 dark:bg-slate-800 text-sky-600 dark:text-sky-400 border border-slate-300 dark:border-slate-700"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           📦 All Products ({products.length})
@@ -531,7 +530,7 @@ export default function SecretAdminPortal() {
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
             activeTab === "add_product"
               ? "bg-sky-500 text-white font-bold"
-              : "text-slate-400 hover:text-white"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           ➕ Add New Product
@@ -540,8 +539,8 @@ export default function SecretAdminPortal() {
           onClick={() => setActiveTab("categories")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
             activeTab === "categories"
-              ? "bg-slate-800 text-sky-400 border border-slate-700"
-              : "text-slate-400 hover:text-white"
+              ? "bg-slate-200 dark:bg-slate-800 text-sky-600 dark:text-sky-400 border border-slate-300 dark:border-slate-700"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           🏷️ Categories ({categories.length})
@@ -550,8 +549,8 @@ export default function SecretAdminPortal() {
           onClick={() => setActiveTab("merchants")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
             activeTab === "merchants"
-              ? "bg-slate-800 text-sky-400 border border-slate-700"
-              : "text-slate-400 hover:text-white"
+              ? "bg-slate-200 dark:bg-slate-800 text-sky-600 dark:text-sky-400 border border-slate-300 dark:border-slate-700"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           <span>👥 Merchants / KYC</span>
@@ -565,8 +564,8 @@ export default function SecretAdminPortal() {
           onClick={() => setActiveTab("tickets")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
             activeTab === "tickets"
-              ? "bg-slate-800 text-sky-400 border border-slate-700"
-              : "text-slate-400 hover:text-white"
+              ? "bg-slate-200 dark:bg-slate-800 text-sky-600 dark:text-sky-400 border border-slate-300 dark:border-slate-700"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
           🎫 Support Tickets ({tickets.length})
@@ -577,7 +576,7 @@ export default function SecretAdminPortal() {
       {activeTab === "all_products" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
               Inventory & Catalog ({products.length})
             </h2>
             <button
@@ -592,7 +591,7 @@ export default function SecretAdminPortal() {
           </div>
 
           {products.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-sm">
               No products listed yet. Click "Add New Product" to create your first listing.
             </div>
           ) : (
@@ -610,14 +609,14 @@ export default function SecretAdminPortal() {
                 return (
                   <div
                     key={p.id}
-                    className="p-3.5 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3 hover:border-slate-700 transition"
+                    className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-14 h-14 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center relative">
+                      <div className="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 flex items-center justify-center relative">
                         {p.image_url ? (
                           <img src={p.image_url} alt={p.title} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-[10px] text-slate-500">🎮</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500">🎮</span>
                         )}
                         {hasDiscount && (
                           <span className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-bold px-1 rounded">
@@ -627,32 +626,32 @@ export default function SecretAdminPortal() {
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-bold text-white truncate">{p.title}</h4>
+                          <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{p.title}</h4>
                           {p.delivery_type === "manual" ? (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/10 text-amber-500 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
                               🕒 Manual
                             </span>
                           ) : (
-                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-400 border border-sky-500/20">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20">
                               ⚡ Auto
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-slate-400 mt-0.5">
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
                           {p.category} •{" "}
                           {hasDiscount ? (
                             <>
-                              <span className="line-through text-slate-500">${p.price}</span>{" "}
-                              <strong className="text-emerald-400">${p.discount_price}</strong>
+                              <span className="line-through text-slate-400 dark:text-slate-500">${p.price}</span>{" "}
+                              <strong className="text-emerald-500 dark:text-emerald-400">${p.discount_price}</strong>
                             </>
                           ) : (
                             <strong>${p.price}</strong>
                           )}
                           {" "}• Stock:{" "}
                           {p.delivery_type === "manual" ? (
-                            <strong className="text-amber-400">Manual Delivery</strong>
+                            <strong className="text-amber-500 dark:text-amber-400">Manual Delivery</strong>
                           ) : (
-                            <strong className={stock > 0 ? "text-emerald-400" : "text-rose-400"}>
+                            <strong className={stock > 0 ? "text-emerald-500 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}>
                               {stock} codes
                             </strong>
                           )}
@@ -664,13 +663,13 @@ export default function SecretAdminPortal() {
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => startEditProduct(p)}
-                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                        className="text-xs text-sky-600 dark:text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteProduct(p.id)}
-                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
+                        className="text-xs text-rose-500 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition cursor-pointer"
                       >
                         Delete
                       </button>
@@ -685,13 +684,13 @@ export default function SecretAdminPortal() {
 
       {/* TAB 2: ADD / EDIT PRODUCT */}
       {activeTab === "add_product" && (
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                 {editingProductId ? "Edit Product" : "Add New Product"}
               </h2>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 {productStep === 1 ? "Step 1 of 2: Product Information" : "Step 2 of 2: Delivery Method Setup"}
               </span>
             </div>
@@ -699,7 +698,7 @@ export default function SecretAdminPortal() {
               <button
                 type="button"
                 onClick={resetProductForm}
-                className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
+                className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg cursor-pointer"
               >
                 Cancel
               </button>
@@ -710,24 +709,24 @@ export default function SecretAdminPortal() {
           {productStep === 1 && (
             <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Product Title</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Product Title</label>
                 <input
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Discord Nitro 1 Month Global"
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
 
-              {/* Category Dropdown with Clean Placeholder */}
-              <div className="p-4 bg-slate-950 border border-slate-800 rounded-2xl space-y-3">
-                <label className="block text-xs font-semibold text-slate-300">
+              {/* Category Dropdown */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Category & Product Icon
                 </label>
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 shrink-0 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0 flex items-center justify-center">
                     {activeSelectedCategory?.image_url ? (
                       <img
                         src={activeSelectedCategory.image_url}
@@ -735,7 +734,7 @@ export default function SecretAdminPortal() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-slate-600 text-xs font-mono">No Icon</span>
+                      <span className="text-slate-400 dark:text-slate-600 text-xs font-mono">No Icon</span>
                     )}
                   </div>
                   <div className="flex-1 space-y-1">
@@ -743,7 +742,7 @@ export default function SecretAdminPortal() {
                       required
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500"
                     >
                       <option value="" disabled>-- Select a Category --</option>
                       {categories.map((c) => (
@@ -761,7 +760,7 @@ export default function SecretAdminPortal() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Regular Price (USD $)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Regular Price (USD $)</label>
                   <input
                     type="number"
                     step="0.01"
@@ -769,33 +768,33 @@ export default function SecretAdminPortal() {
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
                     placeholder="9.99"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Discount Price (USD $ - Optional)</label>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Discount Price (USD $ - Optional)</label>
                   <input
                     type="number"
                     step="0.01"
                     value={discountPrice}
                     onChange={(e) => setDiscountPrice(e.target.value)}
                     placeholder="7.99"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                    className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                   />
                 </div>
               </div>
 
               {/* Discount Duration Controls */}
               {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (
-                <div className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
-                  <span className="block text-xs font-bold text-sky-400">Discount Timer / Duration</span>
+                <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
+                  <span className="block text-xs font-bold text-sky-600 dark:text-sky-400">Discount Timer / Duration</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-slate-400 mb-1">Offer Type</label>
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Offer Type</label>
                       <select
                         value={discountDurationType}
                         onChange={(e) => setDiscountDurationType(e.target.value as any)}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                       >
                         <option value="none">No Expiry Date (Until manually changed)</option>
                         <option value="lifetime">Lifetime Deal</option>
@@ -804,14 +803,14 @@ export default function SecretAdminPortal() {
                     </div>
                     {discountDurationType === "custom" && (
                       <div>
-                        <label className="block text-xs text-slate-400 mb-1">Number of Days Active</label>
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Number of Days Active</label>
                         <input
                           type="number"
                           min="1"
                           max="365"
                           value={discountDays}
                           onChange={(e) => setDiscountDays(e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                          className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
                         />
                       </div>
                     )}
@@ -820,14 +819,14 @@ export default function SecretAdminPortal() {
               )}
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Description</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Description</label>
                 <textarea
                   rows={3}
                   required
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Redemption instructions, region limitations, and key details..."
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-sky-500"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
 
@@ -835,7 +834,7 @@ export default function SecretAdminPortal() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950 flex items-center gap-2"
+                  className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-md shadow-sky-500/20 flex items-center gap-2"
                 >
                   <span>{submitting ? "Saving..." : "Next: Set Delivery Method →"}</span>
                 </button>
@@ -847,8 +846,8 @@ export default function SecretAdminPortal() {
           {productStep === 2 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-base font-bold text-white mb-1">How will this product be delivered?</h3>
-                <p className="text-xs text-slate-400">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">How will this product be delivered?</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Select fulfillment method for <strong>{title}</strong>.
                 </p>
               </div>
@@ -860,7 +859,7 @@ export default function SecretAdminPortal() {
                   className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
                     deliveryType === "auto"
                       ? "bg-sky-500/10 border-sky-500 ring-1 ring-sky-500/50"
-                      : "bg-slate-950 border-slate-800 hover:border-slate-700"
+                      : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -872,8 +871,8 @@ export default function SecretAdminPortal() {
                       className="cursor-pointer text-sky-500"
                     />
                   </div>
-                  <h4 className="text-sm font-bold text-white">Automatic Delivery</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Automatic Delivery</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                     License keys/vouchers are delivered instantly to buyer's screen right after payment confirmation.
                   </p>
                 </div>
@@ -884,7 +883,7 @@ export default function SecretAdminPortal() {
                   className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
                     deliveryType === "manual"
                       ? "bg-amber-500/10 border-amber-500 ring-1 ring-amber-500/50"
-                      : "bg-slate-950 border-slate-800 hover:border-slate-700"
+                      : "bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                   }`}
                 >
                   <div className="flex items-center justify-between">
@@ -896,8 +895,8 @@ export default function SecretAdminPortal() {
                       className="cursor-pointer text-amber-500"
                     />
                   </div>
-                  <h4 className="text-sm font-bold text-white">Manual Delivery</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
+                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">Manual Delivery</h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                     You fulfill the order manually. A <strong>🕒 Manual Delivery</strong> badge will appear on storefront.
                   </p>
                 </div>
@@ -905,12 +904,12 @@ export default function SecretAdminPortal() {
 
               {/* If Automatic Delivery: Show Codes input */}
               {deliveryType === "auto" ? (
-                <div className="space-y-2 bg-slate-950 border border-slate-800 rounded-xl p-4">
+                <div className="space-y-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-slate-300">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                       Voucher / License Codes (One code per line)
                     </label>
-                    <span className="text-xs font-mono text-sky-400">
+                    <span className="text-xs font-mono text-sky-600 dark:text-sky-400">
                       Stock: {voucherCodes.split("\n").filter((c) => c.trim()).length} codes
                     </span>
                   </div>
@@ -919,11 +918,11 @@ export default function SecretAdminPortal() {
                     value={voucherCodes}
                     onChange={(e) => setVoucherCodes(e.target.value)}
                     placeholder="CODE-XXXXX-1111&#10;CODE-YYYYY-2222"
-                    className="w-full font-mono bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-600 focus:outline-none"
+                    className="w-full font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none"
                   />
                 </div>
               ) : (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-600 dark:text-amber-300">
                   🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual dispatch.
                 </div>
               )}
@@ -932,7 +931,7 @@ export default function SecretAdminPortal() {
                 <button
                   type="button"
                   onClick={() => setProductStep(1)}
-                  className="px-4 py-2 text-xs text-slate-400 hover:text-white"
+                  className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 >
                   ← Back to Details
                 </button>
@@ -940,7 +939,7 @@ export default function SecretAdminPortal() {
                   type="button"
                   disabled={submitting}
                   onClick={handleProductStepTwoSubmit}
-                  className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-emerald-950"
+                  className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-md shadow-emerald-500/20"
                 >
                   {submitting ? "Finalizing..." : "Complete & Publish Product ✓"}
                 </button>
@@ -953,16 +952,16 @@ export default function SecretAdminPortal() {
       {/* TAB 3: CATEGORIES */}
       {activeTab === "categories" && (
         <div className="space-y-6">
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4 shadow-sm">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                 {editingCategoryId ? "Edit Category & Photo" : "Add New Category"}
               </h2>
               {editingCategoryId && (
                 <button
                   type="button"
                   onClick={resetCategoryForm}
-                  className="text-xs text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 rounded-lg cursor-pointer"
+                  className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg cursor-pointer"
                 >
                   Cancel Edit
                 </button>
@@ -971,25 +970,25 @@ export default function SecretAdminPortal() {
 
             <form onSubmit={handleCategorySubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Name</label>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Category Name</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Steam, Xbox, PlayStation, Nintendo"
                   value={categoryName}
                   onChange={(e) => setCategoryName(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs text-white"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Category Master Icon / Photo</label>
-                <div className="flex items-center gap-4 bg-slate-950 border border-slate-800 rounded-xl p-3">
-                  <div className="w-14 h-14 bg-slate-900 rounded-lg overflow-hidden border border-slate-700 shrink-0 flex items-center justify-center">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Category Master Icon / Photo</label>
+                <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
+                  <div className="w-14 h-14 bg-slate-100 dark:bg-slate-900 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 flex items-center justify-center">
                     {categoryImagePreview ? (
                       <img src={categoryImagePreview} alt="Preview" className="w-full h-full object-cover" />
                     ) : (
-                      <span className="text-[10px] text-slate-500">No Photo</span>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">No Photo</span>
                     )}
                   </div>
                   <div className="flex-1 space-y-1">
@@ -1002,7 +1001,7 @@ export default function SecretAdminPortal() {
                     />
                     <label
                       htmlFor="admin-cat-img"
-                      className="inline-block px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition"
+                      className="inline-block px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-semibold rounded-lg cursor-pointer transition border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-white"
                     >
                       {categoryImagePreview ? "Change Category Image" : "Upload Category Image"}
                     </label>
@@ -1014,7 +1013,7 @@ export default function SecretAdminPortal() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-lg shadow-sky-950"
+                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-md shadow-sky-500/20"
               >
                 {submitting
                   ? "Processing..."
@@ -1026,7 +1025,7 @@ export default function SecretAdminPortal() {
           </div>
 
           <div className="space-y-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               All Existing Categories ({categories.length})
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1038,32 +1037,32 @@ export default function SecretAdminPortal() {
                 return (
                   <div
                     key={cat.id}
-                    className="p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3"
+                    className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-between gap-3 shadow-sm"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-700 flex items-center justify-center">
+                      <div className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
                         {cat.image_url ? (
                           <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" />
                         ) : (
-                          <span className="text-xs text-slate-500">🎮</span>
+                          <span className="text-xs text-slate-400 dark:text-slate-500">🎮</span>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-white truncate">{cat.name}</h4>
-                        <p className="text-[10px] text-slate-400">{count} products assigned</p>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{cat.name}</h4>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">{count} products assigned</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => startEditCategory(cat)}
-                        className="text-xs text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
+                        className="text-xs text-sky-600 dark:text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteCategory(cat.id)}
-                        className="text-xs text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
+                        className="text-xs text-rose-500 dark:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 px-2.5 py-1 rounded-lg transition cursor-pointer"
                       >
                         Delete
                       </button>
@@ -1081,23 +1080,23 @@ export default function SecretAdminPortal() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                 Merchant Applications & KYC Verification ({sellers.length})
               </h2>
-              <span className="text-xs text-slate-400">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
                 Review identity documents, store information, and approve or reject seller privileges.
               </span>
             </div>
             <button
               onClick={fetchSellers}
-              className="text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 transition"
+              className="text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 transition"
             >
               Refresh List
             </button>
           </div>
 
           {sellers.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-sm">
               No merchant applications registered yet.
             </div>
           ) : (
@@ -1105,27 +1104,27 @@ export default function SecretAdminPortal() {
               {sellers.map((s) => (
                 <div
                   key={s.id}
-                  className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-3">
                     <div>
                       <div className="flex items-center gap-2.5">
-                        <h3 className="text-sm font-bold text-white">{s.shop_name}</h3>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">{s.shop_name}</h3>
                         <span
                           className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                             s.verification_status === "verified"
-                              ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                               : s.verification_status === "rejected"
-                              ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
-                              : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                              ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                              : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
                           }`}
                         >
                           {s.verification_status}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-400 mt-0.5">
-                        Country: <strong className="text-slate-200">{s.country}</strong> • Seller ID:{" "}
-                        <span className="font-mono text-sky-400 text-[11px]">{s.id}</span>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Country: <strong className="text-slate-700 dark:text-slate-200">{s.country}</strong> • Seller ID:{" "}
+                        <span className="font-mono text-sky-600 dark:text-sky-400 text-[11px]">{s.id}</span>
                       </p>
                     </div>
 
@@ -1135,7 +1134,7 @@ export default function SecretAdminPortal() {
                         <button
                           type="button"
                           onClick={() => handleUpdateSellerStatus(s.id, "verified")}
-                          className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-emerald-950"
+                          className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-emerald-500/20"
                         >
                           Approve ✓
                         </button>
@@ -1144,7 +1143,7 @@ export default function SecretAdminPortal() {
                         <button
                           type="button"
                           onClick={() => handleUpdateSellerStatus(s.id, "rejected")}
-                          className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 font-bold text-xs rounded-xl transition cursor-pointer"
+                          className="px-3.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 dark:text-rose-400 border border-rose-500/20 font-bold text-xs rounded-xl transition cursor-pointer"
                         >
                           Reject ✕
                         </button>
@@ -1153,27 +1152,27 @@ export default function SecretAdminPortal() {
                   </div>
 
                   {s.description && (
-                    <div className="text-xs text-slate-300 bg-slate-950 p-3 rounded-xl border border-slate-800/60 leading-relaxed">
-                      <strong className="text-slate-400 block mb-0.5 text-[11px]">Store Bio:</strong>
+                    <div className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/60 leading-relaxed">
+                      <strong className="text-slate-500 dark:text-slate-400 block mb-0.5 text-[11px]">Store Bio:</strong>
                       {s.description}
                     </div>
                   )}
 
-                  {/* KYC Documents Preview (Front and Back) */}
-                  <div className="bg-slate-950 border border-slate-800/80 rounded-xl p-4 space-y-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-300 gap-1 border-b border-slate-800/60 pb-2">
+                  {/* KYC Documents Preview */}
+                  <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-700 dark:text-slate-300 gap-1 border-b border-slate-200 dark:border-slate-800/60 pb-2">
                       <span>
-                        Document Type: <strong className="text-sky-400">{s.document_type || "NID / Passport"}</strong>
+                        Document Type: <strong className="text-sky-600 dark:text-sky-400">{s.document_type || "NID / Passport"}</strong>
                       </span>
                       <span>
-                        Document No: <strong className="text-white font-mono">{s.document_number || "N/A"}</strong>
+                        Document No: <strong className="text-slate-900 dark:text-white font-mono">{s.document_number || "N/A"}</strong>
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                      {/* Front Side Card */}
+                      {/* Front Side */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-semibold text-slate-400 block">
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
                           Front Side Document:
                         </span>
                         {s.document_front_url ? (
@@ -1181,7 +1180,7 @@ export default function SecretAdminPortal() {
                             href={s.document_front_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block h-36 bg-slate-900 border border-slate-800 hover:border-sky-500 rounded-xl overflow-hidden relative group transition"
+                            className="block h-36 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-sky-500 rounded-xl overflow-hidden relative group transition"
                           >
                             <img
                               src={s.document_front_url}
@@ -1193,15 +1192,15 @@ export default function SecretAdminPortal() {
                             </div>
                           </a>
                         ) : (
-                          <div className="h-36 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xs text-slate-500">
+                          <div className="h-36 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
                             No front image uploaded
                           </div>
                         )}
                       </div>
 
-                      {/* Back Side Card */}
+                      {/* Back Side */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-semibold text-slate-400 block">
+                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
                           Back Side Document:
                         </span>
                         {s.document_back_url ? (
@@ -1209,7 +1208,7 @@ export default function SecretAdminPortal() {
                             href={s.document_back_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="block h-36 bg-slate-900 border border-slate-800 hover:border-sky-500 rounded-xl overflow-hidden relative group transition"
+                            className="block h-36 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-sky-500 rounded-xl overflow-hidden relative group transition"
                           >
                             <img
                               src={s.document_back_url}
@@ -1221,7 +1220,7 @@ export default function SecretAdminPortal() {
                             </div>
                           </a>
                         ) : (
-                          <div className="h-36 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center text-xs text-slate-500">
+                          <div className="h-36 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
                             No back image uploaded
                           </div>
                         )}
@@ -1239,63 +1238,63 @@ export default function SecretAdminPortal() {
       {activeTab === "tickets" && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
               Customer & Seller Support Tickets ({tickets.length})
             </h2>
             <button
               onClick={fetchTickets}
-              className="text-xs bg-slate-900 border border-slate-800 hover:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-300 transition"
+              className="text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-200 dark:hover:bg-slate-800 px-3 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 transition"
             >
               Refresh Tickets
             </button>
           </div>
 
           {tickets.length === 0 ? (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-500 text-xs">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-sm">
               No support tickets submitted yet.
             </div>
           ) : (
             <div className="space-y-3">
               {tickets.map((t) => (
-                <div key={t.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+                <div key={t.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-3">
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">#{t.id} - {t.subject}</span>
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">#{t.id} - {t.subject}</span>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                           t.status === "resolved"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
                             : t.status === "in_progress"
-                            ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                            : "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                            : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
                         }`}>
                           {t.status}
                         </span>
                       </div>
-                      <p className="text-[11px] text-slate-400">
-                        From: <strong className="text-slate-200">{t.user_name || "User"}</strong> ({t.user_email}) • Role: <span className="uppercase text-sky-400 font-mono">{t.role || "buyer"}</span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                        From: <strong className="text-slate-700 dark:text-slate-200">{t.user_name || "User"}</strong> ({t.user_email}) • Role: <span className="uppercase text-sky-600 dark:text-sky-400 font-mono">{t.role || "buyer"}</span>
                       </p>
                     </div>
 
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                       {new Date(t.created_at).toLocaleString()}
                     </span>
                   </div>
 
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800/80 text-xs text-slate-300 leading-relaxed whitespace-pre-line">
+                  <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                     {t.message}
                   </div>
 
                   {t.admin_reply && (
-                    <div className="bg-sky-950/20 border border-sky-800/40 p-3 rounded-xl text-xs text-sky-200 space-y-1">
-                      <span className="text-[10px] font-bold text-sky-400 uppercase">Existing Administrative Reply:</span>
+                    <div className="bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800/40 p-3 rounded-xl text-xs text-sky-800 dark:text-sky-200 space-y-1">
+                      <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase">Existing Administrative Reply:</span>
                       <p>{t.admin_reply}</p>
                     </div>
                   )}
 
                   {activeTicketId === t.id ? (
-                    <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-4 space-y-3">
-                      <label className="block text-xs font-bold text-slate-200">
+                    <div className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
+                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
                         Write Official Resolution Reply
                       </label>
                       <textarea
@@ -1303,14 +1302,14 @@ export default function SecretAdminPortal() {
                         value={ticketReplyText}
                         onChange={(e) => setTicketReplyText(e.target.value)}
                         placeholder="Provide response or resolution steps..."
-                        className="w-full bg-slate-900 border border-slate-800 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
                       />
 
                       <div className="flex items-center gap-3">
                         <select
                           value={ticketStatusSelect}
                           onChange={(e) => setTicketStatusSelect(e.target.value as any)}
-                          className="bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none"
+                          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
                         >
                           <option value="in_progress">In Progress</option>
                           <option value="resolved">Resolved</option>
@@ -1329,7 +1328,7 @@ export default function SecretAdminPortal() {
                         <button
                           type="button"
                           onClick={() => setActiveTicketId(null)}
-                          className="px-3 py-2 text-xs text-slate-400 hover:text-white"
+                          className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                         >
                           Cancel
                         </button>
@@ -1343,7 +1342,7 @@ export default function SecretAdminPortal() {
                         setTicketReplyText(t.admin_reply || "");
                         setTicketStatusSelect(t.status);
                       }}
-                      className="text-xs bg-slate-800 hover:bg-slate-700 text-sky-400 px-3 py-1.5 rounded-lg transition"
+                      className="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 px-3 py-1.5 rounded-lg transition"
                     >
                       {t.admin_reply ? "Edit Official Reply" : "Resolve / Reply to Ticket →"}
                     </button>

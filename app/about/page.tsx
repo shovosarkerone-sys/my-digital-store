@@ -30,9 +30,9 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white selection:bg-sky-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white selection:bg-sky-500 selection:text-white transition-colors duration-200">
       {/* Header Navigation */}
-      <header className="border-b border-slate-900 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+      <header className="border-b border-slate-200 dark:border-slate-900 bg-white/80 dark:bg-slate-950/80 backdrop-blur sticky top-0 z-50 transition-colors duration-200">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
             <Image
@@ -42,7 +42,7 @@ export default function AboutPage() {
               height={34}
               className="w-8 h-8 object-contain bg-transparent"
             />
-            <span className="font-extrabold text-lg tracking-tight text-white">
+            <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
               Inskeys
             </span>
           </Link>
@@ -52,13 +52,13 @@ export default function AboutPage() {
               href="https://www.trustpilot.com/review/inskeys.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl transition"
+              className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl transition"
             >
               <span>★</span> Trustpilot
             </Link>
             <Link
               href="/"
-              className="text-xs text-slate-300 hover:text-white bg-slate-900 border border-slate-800 px-3.5 py-1.5 rounded-xl transition"
+              className="text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-1.5 rounded-xl transition"
             >
               ← Home
             </Link>
@@ -69,26 +69,26 @@ export default function AboutPage() {
       <main className="max-w-5xl mx-auto px-4 sm:px-6 py-12 md:py-16 space-y-16">
         {/* 1. Hero Section */}
         <section className="text-center max-w-3xl mx-auto space-y-4">
-          <span className="text-xs font-bold text-sky-400 tracking-widest uppercase bg-sky-500/10 border border-sky-500/20 px-3.5 py-1.5 rounded-full inline-block">
+          <span className="text-xs font-bold text-sky-600 dark:text-sky-400 tracking-widest uppercase bg-sky-500/10 border border-sky-500/20 px-3.5 py-1.5 rounded-full inline-block">
             About Inskeys Marketplace
           </span>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
             Your Premier Destination for Digital Entertainment
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
             No matter your platform—PC, console, or mobile—Inskeys connects verified sellers and global buyers with unbeatable prices, secure crypto payments, and guaranteed 36-Hour Buyer Protection.
           </p>
 
           <div className="flex items-center justify-center gap-3 pt-3">
             <Link
               href="/"
-              className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl shadow-lg shadow-sky-950 transition"
+              className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl shadow-md shadow-sky-500/20 transition"
             >
               Explore Products →
             </Link>
             <Link
               href="/support"
-              className="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs rounded-xl transition"
+              className="px-6 py-2.5 bg-slate-100 dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs rounded-xl transition"
             >
               Contact Support
             </Link>
@@ -98,62 +98,62 @@ export default function AboutPage() {
         {/* 2. Core Service Pillars */}
         <section className="space-y-6">
           <div className="text-center space-y-1">
-            <h2 className="text-lg sm:text-xl font-bold text-white">What We Offer</h2>
-            <p className="text-xs text-slate-400">Everything you need for gaming, software, and subscriptions</p>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">What We Offer</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Everything you need for gaming, software, and subscriptions</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {coreServices.map((service, index) => (
               <div
                 key={index}
-                className="p-6 bg-slate-900/70 border border-slate-800 rounded-3xl space-y-3 hover:border-slate-700 transition"
+                className="p-6 bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 rounded-3xl space-y-3 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm"
               >
                 <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-2xl">
                   {service.icon}
                 </div>
-                <h3 className="text-sm font-bold text-white">{service.title}</h3>
-                <p className="text-xs text-slate-400 leading-relaxed">{service.desc}</p>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{service.title}</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{service.desc}</p>
               </div>
             ))}
           </div>
         </section>
 
         {/* 3. Who We Are & Dual Ecosystem (Buyers vs Sellers) */}
-        <section className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+        <section className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm transition-colors duration-200">
           <div className="max-w-2xl space-y-2">
-            <span className="text-xs font-bold text-sky-400 uppercase tracking-wider">Who We Are</span>
-            <h2 className="text-xl sm:text-2xl font-black text-white">
+            <span className="text-xs font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider">Who We Are</span>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
               A Transparent, High-Speed Marketplace Built for Everyone
             </h2>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
               Inskeys was founded to eliminate excessive middleman commissions and payment hurdles in digital trading. Whether you are buying games or managing a high-volume merchant store, we provide an automated, dispute-free environment backed by strict buyer safety standards.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             {/* For Buyers */}
-            <div className="p-5 bg-slate-950 border border-slate-800/90 rounded-2xl space-y-2.5">
+            <div className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/90 rounded-2xl space-y-2.5">
               <div className="flex items-center gap-2">
                 <span className="text-xl">🛡️</span>
-                <h3 className="text-xs font-bold text-white uppercase tracking-wide">For Buyers</h3>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">For Buyers</h3>
               </div>
-              <ul className="text-xs text-slate-400 space-y-2 leading-relaxed">
-                <li>• <strong>36-Hour Buyer Protection:</strong> Funds are securely held for 36 hours until you verify and activate your code.</li>
-                <li>• <strong>Instant & Flexible:</strong> Immediate automated delivery or transparent manual order fulfillment.</li>
-                <li>• <strong>Direct Crypto Checkout:</strong> Pay instantly with your preferred crypto with low network fees.</li>
+              <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
+                <li>• <strong className="text-slate-800 dark:text-slate-200">36-Hour Buyer Protection:</strong> Funds are securely held for 36 hours until you verify and activate your code.</li>
+                <li>• <strong className="text-slate-800 dark:text-slate-200">Instant & Flexible:</strong> Immediate automated delivery or transparent manual order fulfillment.</li>
+                <li>• <strong className="text-slate-800 dark:text-slate-200">Direct Crypto Checkout:</strong> Pay instantly with your preferred crypto with low network fees.</li>
               </ul>
             </div>
 
             {/* For Sellers */}
-            <div className="p-5 bg-slate-950 border border-slate-800/90 rounded-2xl space-y-2.5">
+            <div className="p-5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/90 rounded-2xl space-y-2.5">
               <div className="flex items-center gap-2">
                 <span className="text-xl">💼</span>
-                <h3 className="text-xs font-bold text-white uppercase tracking-wide">For Sellers</h3>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">For Sellers</h3>
               </div>
-              <ul className="text-xs text-slate-400 space-y-2 leading-relaxed">
-                <li>• <strong>Minimal Marketplace Fees:</strong> Keep the highest portion of your hard-earned revenue.</li>
-                <li>• <strong>Instant Global Audience:</strong> Sell to international customers without regional limitations.</li>
-                <li>• <strong>Dedicated Seller Dashboard:</strong> Manage stock, track analytics, and handle customer queries seamlessly.</li>
+              <ul className="text-xs text-slate-600 dark:text-slate-400 space-y-2 leading-relaxed">
+                <li>• <strong className="text-slate-800 dark:text-slate-200">Minimal Marketplace Fees:</strong> Keep the highest portion of your hard-earned revenue.</li>
+                <li>• <strong className="text-slate-800 dark:text-slate-200">Instant Global Audience:</strong> Sell to international customers without regional limitations.</li>
+                <li>• <strong className="text-slate-800 dark:text-slate-200">Dedicated Seller Dashboard:</strong> Manage stock, track analytics, and handle customer queries seamlessly.</li>
               </ul>
             </div>
           </div>
@@ -162,43 +162,43 @@ export default function AboutPage() {
         {/* 4. Marketplace In Numbers (Stats Grid) */}
         <section className="space-y-4">
           <div className="text-center space-y-1">
-            <span className="text-[11px] font-bold text-sky-400 uppercase tracking-widest">Platform Integrity</span>
-            <h2 className="text-xl font-bold text-white">Inskeys by the Numbers</h2>
+            <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-widest">Platform Integrity</span>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Inskeys by the Numbers</h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {stats.map((st, i) => (
               <div
                 key={i}
-                className="p-5 bg-slate-900 border border-slate-800 rounded-2xl text-center space-y-1"
+                className="p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center space-y-1 shadow-sm"
               >
-                <div className="text-2xl font-black text-sky-400 font-mono">
+                <div className="text-2xl font-black text-sky-600 dark:text-sky-400 font-mono">
                   {st.value}
                 </div>
-                <div className="text-xs font-bold text-white">{st.label}</div>
-                <div className="text-[10px] text-emerald-400 font-semibold">{st.change}</div>
+                <div className="text-xs font-bold text-slate-900 dark:text-white">{st.label}</div>
+                <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">{st.change}</div>
               </div>
             ))}
           </div>
         </section>
 
         {/* 5. Company Info & Verification Details */}
-        <section className="border-t border-slate-800/80 pt-8">
-          <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <section className="border-t border-slate-200 dark:border-slate-800/80 pt-8">
+          <div className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm transition-colors duration-200">
             <div className="space-y-1.5">
-              <h3 className="text-sm font-bold text-white">Inskeys Operations & Support</h3>
-              <p className="text-xs text-slate-400 leading-relaxed max-w-xl">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">Inskeys Operations & Support</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
                 Dedicated to safe digital goods exchange, fast resolution disputes, and 24/7 client security.
               </p>
-              <div className="text-[11px] text-slate-500 font-mono pt-1">
-                Official Support: <strong className="text-sky-400">contact@inskeys.com</strong> • Domain: inskeys.com
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 font-mono pt-1">
+                Official Support: <strong className="text-sky-600 dark:text-sky-400">contact@inskeys.com</strong> • Domain: inskeys.com
               </div>
             </div>
 
             <div className="shrink-0 flex items-center gap-3">
               <Link
                 href="/"
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition"
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white border border-slate-200 dark:border-slate-700 font-bold text-xs rounded-xl transition"
               >
                 Home
               </Link>
@@ -206,7 +206,7 @@ export default function AboutPage() {
                 href="https://www.trustpilot.com/review/inskeys.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition"
+                className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl transition shadow-md shadow-emerald-500/20"
               >
                 Trustpilot Reviews ★
               </Link>
@@ -216,7 +216,7 @@ export default function AboutPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-slate-900 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 dark:border-slate-900 py-6 text-center text-xs text-slate-500 dark:text-slate-400">
         <p>© 2026 Inskeys.com. All Rights Reserved. All product names, logos, and brands are property of their respective owners.</p>
       </footer>
     </div>
