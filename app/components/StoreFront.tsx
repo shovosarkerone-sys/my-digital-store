@@ -179,7 +179,6 @@ export default function StoreFront({
     setIsSearchFocused(false);
   };
 
-  // থিম ড্রপডাউনে প্রদর্শিত আইকন ও নাম
   const currentThemeLabel = !mounted
     ? "System"
     : theme === "light"
@@ -702,31 +701,41 @@ export default function StoreFront({
                     className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-sm dark:shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                   >
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden shrink-0 relative flex items-center justify-center border border-slate-200 dark:border-slate-700/60">
-                        {product.image_url ? (
-                          <img
-                            src={product.image_url}
-                            alt={product.title}
-                            referrerPolicy="no-referrer"
-                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                          />
-                        ) : (
-                          <span className="text-slate-400 dark:text-slate-600 text-xs">🎮</span>
-                        )}
-
-                        {/* পরিবর্তিত ডিসকাউন্ট ব্যাজ */}
-                        {hasDiscount && (
-                          <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow">
+                      
+                      {/* === নতুন ইমেজ, ডিসকাউন্ট এবং ভিউ কন্টেইনার === */}
+                      <div className="flex flex-col items-center gap-1.5 shrink-0 w-16 sm:w-20">
+                        
+                        {/* ১. ডিসকাউন্ট ব্যাজ (ছবির বাইরে, উপরে) */}
+                        {hasDiscount ? (
+                          <div className="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-sm w-full text-center whitespace-nowrap">
                             {discountPercent}% OFF
                           </div>
+                        ) : (
+                          <div className="h-[18px]"></div> /* এলাইনমেন্ট ঠিক রাখার জন্য ফাঁকা জায়গা */
                         )}
 
-                        {/* পরিবর্তিত ভিউ আইকন */}
-                        <div className="absolute bottom-1.5 right-1.5 bg-black/80 backdrop-blur-xs text-[10px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
+                        {/* ২. প্রোডাক্ট ইমেজ (কোনো ওভারলে ছাড়া ক্লিয়ার ছবি) */}
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700/60 shrink-0">
+                          {product.image_url ? (
+                            <img
+                              src={product.image_url}
+                              alt={product.title}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                            />
+                          ) : (
+                            <span className="text-slate-400 dark:text-slate-600 text-xs">🎮</span>
+                          )}
+                        </div>
+
+                        {/* ৩. ভিউ আইকন (ছবির বাইরে, নিচে) */}
+                        <div className="bg-slate-100 dark:bg-slate-800/80 text-[9px] text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md font-mono flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 w-full">
                           <span>👁️</span>
                           <span>{product.views || 0}</span>
                         </div>
+                        
                       </div>
+                      {/* === শেষ === */}
 
                       <div className="min-w-0 flex-1 space-y-1">
                         <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider block">
