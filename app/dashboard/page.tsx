@@ -128,6 +128,13 @@ function DashboardContent() {
   const [submittingTicket, setSubmittingTicket] = useState(false);
   const [ticketActionMsg, setTicketActionMsg] = useState("");
 
+  // ==========================================
+  // NEW: Buyer Reply States
+  // ==========================================
+  const [activeReplyTicketId, setActiveReplyTicketId] = useState<number | null>(null);
+  const [userReplyText, setUserReplyText] = useState("");
+  const [replyingToTicket, setReplyingToTicket] = useState(false);
+
   useEffect(() => {
     async function loadUserData() {
       const {
@@ -510,6 +517,30 @@ function DashboardContent() {
     }
   };
 
+  // ==========================================
+  // NEW: Buyer Ticket Reply Function
+  // ==========================================
+  const handleBuyerTicketReply = async (ticket: any) => {
+    if (!userReplyText.trim()) return;
+    setReplyingToTicket(true);
+    try {
+      const updatedMessage = `${ticket.message}\n\n[User Reply - ${new Date().toLocaleDateString()}]:\n${userReplyText.trim()}`;
+      const { error } = await supabase
+        .from("support_tickets")
+        .update({ message: updatedMessage, status: "open" })
+        .eq("id", ticket.id);
+
+      if (error) throw error;
+      setActiveReplyTicketId(null);
+      setUserReplyText("");
+      await loadUserTickets(user.email, user.id);
+    } catch (err: any) {
+      alert(`Error replying to ticket: ${err.message}`);
+    } finally {
+      setReplyingToTicket(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors duration-200">
@@ -855,11 +886,11 @@ function DashboardContent() {
                                 required
                                 value={category}
                                 onChange={(e) => setCategory(e.target.value)}
-                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer shadow-xs"
                               >
                                 <option value="" disabled>-- Select a Category --</option>
                                 {categories.map((c) => (
-                                  <option key={c.id} value={c.name}>
+                                  <option key={c.id} value={c.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
                                     {c.name}
                                   </option>
                                 ))}
@@ -906,7 +937,7 @@ function DashboardContent() {
                                 <select
                                   value={discountDurationType}
                                   onChange={(e) => setDiscountDurationType(e.target.value as any)}
-                                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white shadow-xs"
                                 >
                                   <option value="none">No Expiry Date (Until manually changed)</option>
                                   <option value="lifetime">Lifetime Deal</option>
@@ -922,7 +953,7 @@ function DashboardContent() {
                                     max="365"
                                     value={discountDays}
                                     onChange={(e) => setDiscountDays(e.target.value)}
-                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white"
+                                    className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white shadow-xs"
                                   />
                                 </div>
                               )}
@@ -964,6 +995,7 @@ function DashboardContent() {
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {/* Automatic Delivery */}
                           <div
                             onClick={() => setDeliveryType("auto")}
                             className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
@@ -987,6 +1019,7 @@ function DashboardContent() {
                             </p>
                           </div>
 
+                          {/* Manual Delivery */}
                           <div
                             onClick={() => setDeliveryType("manual")}
                             className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
@@ -1457,7 +1490,7 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* VIEW 11: SUPPORT DESK */}
+            {/* VIEW 11: SUPPORT DESK WITH REPLY FUNCTIONALITY */}
             {activeTab === "support" && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
@@ -1529,7 +1562,7 @@ function DashboardContent() {
                       No support tickets found on your account.
                     </div>
                   ) : (
-                    <div className="space-y-2.5">
+                    <div className="space-y-4">
                       {tickets.map((t) => (
                         <div key={t.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2">
                           <div className="flex items-center justify-between">
@@ -1544,18 +1577,65 @@ function DashboardContent() {
                               {t.status}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                          
+                          <p className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 whitespace-pre-wrap">
                             {t.message}
                           </p>
+                          
                           {t.admin_reply && (
                             <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/40 text-xs text-sky-800 dark:text-sky-200 space-y-1">
                               <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 block">Inskeys Support Desk Reply:</span>
-                              <p>{t.admin_reply}</p>
+                              <p className="whitespace-pre-wrap">{t.admin_reply}</p>
                             </div>
                           )}
-                          <div className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                            Ticket ID: #{t.id} • {new Date(t.created_at).toLocaleDateString()}
+
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                              Ticket ID: #{t.id} • {new Date(t.created_at).toLocaleDateString()}
+                            </span>
+                            
+                            {/* ===================================== */}
+                            {/* NEW: Reply Button & Logic Section */}
+                            {/* ===================================== */}
+                            {activeReplyTicketId !== t.id && (
+                              <button 
+                                onClick={() => setActiveReplyTicketId(t.id)} 
+                                className="text-[10px] font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300 transition px-2 py-1 rounded-md hover:bg-sky-500/10 cursor-pointer"
+                              >
+                                Reply to Support →
+                              </button>
+                            )}
                           </div>
+
+                          {/* Inline Reply Box for Buyer */}
+                          {activeReplyTicketId === t.id && (
+                            <div className="mt-3 bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm animate-in fade-in duration-200">
+                              <textarea
+                                rows={3}
+                                value={userReplyText}
+                                onChange={(e) => setUserReplyText(e.target.value)}
+                                placeholder="Type your follow-up reply here..."
+                                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-lg p-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none transition mb-2"
+                              />
+                              <div className="flex items-center justify-end gap-2">
+                                <button 
+                                  onClick={() => { setActiveReplyTicketId(null); setUserReplyText(""); }} 
+                                  className="text-xs px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition cursor-pointer"
+                                >
+                                  Cancel
+                                </button>
+                                <button 
+                                  onClick={() => handleBuyerTicketReply(t)} 
+                                  disabled={replyingToTicket || !userReplyText.trim()} 
+                                  className="text-xs bg-sky-500 hover:bg-sky-600 text-white font-bold px-4 py-1.5 rounded-lg transition cursor-pointer disabled:opacity-50"
+                                >
+                                  {replyingToTicket ? "Sending..." : "Send Reply"}
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                          {/* End Reply Section */}
+
                         </div>
                       ))}
                     </div>
