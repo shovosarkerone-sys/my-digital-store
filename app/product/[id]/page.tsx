@@ -212,13 +212,15 @@ export default function ProductDetailPage() {
                 <span className="text-slate-400 dark:text-slate-500 text-sm font-mono">🎮 No Image Available</span>
               )}
 
+              {/* পরিবর্তিত ডিসকাউন্ট ব্যাজ */}
               {hasDiscount && (
-                <div className="absolute top-3 left-3 bg-rose-500 text-white text-xs font-black px-2.5 py-1 rounded-lg shadow-lg">
+                <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-lg">
                   {discountPercent}% OFF
                 </div>
               )}
 
-              <div className="absolute bottom-3 right-3 bg-black/80 backdrop-blur-xs text-[10px] text-slate-300 px-2 py-1 rounded-md font-mono flex items-center gap-1 border border-white/10">
+              {/* পরিবর্তিত ভিউজ আইকন */}
+              <div className="absolute bottom-1.5 right-1.5 bg-black/80 backdrop-blur-xs text-[10px] text-slate-300 px-2 py-1 rounded-md font-mono flex items-center gap-1 border border-white/10">
                 <span>👁️</span>
                 <span>{product.views || 0} views</span>
               </div>
