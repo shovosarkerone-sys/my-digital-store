@@ -53,7 +53,6 @@ export default function StoreFront({
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 30;
 
-  // হাইড্রেশন মিসম্যাচ রোধ করার জন্য
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -689,9 +688,11 @@ export default function StoreFront({
                     product.discount_price < product.price &&
                     (!product.discount_until || new Date(product.discount_until) > new Date())
                 );
+                
+                // দশমিক সহ নিখুঁত পার্সেন্টেজ হিসাব
                 const discountPercent =
                   hasDiscount && product.price > 0
-                    ? Math.round(((product.price - product.discount_price!) / product.price) * 100)
+                    ? (((product.price - product.discount_price!) / product.price) * 100).toFixed(2)
                     : null;
 
                 return (
@@ -700,43 +701,38 @@ export default function StoreFront({
                     href={`/product/${product.id}`}
                     className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 hover:border-sky-500/50 rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 sm:gap-4 group transition duration-200 shadow-sm dark:shadow-lg hover:shadow-sky-500/5 cursor-pointer"
                   >
+                    
+                    {/* === স্লিম কার্ড ডিজাইন (আগের মতো) === */}
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                       
-                      {/* === নতুন ইমেজ, ডিসকাউন্ট এবং ভিউ কন্টেইনার === */}
-                      <div className="flex flex-col items-center gap-1.5 shrink-0 w-16 sm:w-20">
+                      {/* ছবি এবং ব্যাজের কন্টেইনার (w-16 h-16) */}
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden relative flex items-center justify-center border border-slate-200 dark:border-slate-700/60 shrink-0">
                         
-                        {/* ১. ডিসকাউন্ট ব্যাজ (ছবির বাইরে, উপরে) */}
-                        {hasDiscount ? (
-                          <div className="bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-sm w-full text-center whitespace-nowrap">
-                            {discountPercent}% OFF
-                          </div>
+                        {product.image_url ? (
+                          <img
+                            src={product.image_url}
+                            alt={product.title}
+                            referrerPolicy="no-referrer"
+                            className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                          />
                         ) : (
-                          <div className="h-[18px]"></div> /* এলাইনমেন্ট ঠিক রাখার জন্য ফাঁকা জায়গা */
+                          <span className="text-slate-400 dark:text-slate-600 text-xs">🎮</span>
                         )}
 
-                        {/* ২. প্রোডাক্ট ইমেজ (কোনো ওভারলে ছাড়া ক্লিয়ার ছবি) */}
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-200 dark:border-slate-700/60 shrink-0">
-                          {product.image_url ? (
-                            <img
-                              src={product.image_url}
-                              alt={product.title}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                            />
-                          ) : (
-                            <span className="text-slate-400 dark:text-slate-600 text-xs">🎮</span>
-                          )}
-                        </div>
+                        {/* ১. ডিসকাউন্ট ব্যাজ (ছবির ঠিক ওপরের বাঁ-দিকের কোনায় সেট করা) */}
+                        {hasDiscount && (
+                          <div className="absolute top-0 left-0 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-br-lg rounded-tl-xl shadow-sm z-10">
+                            {discountPercent}% OFF
+                          </div>
+                        )}
 
-                        {/* ৩. ভিউ আইকন (ছবির বাইরে, নিচে) */}
-                        <div className="bg-slate-100 dark:bg-slate-800/80 text-[9px] text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded-md font-mono flex items-center justify-center gap-1 border border-slate-200 dark:border-slate-700 w-full">
-                          <span>👁️</span>
-                          <span>{product.views || 0}</span>
+                        {/* ২. ভিউ আইকন (ছবির ঠিক নিচের ডান-দিকের কোনায় সেট করা) */}
+                        <div className="absolute bottom-0 right-0 bg-black/70 backdrop-blur-md text-[9px] text-slate-200 px-1.5 py-0.5 rounded-tl-lg rounded-br-xl font-mono flex items-center gap-1 z-10 border-t border-l border-white/10">
+                          <span>👁️</span><span>{product.views || 0}</span>
                         </div>
-                        
                       </div>
-                      {/* === শেষ === */}
 
+                      {/* প্রোডাক্ট ডিটেইলস */}
                       <div className="min-w-0 flex-1 space-y-1">
                         <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase tracking-wider block">
                           {product.category}
