@@ -91,14 +91,14 @@ export default function SearchBar() {
     return () => clearTimeout(debounceTimer);
   }, [query]);
 
-  // এন্টার বাটন অথবা সার্চ বাটনে চাপলে সরাসরি সার্চ পেজে রিডাইরেক্ট
+  // এন্টার বাটন অথবা সার্চ বাটনে চাপলে সম্পূর্ণ আলাদা সার্চ পেজে রিডাইরেক্ট
   const handleManualSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const clean = query.trim();
     if (!clean) return;
 
     setIsOpen(false);
-    router.push(`/products?search=${encodeURIComponent(clean)}`);
+    router.push(`/search?q=${encodeURIComponent(clean)}`);
   };
 
   return (
@@ -144,8 +144,17 @@ export default function SearchBar() {
       {isOpen && (
         <div className="absolute left-0 right-0 top-full mt-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl dark:shadow-2xl overflow-hidden z-50 divide-y divide-slate-100 dark:divide-slate-800/60 max-h-80 overflow-y-auto transition-colors">
           {loading ? (
-            <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
-              Searching marketplace...
+            /* পরিবর্তিত প্রফেশনাল স্কেলিটন লোডার */
+            <div className="p-4 space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3 animate-pulse">
+                  <div className="w-10 h-10 bg-slate-200 dark:bg-slate-800 rounded-lg shrink-0"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-3/4"></div>
+                    <div className="h-2 bg-slate-200 dark:bg-slate-800 rounded w-1/3"></div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : results.length === 0 ? (
             <div className="p-4 text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
