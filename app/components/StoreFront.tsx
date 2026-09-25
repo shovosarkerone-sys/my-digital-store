@@ -173,9 +173,14 @@ export default function StoreFront({
       .filter((c) => c.length > 0).length;
   };
 
+  // পরিবর্তিত সার্চ সাবমিট ফাংশন
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSearchFocused(false);
+    const clean = searchQuery.trim();
+    if (clean) {
+      setIsSearchFocused(false);
+      router.push(`/search?q=${encodeURIComponent(clean)}`);
+    }
   };
 
   const currentThemeLabel = !mounted
