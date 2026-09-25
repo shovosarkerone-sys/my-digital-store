@@ -714,13 +714,15 @@ export default function StoreFront({
                           <span className="text-slate-400 dark:text-slate-600 text-xs">🎮</span>
                         )}
 
+                        {/* পরিবর্তিত ডিসকাউন্ট ব্যাজ */}
                         {hasDiscount && (
-                          <div className="absolute top-1 left-1 bg-rose-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                          <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow">
                             {discountPercent}% OFF
                           </div>
                         )}
 
-                        <div className="absolute bottom-1 right-1 bg-black/80 backdrop-blur-xs text-[9px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
+                        {/* পরিবর্তিত ভিউ আইকন */}
+                        <div className="absolute bottom-1.5 right-1.5 bg-black/80 backdrop-blur-xs text-[10px] text-slate-300 px-1.5 py-0.5 rounded-md font-mono flex items-center gap-1 border border-white/10">
                           <span>👁️</span>
                           <span>{product.views || 0}</span>
                         </div>
