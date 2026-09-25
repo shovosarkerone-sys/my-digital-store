@@ -126,9 +126,11 @@ export default function ProductDetailPage() {
     (!product.discount_until || new Date(product.discount_until) > new Date())
   );
   const finalPrice = hasDiscount ? product.discount_price : product.price;
+  
+  // দশমিক সহ নিখুঁত পার্সেন্টেজ হিসাব
   const discountPercent =
     hasDiscount && product.price > 0
-      ? Math.round(((product.price - product.discount_price) / product.price) * 100)
+      ? (((product.price - product.discount_price) / product.price) * 100).toFixed(2)
       : null;
 
   const whatsappMessage = encodeURIComponent(
@@ -212,15 +214,15 @@ export default function ProductDetailPage() {
                 <span className="text-slate-400 dark:text-slate-500 text-sm font-mono">🎮 No Image Available</span>
               )}
 
-              {/* পরিবর্তিত ডিসকাউন্ট ব্যাজ */}
+              {/* পরিবর্তিত ডিসকাউন্ট ব্যাজ (ওপরের বাঁ-দিকের কোনায়) */}
               {hasDiscount && (
-                <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[10px] font-black px-2 py-0.5 rounded-md shadow-lg">
+                <div className="absolute top-0 left-0 bg-emerald-500 text-white text-[11px] font-black px-2 py-1 rounded-br-xl rounded-tl-xl shadow-lg">
                   {discountPercent}% OFF
                 </div>
               )}
 
-              {/* পরিবর্তিত ভিউজ আইকন */}
-              <div className="absolute bottom-1.5 right-1.5 bg-black/80 backdrop-blur-xs text-[10px] text-slate-300 px-2 py-1 rounded-md font-mono flex items-center gap-1 border border-white/10">
+              {/* পরিবর্তিত ভিউজ আইকন (নিচের ডান-দিকের কোনায়) */}
+              <div className="absolute bottom-0 right-0 bg-black/70 backdrop-blur-md text-[11px] text-slate-200 px-2 py-1 rounded-tl-xl rounded-br-xl font-mono flex items-center gap-1 border-t border-l border-white/10">
                 <span>👁️</span>
                 <span>{product.views || 0} views</span>
               </div>
