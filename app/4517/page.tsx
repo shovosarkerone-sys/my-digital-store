@@ -56,17 +56,17 @@ export default function SecretAdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
-
+  
   const [activeTab, setActiveTab] = useState<
     "all_products" | "add_product" | "categories" | "merchants" | "tickets"
   >("all_products");
+  
   const [productStep, setProductStep] = useState<1 | 2>(1);
-
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
-
+  
   // Product Form States
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -78,20 +78,14 @@ export default function SecretAdminPortal() {
   const [deliveryType, setDeliveryType] = useState<"auto" | "manual">("auto");
   const [description, setDescription] = useState("");
   const [voucherCodes, setVoucherCodes] = useState("");
-
+  
   // Category Form States
   const [categoryName, setCategoryName] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
   const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(null);
   const [existingCategoryImageUrl, setExistingCategoryImageUrl] = useState<string | null>(null);
-
-  // Ticket Management States
-  const [activeTicketId, setActiveTicketId] = useState<number | null>(null);
-  const [ticketReplyText, setTicketReplyText] = useState("");
-  const [ticketStatusSelect, setTicketStatusSelect] = useState<"open" | "in_progress" | "resolved">("resolved");
-  const [updatingTicket, setUpdatingTicket] = useState(false);
-
+  
   // Status message
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -110,7 +104,6 @@ export default function SecretAdminPortal() {
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const correctPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "shovo2026";
-
     if (passwordInput === correctPassword) {
       setIsAuthenticated(true);
       sessionStorage.setItem("admin_authenticated", "true");
@@ -160,9 +153,7 @@ export default function SecretAdminPortal() {
         .from("sellers")
         .update({ verification_status: status })
         .eq("id", sellerId);
-
       if (error) throw error;
-
       setMessage(`Merchant verification status updated to: ${status.toUpperCase()}`);
       await fetchSellers();
     } catch (err: any) {
@@ -176,13 +167,10 @@ export default function SecretAdminPortal() {
       setMessage("Please select a valid product category.");
       return;
     }
-
     setSubmitting(true);
     setMessage("");
-
     try {
       const autoCategoryImageUrl = activeSelectedCategory?.image_url || null;
-
       let computedDiscountUntil: string | null = null;
       if (discountDurationType === "custom" && discountDays) {
         const d = new Date();
@@ -191,7 +179,6 @@ export default function SecretAdminPortal() {
       } else if (discountDurationType === "lifetime") {
         computedDiscountUntil = "2099-12-31T23:59:59Z";
       }
-
       const payload = {
         title: title.trim(),
         category,
@@ -202,7 +189,6 @@ export default function SecretAdminPortal() {
         description: description.trim(),
         seller_name: "Official Store",
       };
-
       if (editingProductId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
         if (error) throw error;
@@ -212,11 +198,9 @@ export default function SecretAdminPortal() {
           .insert([{ ...payload, delivery_type: "auto", voucher_codes: "", views: 0, sold_count: 0 }])
           .select()
           .single();
-
         if (error) throw error;
         if (data) setEditingProductId(data.id);
       }
-
       setProductStep(2);
     } catch (err: any) {
       setMessage(`Error: ${err.message}`);
@@ -229,16 +213,13 @@ export default function SecretAdminPortal() {
     if (!editingProductId) return;
     setSubmitting(true);
     setMessage("");
-
     try {
       const payload = {
         delivery_type: deliveryType,
         voucher_codes: deliveryType === "auto" ? voucherCodes.trim() : null,
       };
-
       const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
       if (error) throw error;
-
       setMessage("Product published & delivery setup completed successfully!");
       resetProductForm();
       await fetchProducts();
@@ -307,7 +288,6 @@ export default function SecretAdminPortal() {
     const { error } = await supabase.storage
       .from("product-images")
       .upload(fileName, file, { cacheControl: "3600", upsert: false });
-
     if (error) throw error;
     const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
     return data.publicUrl;
@@ -318,37 +298,30 @@ export default function SecretAdminPortal() {
     if (!categoryName.trim()) return;
     setSubmitting(true);
     setMessage("");
-
     try {
       let finalCatImageUrl = existingCategoryImageUrl;
-
       if (categoryImageFile) {
         finalCatImageUrl = await uploadImageToStorage(categoryImageFile, "categories");
       }
-
       const payload = {
         name: categoryName.trim(),
         image_url: finalCatImageUrl,
       };
-
       if (editingCategoryId) {
         const { error } = await supabase.from("categories").update(payload).eq("id", editingCategoryId);
         if (error) throw error;
-
         if (finalCatImageUrl) {
           await supabase
             .from("products")
             .update({ image_url: finalCatImageUrl })
             .ilike("category", categoryName.trim());
         }
-
         setMessage("Category updated & synced to related products successfully.");
       } else {
         const { error } = await supabase.from("categories").insert([payload]);
         if (error) throw error;
         setMessage("Category created successfully.");
       }
-
       resetCategoryForm();
       await fetchCategories();
       await fetchProducts();
@@ -383,29 +356,6 @@ export default function SecretAdminPortal() {
     if (!error) fetchCategories();
   };
 
-  const handleUpdateTicket = async (ticketId: number) => {
-    setUpdatingTicket(true);
-    try {
-      const { error } = await supabase
-        .from("support_tickets")
-        .update({
-          admin_reply: ticketReplyText.trim(),
-          status: ticketStatusSelect,
-        })
-        .eq("id", ticketId);
-
-      if (error) throw error;
-
-      setActiveTicketId(null);
-      setTicketReplyText("");
-      await fetchTickets();
-    } catch (err: any) {
-      alert(`Ticket update failed: ${err.message}`);
-    } finally {
-      setUpdatingTicket(false);
-    }
-  };
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white flex items-center justify-center p-4 transition-colors duration-200">
@@ -419,13 +369,11 @@ export default function SecretAdminPortal() {
               Enter master key to access the control panel
             </p>
           </div>
-
           {passwordError && (
             <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 dark:text-rose-400 text-xs rounded-xl text-center">
               {passwordError}
             </div>
           )}
-
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
@@ -441,7 +389,6 @@ export default function SecretAdminPortal() {
                 className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
-
             <button
               type="submit"
               className="w-full py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20"
@@ -449,7 +396,6 @@ export default function SecretAdminPortal() {
               Unlock Console →
             </button>
           </form>
-
           <div className="text-center">
             <Link href="/" className="text-[11px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400">
               ← Return to Home
@@ -486,7 +432,6 @@ export default function SecretAdminPortal() {
             <span className="text-xs text-sky-600 dark:text-sky-400 font-mono">Control Center</span>
           </div>
         </Link>
-
         <div className="flex items-center gap-2">
           <Link
             href="/"
@@ -503,13 +448,11 @@ export default function SecretAdminPortal() {
           </button>
         </div>
       </div>
-
       {message && (
         <div className="p-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-amber-600 dark:text-amber-300">
           {message}
         </div>
       )}
-
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
         <button
@@ -589,7 +532,6 @@ export default function SecretAdminPortal() {
               + Add Product
             </button>
           </div>
-
           {products.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-sm">
               No products listed yet. Click "Add New Product" to create your first listing.
@@ -600,12 +542,10 @@ export default function SecretAdminPortal() {
                 const stock = p.voucher_codes
                   ? p.voucher_codes.split("\n").filter((c) => c.trim()).length
                   : 0;
-
                 const hasDiscount = p.discount_price && p.discount_price < p.price;
                 const discountPercent = hasDiscount && p.price > 0
                   ? Math.round(((p.price - p.discount_price!) / p.price) * 100)
                   : null;
-
                 return (
                   <div
                     key={p.id}
@@ -659,7 +599,6 @@ export default function SecretAdminPortal() {
                         </p>
                       </div>
                     </div>
-
                     <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => startEditProduct(p)}
@@ -704,7 +643,6 @@ export default function SecretAdminPortal() {
               </button>
             )}
           </div>
-
           {/* STEP 1: Basic Information */}
           {productStep === 1 && (
             <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
@@ -719,7 +657,6 @@ export default function SecretAdminPortal() {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
-
               {/* Category Dropdown */}
               <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -742,7 +679,7 @@ export default function SecretAdminPortal() {
                       required
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer"
                     >
                       <option value="" disabled>-- Select a Category --</option>
                       {categories.map((c) => (
@@ -757,7 +694,6 @@ export default function SecretAdminPortal() {
                   </div>
                 </div>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Regular Price (USD $)</label>
@@ -783,14 +719,13 @@ export default function SecretAdminPortal() {
                   />
                 </div>
               </div>
-
               {/* Discount Duration Controls */}
               {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (
                 <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                   <span className="block text-xs font-bold text-sky-600 dark:text-sky-400">Discount Timer / Duration</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Offer Type</label>
+                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Offer Type</label>
                       <select
                         value={discountDurationType}
                         onChange={(e) => setDiscountDurationType(e.target.value as any)}
@@ -803,7 +738,7 @@ export default function SecretAdminPortal() {
                     </div>
                     {discountDurationType === "custom" && (
                       <div>
-                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Number of Days Active</label>
+                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Number of Days Active</label>
                         <input
                           type="number"
                           min="1"
@@ -817,7 +752,6 @@ export default function SecretAdminPortal() {
                   </div>
                 </div>
               )}
-
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Description</label>
                 <textarea
@@ -829,7 +763,6 @@ export default function SecretAdminPortal() {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
-
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
@@ -841,7 +774,6 @@ export default function SecretAdminPortal() {
               </div>
             </form>
           )}
-
           {/* STEP 2: Choose Delivery Method */}
           {productStep === 2 && (
             <div className="space-y-6">
@@ -851,7 +783,6 @@ export default function SecretAdminPortal() {
                   Select fulfillment method for <strong>{title}</strong>.
                 </p>
               </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Option 1: Automatic Delivery */}
                 <div
@@ -876,7 +807,6 @@ export default function SecretAdminPortal() {
                     License keys/vouchers are delivered instantly to buyer's screen right after payment confirmation.
                   </p>
                 </div>
-
                 {/* Option 2: Manual Delivery */}
                 <div
                   onClick={() => setDeliveryType("manual")}
@@ -901,7 +831,6 @@ export default function SecretAdminPortal() {
                   </p>
                 </div>
               </div>
-
               {/* If Automatic Delivery: Show Codes input */}
               {deliveryType === "auto" ? (
                 <div className="space-y-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
@@ -926,7 +855,6 @@ export default function SecretAdminPortal() {
                   🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual dispatch.
                 </div>
               )}
-
               <div className="flex items-center justify-between pt-2">
                 <button
                   type="button"
@@ -948,7 +876,6 @@ export default function SecretAdminPortal() {
           )}
         </div>
       )}
-
       {/* TAB 3: CATEGORIES */}
       {activeTab === "categories" && (
         <div className="space-y-6">
@@ -967,7 +894,6 @@ export default function SecretAdminPortal() {
                 </button>
               )}
             </div>
-
             <form onSubmit={handleCategorySubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Category Name</label>
@@ -980,7 +906,6 @@ export default function SecretAdminPortal() {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white"
                 />
               </div>
-
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Category Master Icon / Photo</label>
                 <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3">
@@ -1009,7 +934,6 @@ export default function SecretAdminPortal() {
                   </div>
                 </div>
               </div>
-
               <button
                 type="submit"
                 disabled={submitting}
@@ -1023,7 +947,6 @@ export default function SecretAdminPortal() {
               </button>
             </form>
           </div>
-
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
               All Existing Categories ({categories.length})
@@ -1033,7 +956,6 @@ export default function SecretAdminPortal() {
                 const count = products.filter(
                   (p) => p.category.toLowerCase() === cat.name.toLowerCase()
                 ).length;
-
                 return (
                   <div
                     key={cat.id}
@@ -1052,7 +974,6 @@ export default function SecretAdminPortal() {
                         <p className="text-[10px] text-slate-500 dark:text-slate-400">{count} products assigned</p>
                       </div>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => startEditCategory(cat)}
@@ -1074,7 +995,6 @@ export default function SecretAdminPortal() {
           </div>
         </div>
       )}
-
       {/* TAB 4: MERCHANTS / KYC MANAGEMENT */}
       {activeTab === "merchants" && (
         <div className="space-y-4">
@@ -1094,7 +1014,6 @@ export default function SecretAdminPortal() {
               Refresh List
             </button>
           </div>
-
           {sellers.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-sm">
               No merchant applications registered yet.
@@ -1127,7 +1046,6 @@ export default function SecretAdminPortal() {
                         <span className="font-mono text-sky-600 dark:text-sky-400 text-[11px]">{s.id}</span>
                       </p>
                     </div>
-
                     {/* Action Buttons */}
                     <div className="flex items-center gap-2">
                       {s.verification_status !== "verified" && (
@@ -1150,14 +1068,12 @@ export default function SecretAdminPortal() {
                       )}
                     </div>
                   </div>
-
                   {s.description && (
                     <div className="text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/60 leading-relaxed">
                       <strong className="text-slate-500 dark:text-slate-400 block mb-0.5 text-[11px]">Store Bio:</strong>
                       {s.description}
                     </div>
                   )}
-
                   {/* KYC Documents Preview */}
                   <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 rounded-xl p-4 space-y-3">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-700 dark:text-slate-300 gap-1 border-b border-slate-200 dark:border-slate-800/60 pb-2">
@@ -1168,7 +1084,6 @@ export default function SecretAdminPortal() {
                         Document No: <strong className="text-slate-900 dark:text-white font-mono">{s.document_number || "N/A"}</strong>
                       </span>
                     </div>
-
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                       {/* Front Side */}
                       <div className="space-y-1">
@@ -1197,7 +1112,6 @@ export default function SecretAdminPortal() {
                           </div>
                         )}
                       </div>
-
                       {/* Back Side */}
                       <div className="space-y-1">
                         <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
@@ -1233,7 +1147,6 @@ export default function SecretAdminPortal() {
           )}
         </div>
       )}
-
       {/* TAB 5: SUPPORT TICKETS */}
       {activeTab === "tickets" && (
         <div className="space-y-4">
@@ -1248,7 +1161,6 @@ export default function SecretAdminPortal() {
               Refresh Tickets
             </button>
           </div>
-
           {tickets.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center text-slate-400 text-xs shadow-sm">
               No support tickets submitted yet.
@@ -1275,78 +1187,32 @@ export default function SecretAdminPortal() {
                         From: <strong className="text-slate-700 dark:text-slate-200">{t.user_name || "User"}</strong> ({t.user_email}) • Role: <span className="uppercase text-sky-600 dark:text-sky-400 font-mono">{t.role || "buyer"}</span>
                       </p>
                     </div>
-
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                       {new Date(t.created_at).toLocaleString()}
                     </span>
                   </div>
-
                   <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                     {t.message}
                   </div>
-
-                  {t.admin_reply && (
-                    <div className="bg-sky-50 dark:bg-sky-950/20 border border-sky-200 dark:border-sky-800/40 p-3 rounded-xl text-xs text-sky-800 dark:text-sky-200 space-y-1">
-                      <span className="text-[10px] font-bold text-sky-600 dark:text-sky-400 uppercase">Existing Administrative Reply:</span>
-                      <p>{t.admin_reply}</p>
-                    </div>
-                  )}
-
-                  {activeTicketId === t.id ? (
-                    <div className="bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-xl p-4 space-y-3">
-                      <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
-                        Write Official Resolution Reply
-                      </label>
-                      <textarea
-                        rows={3}
-                        value={ticketReplyText}
-                        onChange={(e) => setTicketReplyText(e.target.value)}
-                        placeholder="Provide response or resolution steps..."
-                        className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                      />
-
-                      <div className="flex items-center gap-3">
-                        <select
-                          value={ticketStatusSelect}
-                          onChange={(e) => setTicketStatusSelect(e.target.value as any)}
-                          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none"
-                        >
-                          <option value="in_progress">In Progress</option>
-                          <option value="resolved">Resolved</option>
-                          <option value="open">Open</option>
-                        </select>
-
-                        <button
-                          type="button"
-                          disabled={updatingTicket}
-                          onClick={() => handleUpdateTicket(t.id)}
-                          className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl transition"
-                        >
-                          {updatingTicket ? "Saving..." : "Send Reply & Update Status"}
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setActiveTicketId(null)}
-                          className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveTicketId(t.id);
-                        setTicketReplyText(t.admin_reply || "");
-                        setTicketStatusSelect(t.status);
-                      }}
-                      className="text-xs bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 px-3 py-1.5 rounded-lg transition"
+                  
+                  {/* ===================================== */}
+                  {/* NEW: Chat Room Link for Admin */}
+                  {/* ===================================== */}
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                      Ticket Status: {t.status}
+                    </span>
+                    
+                    <Link
+                      href={`/ticket/${t.id}`}
+                      className="text-[10px] bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm shadow-emerald-500/20"
                     >
-                      {t.admin_reply ? "Edit Official Reply" : "Resolve / Reply to Ticket →"}
-                    </button>
-                  )}
+                      <span>Open Chat Room</span>
+                      <span>💬</span>
+                    </Link>
+                  </div>
+                  {/* End Chat Room Link */}
+
                 </div>
               ))}
             </div>
