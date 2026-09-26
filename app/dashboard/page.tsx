@@ -76,6 +76,7 @@ function DashboardContent() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [shopName, setShopName] = useState<string>("Merchant Store");
+  const [isLocked, setIsLocked] = useState<boolean>(false);
 
   // Tab State
   const [activeTab, setActiveTab] = useState<
@@ -140,6 +141,18 @@ function DashboardContent() {
       }
       setUser(user);
 
+      // 1. Check if User is Locked/Banned
+      const { data: lockData } = await supabase
+        .from("banned_users")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (lockData) {
+        setIsLocked(true);
+        setActiveTab("support"); // Force to support tab
+      }
+
       // Check seller store name
       const { data: sellerData } = await supabase
         .from("sellers")
@@ -197,7 +210,7 @@ function DashboardContent() {
     const tabParam = searchParams.get("tab");
     const contactParam = searchParams.get("contact");
 
-    if (tabParam === "messages") {
+    if (tabParam === "messages" && !isLocked) {
       setActiveTab("messages");
     }
 
@@ -211,7 +224,7 @@ function DashboardContent() {
         return prev;
       });
     }
-  }, [searchParams]);
+  }, [searchParams, isLocked]);
 
   // Realtime Messages Subscription
   useEffect(() => {
@@ -593,12 +606,34 @@ function DashboardContent() {
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-            Dashboard
+            {isLocked ? "Support Desk" : "Dashboard"}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Manage your digital orders, identity verification, and buyer security.
+            {isLocked 
+              ? "Communicate directly with our official support team." 
+              : "Manage your digital orders, identity verification, and buyer security."}
           </p>
         </div>
+
+        {/* ======================================================== */}
+        {/* NEW: LOCKED ACCOUNT PROFESSIONAL MESSAGE */}
+        {/* ======================================================== */}
+        {isLocked && (
+          <div className="max-w-3xl mx-auto bg-rose-500/10 border border-rose-500/20 rounded-3xl p-8 sm:p-10 text-center space-y-4 shadow-xl">
+            <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner border border-rose-500/20">
+              🔒
+            </div>
+            <h2 className="text-xl font-black text-rose-600 dark:text-rose-400 tracking-tight">
+              Account Temporarily Locked
+            </h2>
+            <p className="text-sm text-rose-700/80 dark:text-rose-300/80 leading-relaxed max-w-lg mx-auto">
+              Your account has been suspended by the administrative team due to suspicious activity or policy violation. All purchasing, selling, and marketplace activities have been disabled.
+            </p>
+            <p className="text-xs text-rose-700/70 dark:text-rose-300/70 max-w-md mx-auto">
+              However, your access to our <strong className="font-bold">Support Desk</strong> remains open. Please submit a support ticket below to discuss this issue with our team and restore your account.
+            </p>
+          </div>
+        )}
 
         {/* 2-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -607,7 +642,7 @@ function DashboardContent() {
           <div className="lg:col-span-8 space-y-6">
             
             {/* VIEW 1: MAIN DASHBOARD */}
-            {activeTab === "dashboard" && (
+            {activeTab === "dashboard" && !isLocked && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Profile Card */}
@@ -766,7 +801,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 2: "MY PRODUCTS" */}
-            {activeTab === "products" && (
+            {activeTab === "products" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
                   <div>
@@ -1137,7 +1172,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 3: FEEDBACK RECORDS */}
-            {activeTab === "feedbacks" && (
+            {activeTab === "feedbacks" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <div>
@@ -1184,7 +1219,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 4: MESSENGER (REALTIME CHAT) */}
-            {activeTab === "messages" && (
+            {activeTab === "messages" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl dark:shadow-2xl h-[520px] flex flex-col md:flex-row transition-colors">
                 {/* Left Conversations Sidebar */}
                 <div className="w-full md:w-60 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 p-3 space-y-2 overflow-y-auto shrink-0">
@@ -1273,7 +1308,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 5: TRANSACTIONS */}
-            {activeTab === "transactions" && (
+            {activeTab === "transactions" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1323,7 +1358,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 6: FINANCIAL */}
-            {activeTab === "financial" && (
+            {activeTab === "financial" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1356,7 +1391,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 7: PROFILE */}
-            {activeTab === "profile" && (
+            {activeTab === "profile" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1390,7 +1425,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 8: DISPUTE CENTER */}
-            {activeTab === "dispute" && (
+            {activeTab === "dispute" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1409,7 +1444,7 @@ function DashboardContent() {
                   </p>
                   <button
                     onClick={() => setActiveTab("support")}
-                    className="inline-block px-4 py-2 bg-sky-50 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20"
+                    className="inline-block px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20"
                   >
                     Open Dispute Ticket →
                   </button>
@@ -1418,7 +1453,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 9: SECURITY & SETTINGS */}
-            {activeTab === "security" && (
+            {activeTab === "security" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1446,7 +1481,7 @@ function DashboardContent() {
             )}
 
             {/* VIEW 10: DISCOUNT VOUCHERS */}
-            {activeTab === "vouchers" && (
+            {activeTab === "vouchers" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
@@ -1459,7 +1494,7 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* VIEW 11: SUPPORT DESK WITH NEW CHAT ROOM LINK */}
+            {/* VIEW 11: SUPPORT DESK WITH CHAT ROOM LINK */}
             {activeTab === "support" && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
@@ -1552,7 +1587,7 @@ function DashboardContent() {
                           </p>
                           
                           {/* ===================================== */}
-                          {/* NEW: Chat Room Link Added Here */}
+                          {/* Chat Room Link Added Here */}
                           {/* ===================================== */}
                           <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
                             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
@@ -1577,119 +1612,123 @@ function DashboardContent() {
 
           </div>
 
-          {/* RIGHT SIDEBAR MENU */}
+          {/* RIGHT SIDEBAR MENU - ONLY SHOW SUPPORT IF LOCKED */}
           <aside className="lg:col-span-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-3 sm:p-4 space-y-1 shadow-xl dark:shadow-2xl sticky top-24 transition-colors">
             
-            <button
-              type="button"
-              onClick={() => setActiveTab("dashboard")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "dashboard"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="text-base">⊞</span>
-              <span>Dashboard</span>
-            </button>
+            {!isLocked && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("dashboard")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "dashboard"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">⊞</span>
+                  <span>Dashboard</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("transactions")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "transactions"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="text-base">🔁</span>
-              <span>Transactions</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("transactions")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "transactions"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">🔁</span>
+                  <span>Transactions</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("financial")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "financial"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="text-base">💳</span>
-              <span>Financial</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("financial")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "financial"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">💳</span>
+                  <span>Financial</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("products")}
-              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "products"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-base">📦</span>
-                <span>Products</span>
-              </div>
-              {myProducts.length > 0 && (
-                <span className="bg-slate-100 dark:bg-slate-950 text-sky-600 dark:text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">
-                  {myProducts.length}
-                </span>
-              )}
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("products")}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "products"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-base">📦</span>
+                    <span>Products</span>
+                  </div>
+                  {myProducts.length > 0 && (
+                    <span className="bg-slate-100 dark:bg-slate-950 text-sky-600 dark:text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">
+                      {myProducts.length}
+                    </span>
+                  )}
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("profile")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "profile"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="text-base">👤</span>
-              <span>Profile</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("profile")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "profile"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">👤</span>
+                  <span>Profile</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("dispute")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "dispute"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="text-base">🛡️</span>
-              <span>Dispute Center</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("dispute")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "dispute"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">🛡️</span>
+                  <span>Dispute Center</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("security")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "security"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="text-base">⚙️</span>
-              <span>Security & settings</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("security")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "security"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">⚙️</span>
+                  <span>Security & settings</span>
+                </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab("vouchers")}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
-                activeTab === "vouchers"
-                  ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
-                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
-              }`}
-            >
-              <span className="text-base">🎟️</span>
-              <span>Discount Vouchers</span>
-            </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("vouchers")}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
+                    activeTab === "vouchers"
+                      ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                      : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <span className="text-base">🎟️</span>
+                  <span>Discount Vouchers</span>
+                </button>
+              </>
+            )}
 
             <button
               type="button"
@@ -1701,7 +1740,7 @@ function DashboardContent() {
               }`}
             >
               <span className="text-base">🎫</span>
-              <span>Support</span>
+              <span>Support Desk</span>
             </button>
 
           </aside>
