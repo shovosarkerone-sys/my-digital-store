@@ -52,21 +52,29 @@ interface SupportTicket {
   created_at: string;
 }
 
+interface BannedUser {
+  user_id: string;
+  user_email: string;
+  locked_by: string;
+  locked_at: string;
+}
+
 export default function SecretAdminPortal() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [passwordInput, setPasswordInput] = useState<string>("");
   const [passwordError, setPasswordError] = useState<string>("");
-  
+
   const [activeTab, setActiveTab] = useState<
-    "all_products" | "add_product" | "categories" | "merchants" | "tickets"
+    "all_products" | "add_product" | "categories" | "merchants" | "tickets" | "users"
   >("all_products");
-  
+
   const [productStep, setProductStep] = useState<1 | 2>(1);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [sellers, setSellers] = useState<Seller[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
-  
+  const [bannedUsers, setBannedUsers] = useState<BannedUser[]>([]);
+
   // Product Form States
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
   const [title, setTitle] = useState("");
@@ -78,14 +86,14 @@ export default function SecretAdminPortal() {
   const [deliveryType, setDeliveryType] = useState<"auto" | "manual">("auto");
   const [description, setDescription] = useState("");
   const [voucherCodes, setVoucherCodes] = useState("");
-  
+
   // Category Form States
   const [categoryName, setCategoryName] = useState("");
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
   const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(null);
   const [existingCategoryImageUrl, setExistingCategoryImageUrl] = useState<string | null>(null);
-  
+
   // Status message
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -94,12 +102,17 @@ export default function SecretAdminPortal() {
     const savedAuth = sessionStorage.getItem("admin_authenticated");
     if (savedAuth === "true") {
       setIsAuthenticated(true);
-      fetchCategories();
-      fetchProducts();
-      fetchSellers();
-      fetchTickets();
+      fetchAllData();
     }
   }, []);
+
+  const fetchAllData = () => {
+    fetchCategories();
+    fetchProducts();
+    fetchSellers();
+    fetchTickets();
+    fetchBannedUsers();
+  };
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,10 +121,7 @@ export default function SecretAdminPortal() {
       setIsAuthenticated(true);
       sessionStorage.setItem("admin_authenticated", "true");
       setPasswordError("");
-      fetchCategories();
-      fetchProducts();
-      fetchSellers();
-      fetchTickets();
+      fetchAllData();
     } else {
       setPasswordError("Access Denied: Invalid Administrative Passkey.");
     }
@@ -124,23 +134,76 @@ export default function SecretAdminPortal() {
   };
 
   const fetchCategories = async () => {
-    const { data } = await supabase.from("categories").select("*").order("name");
+    const { data } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name");
     if (data) setCategories(data);
   };
 
   const fetchProducts = async () => {
-    const { data } = await supabase.from("products").select("*").order("id", { ascending: false });
+    const { data } = await supabase
+      .from("products")
+      .select("*")
+      .order("id", { ascending: false });
     if (data) setProducts(data);
   };
 
   const fetchSellers = async () => {
-    const { data } = await supabase.from("sellers").select("*").order("id", { ascending: false });
+    const { data } = await supabase
+      .from("sellers")
+      .select("*")
+      .order("id", { ascending: false });
     if (data) setSellers(data);
   };
 
   const fetchTickets = async () => {
-    const { data } = await supabase.from("support_tickets").select("*").order("id", { ascending: false });
+    const { data } = await supabase
+      .from("support_tickets")
+      .select("*")
+      .order("id", { ascending: false });
     if (data) setTickets(data);
+  };
+
+  const fetchBannedUsers = async () => {
+    const { data } = await supabase
+      .from("banned_users")
+      .select("*");
+    if (data) setBannedUsers(data);
+  };
+
+  const handleToggleLock = async (userId: string, userEmail: string) => {
+    const isBanned = bannedUsers.some(b => b.user_id === userId);
+    try {
+      if (isBanned) {
+        await supabase
+          .from("banned_users")
+          .delete()
+          .eq("user_id", userId);
+        setMessage(`Account unlocked successfully: ${userEmail}`);
+      } else {
+        await supabase
+          .from("banned_users")
+          .insert([{ user_id: userId, user_email: userEmail }]);
+        setMessage(`Account locked successfully: ${userEmail}`);
+      }
+      fetchBannedUsers();
+    } catch (err: any) {
+      alert(`Lock toggle failed: ${err.message}`);
+    }
+  };
+
+  const handleQuickStatusUpdate = async (ticketId: number, status: string) => {
+    try {
+      await supabase
+        .from("support_tickets")
+        .update({ status })
+        .eq("id", ticketId);
+      setMessage(`Ticket #${ticketId} status updated to ${status}`);
+      fetchTickets();
+    } catch (err: any) {
+      alert(`Update failed: ${err.message}`);
+    }
   };
 
   const activeSelectedCategory = categories.find(
@@ -169,6 +232,7 @@ export default function SecretAdminPortal() {
     }
     setSubmitting(true);
     setMessage("");
+
     try {
       const autoCategoryImageUrl = activeSelectedCategory?.image_url || null;
       let computedDiscountUntil: string | null = null;
@@ -179,6 +243,7 @@ export default function SecretAdminPortal() {
       } else if (discountDurationType === "lifetime") {
         computedDiscountUntil = "2099-12-31T23:59:59Z";
       }
+
       const payload = {
         title: title.trim(),
         category,
@@ -189,8 +254,12 @@ export default function SecretAdminPortal() {
         description: description.trim(),
         seller_name: "Official Store",
       };
+
       if (editingProductId) {
-        const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
+        const { error } = await supabase
+          .from("products")
+          .update(payload)
+          .eq("id", editingProductId);
         if (error) throw error;
       } else {
         const { data, error } = await supabase
@@ -213,12 +282,16 @@ export default function SecretAdminPortal() {
     if (!editingProductId) return;
     setSubmitting(true);
     setMessage("");
+
     try {
       const payload = {
         delivery_type: deliveryType,
         voucher_codes: deliveryType === "auto" ? voucherCodes.trim() : null,
       };
-      const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
+      const { error } = await supabase
+        .from("products")
+        .update(payload)
+        .eq("id", editingProductId);
       if (error) throw error;
       setMessage("Product published & delivery setup completed successfully!");
       resetProductForm();
@@ -308,7 +381,10 @@ export default function SecretAdminPortal() {
         image_url: finalCatImageUrl,
       };
       if (editingCategoryId) {
-        const { error } = await supabase.from("categories").update(payload).eq("id", editingCategoryId);
+        const { error } = await supabase
+          .from("categories")
+          .update(payload)
+          .eq("id", editingCategoryId);
         if (error) throw error;
         if (finalCatImageUrl) {
           await supabase
@@ -407,9 +483,17 @@ export default function SecretAdminPortal() {
   }
 
   const pendingSellersCount = sellers.filter((s) => s.verification_status === "pending").length;
+  
+  // Extract unique buyers from tickets
+  const uniqueBuyers = Array.from(
+    new Map(
+      tickets.filter(t => t.role === 'buyer' && t.user_id).map(t => [t.user_id, t])
+    ).values()
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white p-4 sm:p-6 md:p-10 max-w-5xl mx-auto space-y-6 transition-colors duration-200">
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
         <Link
@@ -448,11 +532,13 @@ export default function SecretAdminPortal() {
           </button>
         </div>
       </div>
+
       {message && (
         <div className="p-3.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-xs text-amber-600 dark:text-amber-300">
           {message}
         </div>
       )}
+
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-2 overflow-x-auto">
         <button
@@ -465,6 +551,7 @@ export default function SecretAdminPortal() {
         >
           📦 All Products ({products.length})
         </button>
+
         <button
           onClick={() => {
             resetProductForm();
@@ -478,6 +565,7 @@ export default function SecretAdminPortal() {
         >
           ➕ Add New Product
         </button>
+
         <button
           onClick={() => setActiveTab("categories")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
@@ -488,6 +576,7 @@ export default function SecretAdminPortal() {
         >
           🏷️ Categories ({categories.length})
         </button>
+
         <button
           onClick={() => setActiveTab("merchants")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5 ${
@@ -503,6 +592,18 @@ export default function SecretAdminPortal() {
             </span>
           )}
         </button>
+
+        <button
+          onClick={() => setActiveTab("users")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
+            activeTab === "users"
+              ? "bg-slate-200 dark:bg-slate-800 text-sky-600 dark:text-sky-400 border border-slate-300 dark:border-slate-700"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+          }`}
+        >
+          👤 Users Directory
+        </button>
+
         <button
           onClick={() => setActiveTab("tickets")}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition cursor-pointer ${
@@ -514,6 +615,71 @@ export default function SecretAdminPortal() {
           🎫 Support Tickets ({tickets.length})
         </button>
       </div>
+
+
+      {/* VIEW: USERS DIRECTORY */}
+      {activeTab === "users" && (
+        <div className="space-y-6">
+          {/* Registered Sellers */}
+          <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+              Registered Sellers ({sellers.length})
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {sellers.map((s) => {
+                const isBanned = bannedUsers.some((b) => b.user_id === s.id);
+                return (
+                  <div key={s.id} className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">{s.shop_name}</h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">ID: {s.id}</p>
+                    </div>
+                    <button
+                      onClick={() => handleToggleLock(s.id, s.shop_name)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
+                        isBanned ? "bg-amber-500/20 text-amber-600 border border-amber-500/30 hover:bg-amber-500/30" : "bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500/20"
+                      }`}
+                    >
+                      {isBanned ? "🔓 Unlock" : "🔒 Lock"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Buyers */}
+          <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+            <div className="mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                Active Buyers ({uniqueBuyers.length})
+              </h2>
+              <p className="text-[10px] text-slate-500">List of buyers extracted from support ticket records.</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {uniqueBuyers.map((b) => {
+                const isBanned = bannedUsers.some((ban) => ban.user_id === b.user_id);
+                return (
+                  <div key={b.user_id} className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">{b.user_name || "Unknown Buyer"}</h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{b.user_email}</p>
+                    </div>
+                    <button
+                      onClick={() => handleToggleLock(b.user_id, b.user_email)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition shadow-sm ${
+                        isBanned ? "bg-amber-500/20 text-amber-600 border border-amber-500/30 hover:bg-amber-500/30" : "bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500/20"
+                      }`}
+                    >
+                      {isBanned ? "🔓 Unlock" : "🔒 Lock"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TAB 1: ALL PRODUCTS */}
       {activeTab === "all_products" && (
@@ -546,6 +712,7 @@ export default function SecretAdminPortal() {
                 const discountPercent = hasDiscount && p.price > 0
                   ? Math.round(((p.price - p.discount_price!) / p.price) * 100)
                   : null;
+
                 return (
                   <div
                     key={p.id}
@@ -643,7 +810,7 @@ export default function SecretAdminPortal() {
               </button>
             )}
           </div>
-          {/* STEP 1: Basic Information */}
+          
           {productStep === 1 && (
             <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
               <div>
@@ -657,7 +824,7 @@ export default function SecretAdminPortal() {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
-              {/* Category Dropdown */}
+
               <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Category & Product Icon
@@ -679,7 +846,7 @@ export default function SecretAdminPortal() {
                       required
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
-                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer"
+                      className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500"
                     >
                       <option value="" disabled>-- Select a Category --</option>
                       {categories.map((c) => (
@@ -694,6 +861,7 @@ export default function SecretAdminPortal() {
                   </div>
                 </div>
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Regular Price (USD $)</label>
@@ -719,13 +887,13 @@ export default function SecretAdminPortal() {
                   />
                 </div>
               </div>
-              {/* Discount Duration Controls */}
+
               {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (
                 <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3">
                   <span className="block text-xs font-bold text-sky-600 dark:text-sky-400">Discount Timer / Duration</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Offer Type</label>
+                      <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Offer Type</label>
                       <select
                         value={discountDurationType}
                         onChange={(e) => setDiscountDurationType(e.target.value as any)}
@@ -738,7 +906,7 @@ export default function SecretAdminPortal() {
                     </div>
                     {discountDurationType === "custom" && (
                       <div>
-                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Number of Days Active</label>
+                        <label className="block text-xs text-slate-600 dark:text-slate-400 mb-1">Number of Days Active</label>
                         <input
                           type="number"
                           min="1"
@@ -752,6 +920,7 @@ export default function SecretAdminPortal() {
                   </div>
                 </div>
               )}
+
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Description</label>
                 <textarea
@@ -763,6 +932,7 @@ export default function SecretAdminPortal() {
                   className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-sky-500"
                 />
               </div>
+
               <div className="flex justify-end pt-2">
                 <button
                   type="submit"
@@ -774,7 +944,7 @@ export default function SecretAdminPortal() {
               </div>
             </form>
           )}
-          {/* STEP 2: Choose Delivery Method */}
+
           {productStep === 2 && (
             <div className="space-y-6">
               <div>
@@ -783,8 +953,8 @@ export default function SecretAdminPortal() {
                   Select fulfillment method for <strong>{title}</strong>.
                 </p>
               </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Option 1: Automatic Delivery */}
                 <div
                   onClick={() => setDeliveryType("auto")}
                   className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
@@ -807,7 +977,7 @@ export default function SecretAdminPortal() {
                     License keys/vouchers are delivered instantly to buyer's screen right after payment confirmation.
                   </p>
                 </div>
-                {/* Option 2: Manual Delivery */}
+
                 <div
                   onClick={() => setDeliveryType("manual")}
                   className={`p-5 rounded-2xl border cursor-pointer transition space-y-2 ${
@@ -831,7 +1001,7 @@ export default function SecretAdminPortal() {
                   </p>
                 </div>
               </div>
-              {/* If Automatic Delivery: Show Codes input */}
+
               {deliveryType === "auto" ? (
                 <div className="space-y-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-1">
@@ -855,6 +1025,7 @@ export default function SecretAdminPortal() {
                   🕒 Manual Delivery selected. No codes are required in advance. Orders will be marked for manual dispatch.
                 </div>
               )}
+
               <div className="flex items-center justify-between pt-2">
                 <button
                   type="button"
@@ -876,6 +1047,7 @@ export default function SecretAdminPortal() {
           )}
         </div>
       )}
+
       {/* TAB 3: CATEGORIES */}
       {activeTab === "categories" && (
         <div className="space-y-6">
@@ -995,6 +1167,7 @@ export default function SecretAdminPortal() {
           </div>
         </div>
       )}
+
       {/* TAB 4: MERCHANTS / KYC MANAGEMENT */}
       {activeTab === "merchants" && (
         <div className="space-y-4">
@@ -1147,6 +1320,7 @@ export default function SecretAdminPortal() {
           )}
         </div>
       )}
+
       {/* TAB 5: SUPPORT TICKETS */}
       {activeTab === "tickets" && (
         <div className="space-y-4">
@@ -1167,54 +1341,67 @@ export default function SecretAdminPortal() {
             </div>
           ) : (
             <div className="space-y-3">
-              {tickets.map((t) => (
-                <div key={t.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-3">
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">#{t.id} - {t.subject}</span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                          t.status === "resolved"
-                            ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                            : t.status === "in_progress"
-                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                            : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
-                        }`}>
-                          {t.status}
-                        </span>
+              {tickets.map((t) => {
+                const isBanned = bannedUsers.some((b) => b.user_id === t.user_id);
+                return (
+                  <div key={t.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-3">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-slate-900 dark:text-white">#{t.id} - {t.subject}</span>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
+                            t.status === "resolved"
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                              : t.status === "in_progress"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                              : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"
+                          }`}>
+                            {t.status}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          From: <strong className="text-slate-700 dark:text-slate-200">{t.user_name || "User"}</strong> ({t.user_email}) • Role: <span className="uppercase text-sky-600 dark:text-sky-400 font-mono">{t.role || "buyer"}</span>
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        From: <strong className="text-slate-700 dark:text-slate-200">{t.user_name || "User"}</strong> ({t.user_email}) • Role: <span className="uppercase text-sky-600 dark:text-sky-400 font-mono">{t.role || "buyer"}</span>
-                      </p>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                        {new Date(t.created_at).toLocaleString()}
+                      </span>
                     </div>
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                      {new Date(t.created_at).toLocaleString()}
-                    </span>
-                  </div>
-                  <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-                    {t.message}
-                  </div>
-                  
-                  {/* ===================================== */}
-                  {/* NEW: Chat Room Link for Admin */}
-                  {/* ===================================== */}
-                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
-                      Ticket Status: {t.status}
-                    </span>
+                    <div className="bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-200 dark:border-slate-800/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
+                      {t.message}
+                    </div>
                     
-                    <Link
-                      href={`/ticket/${t.id}`}
-                      className="text-[10px] bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm shadow-emerald-500/20"
-                    >
-                      <span>Open Chat Room</span>
-                      <span>💬</span>
-                    </Link>
-                  </div>
-                  {/* End Chat Room Link */}
+                    {/* QUICK ACTIONS & CHAT LINK */}
+                    <div className="flex flex-wrap items-center gap-3 mt-4 border-t border-slate-200 dark:border-slate-800/60 pt-3">
+                      <select
+                        value={t.status}
+                        onChange={(e) => handleQuickStatusUpdate(t.id, e.target.value)}
+                        className="bg-slate-100 dark:bg-slate-800 text-xs px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus:outline-none cursor-pointer font-bold text-slate-700 dark:text-slate-300"
+                      >
+                        <option value="open">Status: Open</option>
+                        <option value="in_progress">Status: In Progress</option>
+                        <option value="resolved">Status: Resolved</option>
+                      </select>
 
-                </div>
-              ))}
+                      <Link href={`/ticket/${t.id}`} className="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm shadow-sky-500/20">
+                        <span>Open Chat Room</span><span>💬</span>
+                      </Link>
+
+                      {t.user_id && (
+                        <button
+                          onClick={() => handleToggleLock(t.user_id, t.user_email)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+                            isBanned ? "bg-amber-500 text-white hover:bg-amber-600" : "bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500/20"
+                          }`}
+                        >
+                          {isBanned ? "🔓 Unlock User" : "🔒 Lock User"}
+                        </button>
+                      )}
+                    </div>
+
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
