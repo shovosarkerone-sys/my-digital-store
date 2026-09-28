@@ -781,3 +781,19 @@ function DashboardContent() {
     </div>
   );
 }
+export default function UnifiedDashboard() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors duration-200">
+          <div className="relative w-14 h-14">
+            <div className="absolute inset-0 rounded-full border-2 border-sky-500/20"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-t-sky-500 animate-spin"></div>
+          </div>
+        </div>
+      }
+    >
+      <DashboardContent />
+    </Suspense>
+  );
+}
