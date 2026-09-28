@@ -112,6 +112,9 @@ function DashboardContent() {
   const [submittingTicket, setSubmittingTicket] = useState(false);
   const [ticketActionMsg, setTicketActionMsg] = useState("");
 
+  const [telegramChatId, setTelegramChatId] = useState("");
+  const [savingTelegram, setSavingTelegram] = useState(false);
+
   useEffect(() => {
     async function loadUserData() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -135,6 +138,8 @@ function DashboardContent() {
       } else if (user.user_metadata?.full_name) {
         setShopName(user.user_metadata.full_name);
       }
+
+      setTelegramChatId(sData?.telegram_chat_id || user.user_metadata?.telegram_chat_id || "");
 
       const { data: catData } = await supabase.from("categories").select("*").order("name");
       if (catData) setCategories(catData);
@@ -669,6 +674,21 @@ function DashboardContent() {
                   <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800"><span className="text-slate-500 dark:text-slate-400 block text-[10px]">Authenticated Email</span><strong className="text-sky-600 dark:text-sky-400 font-mono">{user?.email}</strong></div>
                   <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800"><span className="text-slate-500 dark:text-slate-400 block text-[10px]">Country / Region</span><strong className="text-slate-900 dark:text-white">{country}</strong></div>
                   <div className="p-3 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800"><span className="text-slate-500 dark:text-slate-400 block text-[10px]">Membership Duration</span><strong className="text-sky-600 dark:text-sky-400">{membershipDurationText}</strong></div>
+                  
+                  <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2 mt-4">
+                    <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Telegram Notifications</span>
+                    <p className="text-[10px] text-slate-500">Get your ID from <a href="https://t.me/userinfobot" target="_blank" className="text-sky-500 hover:underline font-bold">@userinfobot</a> to receive instant alerts.</p>
+                    <div className="flex gap-2">
+                      <input type="text" value={telegramChatId} onChange={(e) => setTelegramChatId(e.target.value)} placeholder="Your Telegram ID" className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:border-sky-500" />
+                      <button type="button" disabled={savingTelegram} onClick={async () => {
+                        setSavingTelegram(true);
+                        if (isSeller) await supabase.from("sellers").update({ telegram_chat_id: telegramChatId }).eq("id", user.id);
+                        await supabase.auth.updateUser({ data: { telegram_chat_id: telegramChatId } });
+                        setSavingTelegram(false);
+                        alert("Telegram Alert ID Saved!");
+                      }} className="px-3 py-1.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-lg transition cursor-pointer">Save</button>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -759,22 +779,5 @@ function DashboardContent() {
         </div>
       </main>
     </div>
-  );
-}
-
-export default function UnifiedDashboard() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center transition-colors duration-200">
-          <div className="relative w-14 h-14">
-            <div className="absolute inset-0 rounded-full border-2 border-sky-500/20"></div>
-            <div className="absolute inset-0 rounded-full border-2 border-t-sky-500 animate-spin"></div>
-          </div>
-        </div>
-      }
-    >
-      <DashboardContent />
-    </Suspense>
   );
 }
