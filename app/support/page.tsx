@@ -41,8 +41,26 @@ export default function SupportPage() {
         message: ticketMessage.trim(),
         status: "open",
       }]).select().single();
+      
       if (error) throw error;
-      setSubmittedTicketId(data?.id || 1);
+      
+      const newTicketId = data?.id || 1;
+      setSubmittedTicketId(newTicketId);
+
+      try {
+        await fetch("/api/telegram/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ticketId: newTicketId,
+            userName: name.trim() || (currentUser ? "Verified Member" : "Guest Buyer"),
+            email: email.trim(),
+            subject: ticketSubject.trim(),
+            message: ticketMessage.trim()
+          })
+        });
+      } catch (teleErr) {}
+
       setTicketSubject("");
       setTicketMessage("");
     } catch (err: any) {
