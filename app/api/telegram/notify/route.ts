@@ -3,14 +3,15 @@ import { sendTelegramAlert } from "@/lib/telegram";
 
 export async function POST(req: Request) {
   try {
-    const { subject, email, message, ticketId, userName } = await req.json();
+    const body = await req.json();
+    const { ticketId, userName, email, subject, message } = body;
 
-    const text = `🚨 <b>New Support Ticket!</b>\n\n<b>Ticket ID:</b> #${ticketId}\n<b>From:</b> ${userName} (${email})\n<b>Subject:</b> ${subject}\n\n<b>Message:</b>\n<i>${message}</i>`;
+    const telegramText = `🚨 <b>New Support Ticket</b>\n\n<b>Ticket ID:</b> #${ticketId || "N/A"}\n<b>Name:</b> ${userName || "Guest"}\n<b>Email:</b> ${email || "N/A"}\n<b>Subject:</b> ${subject || "No Subject"}\n<b>Message:</b> ${message || "No Message"}`;
 
-    await sendTelegramAlert(text);
+    await sendTelegramAlert(telegramText);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to send alert" }, { status: 500 });
+    return NextResponse.json({ error: "Notification Failed" }, { status: 500 });
   }
 }
