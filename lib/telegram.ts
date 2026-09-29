@@ -1,9 +1,11 @@
 export async function sendTelegramAlert(message: string, userChatId?: string) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN || "8857089186:AAFI8d21o5Kg573dVg8VKRx0_xC1oY311hM";
-  const targetChatId = userChatId || process.env.TELEGRAM_ADMIN_CHAT_ID || "6580208030";
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+  const targetChatId = userChatId || process.env.TELEGRAM_ADMIN_CHAT_ID;
+
+  if (!botToken || !targetChatId) return;
 
   try {
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${8857089186:AAHtHI8C7x3GUC2kT9kUpDX32g3RvZI1Owg}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
