@@ -54,12 +54,12 @@ export async function POST(req: Request) {
       url_return: `${siteUrl}/order/success?order_id=${orderId}`,
     };
 
-    // ৪. তথ্যের উপর ভিত্তি করে সিগনেচার তৈরি করা (একদম Cryptomus এর নিয়ম অনুযায়ী)
+    // ৪. তথ্যের উপর ভিত্তি করে সিগনেচার তৈরি করা (একদম Cryptomus এর নিয়ম অনুযায়ী)
     const payloadJson = JSON.stringify(payload);
     const base64Payload = Buffer.from(payloadJson).toString("base64");
     const sign = crypto.createHash("md5").update(base64Payload + apiKey).digest("hex");
 
-    // ৫. সার্ভারে রিকোয়েস্ট পাঠানো (এখানেই আগেরবার ভুল ছিল, এবার ঠিক করা হয়েছে!)
+    // ৫. সার্ভারে রিকোয়েস্ট পাঠানো
     const res = await fetch("https://api.cryptomus.com/v1/payment", {
       method: "POST",
       headers: {
@@ -67,13 +67,36 @@ export async function POST(req: Request) {
         merchant: merchantId,
         sign: sign,
       },
-      body: payloadJson, // আগে আমরা ভুল করে JSON.stringify({ data: base64Payload }) পাঠাচ্ছিলাম!
+      body: payloadJson, 
     });
 
     const data = await res.json();
     console.log("Cryptomus Response:", data);
 
     if (data.state === 0 && data.result?.url) {
+      
+      // --- 🚀 টেলিগ্রাম নোটিফিকেশন শুরু ---
+      try {
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+        const chat = process.env.TELEGRAM_ADMIN_CHAT_ID;
+        if (token && chat) {
+          const telegramText = `🛒 <b>You have a new sale order!</b>\n\n<b>Product:</b> ${product.title}\n<b>Price:</b> $${finalAmount}\n<b>Buyer Email:</b> ${buyerEmail.trim()}\n<b>Order ID:</b> #${orderId}\n<b>Status:</b> Redirected to Cryptomus`;
+          
+          await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              chat_id: chat, 
+              text: telegramText, 
+              parse_mode: "HTML" 
+            })
+          });
+        }
+      } catch (telegramErr) {
+        console.error("Telegram notification failed:", telegramErr);
+      }
+      // --- 🚀 টেলিগ্রাম নোটিফিকেশন শেষ ---
+
       return NextResponse.json({ checkoutUrl: data.result.url });
     } else {
       return NextResponse.json({ error: data.message || "Payment Failed" }, { status: 500 });
