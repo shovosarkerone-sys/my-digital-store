@@ -1,8 +1,6 @@
 export async function sendTelegramAlert(message: string, userChatId?: string) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const targetChatId = userChatId || process.env.TELEGRAM_ADMIN_CHAT_ID; 
-
-  if (!botToken || !targetChatId) return;
+  const botToken = process.env.TELEGRAM_BOT_TOKEN || "8857089186:AAFI8d21o5Kg573dVg8VKRx0_xC1oY311hM";
+  const targetChatId = userChatId || process.env.TELEGRAM_ADMIN_CHAT_ID || "6580208030";
 
   try {
     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -14,5 +12,7 @@ export async function sendTelegramAlert(message: string, userChatId?: string) {
         parse_mode: "HTML",
       }),
     });
-  } catch (error) {}
+  } catch (error) {
+    console.error("Telegram error:", error);
+  }
 }
