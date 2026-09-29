@@ -71,24 +71,20 @@ interface ChatMessage {
 function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isLocked, setIsLocked] = useState<boolean>(false);
   const [isSeller, setIsSeller] = useState<boolean>(false);
   const [sellerData, setSellerData] = useState<any>(null);
   const [shopName, setShopName] = useState<string>("Valued Customer");
-
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [orders, setOrders] = useState<Order[]>([]);
   const [myProducts, setMyProducts] = useState<SellerProduct[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tickets, setTickets] = useState<any[]>([]);
-
   const [showAddProductModal, setShowAddProductModal] = useState(false);
   const [productStep, setProductStep] = useState<1 | 2>(1);
   const [editingProductId, setEditingProductId] = useState<number | null>(null);
-
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
@@ -99,19 +95,16 @@ function DashboardContent() {
   const [description, setDescription] = useState("");
   const [voucherCodes, setVoucherCodes] = useState("");
   const [submittingProduct, setSubmittingProduct] = useState(false);
-
   const [conversations, setConversations] = useState<string[]>(["contact@inskeys.com"]);
   const [activeChatEmail, setActiveChatEmail] = useState<string>("contact@inskeys.com");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [typedMessage, setTypedMessage] = useState("");
   const chatBottomRef = useRef<HTMLDivElement>(null);
-
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketOrderId, setTicketOrderId] = useState("");
   const [ticketMessage, setTicketMessage] = useState("");
   const [submittingTicket, setSubmittingTicket] = useState(false);
   const [ticketActionMsg, setTicketActionMsg] = useState("");
-
   const [telegramChatId, setTelegramChatId] = useState("");
   const [savingTelegram, setSavingTelegram] = useState(false);
 
@@ -123,13 +116,11 @@ function DashboardContent() {
         return;
       }
       setUser(user);
-
       const { data: lockData } = await supabase.from("banned_users").select("user_id").eq("user_id", user.id).maybeSingle();
       if (lockData) {
         setIsLocked(true);
         setActiveTab("support");
       }
-
       const { data: sData } = await supabase.from("sellers").select("*").eq("id", user.id).maybeSingle();
       if (sData && sData.verification_status === "verified") {
         setIsSeller(true);
@@ -138,22 +129,17 @@ function DashboardContent() {
       } else if (user.user_metadata?.full_name) {
         setShopName(user.user_metadata.full_name);
       }
-
       setTelegramChatId(sData?.telegram_chat_id || user.user_metadata?.telegram_chat_id || "");
-
       const { data: catData } = await supabase.from("categories").select("*").order("name");
       if (catData) setCategories(catData);
-
       if (user.email) {
         const { data: orderData } = await supabase.from("orders").select("*").or(`user_email.eq.${user.email},customer_email.eq.${user.email}`).order("id", { ascending: false });
         if (orderData) setOrders(orderData);
       }
-
       if (sData && sData.verification_status === "verified") {
         const { data: prodData } = await supabase.from("products").select("*").eq("seller_id", user.id).order("id", { ascending: false });
         if (prodData) setMyProducts(prodData);
       }
-
       await loadUserTickets(user.email, user.id);
       if (user.email) await loadMessages(user.email);
       setLoading(false);
@@ -244,6 +230,21 @@ function DashboardContent() {
     try {
       const { error } = await supabase.from("direct_messages").insert([{ sender_email: user.email, receiver_email: activeChatEmail, message: messageText }]);
       if (error) throw error;
+      
+      try {
+        await fetch("/api/telegram/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ticketId: "MSG",
+            userName: user.email,
+            email: activeChatEmail,
+            subject: "New Direct Message",
+            message: messageText
+          })
+        });
+      } catch (err) {}
+      
     } catch (err: any) { alert(`Could not deliver message: ${err.message}`); }
   };
 
@@ -269,13 +270,44 @@ function DashboardContent() {
         seller_id: user.id,
         seller_name: shopName,
       };
+      
       if (editingProductId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
         if (error) throw error;
+        
+        try {
+          await fetch("/api/telegram/notify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ticketId: editingProductId,
+              userName: shopName,
+              email: user.email,
+              subject: "Product Edited",
+              message: `Title: ${title.trim()} | Price: $${price}`
+            })
+          });
+        } catch (err) {}
+        
       } else {
         const { data, error } = await supabase.from("products").insert([{ ...payload, delivery_type: "auto", voucher_codes: "", views: 0, sold_count: 0 }]).select().single();
         if (error) throw error;
-        if (data) setEditingProductId(data.id);
+        if (data) {
+          setEditingProductId(data.id);
+          try {
+            await fetch("/api/telegram/notify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                ticketId: data.id,
+                userName: shopName,
+                email: user.email,
+                subject: "New Product Added",
+                message: `Title: ${title.trim()} | Price: $${price}`
+              })
+            });
+          } catch (err) {}
+        }
       }
       setProductStep(2);
     } catch (err: any) { alert(`Error saving details: ${err.message}`); } finally { setSubmittingProduct(false); }
@@ -350,7 +382,22 @@ function DashboardContent() {
   const handleDeleteProduct = async (id: number) => {
     if (!confirm("Are you sure you want to delete this listing?")) return;
     const { error } = await supabase.from("products").delete().eq("id", id).eq("seller_id", user.id);
-    if (!error) setMyProducts(myProducts.filter((p) => p.id !== id));
+    if (!error) {
+      setMyProducts(myProducts.filter((p) => p.id !== id));
+      try {
+        await fetch("/api/telegram/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ticketId: id,
+            userName: shopName,
+            email: user?.email || "Seller",
+            subject: "Product Deleted",
+            message: `Product ID #${id} has been deleted.`
+          })
+        });
+      } catch (err) {}
+    }
   };
 
   const handleLogout = async () => {
@@ -364,10 +411,25 @@ function DashboardContent() {
     setSubmittingTicket(true); setTicketActionMsg("");
     try {
       const subjectLine = ticketOrderId.trim() ? `[Order #${ticketOrderId.trim()}] ${ticketSubject.trim()}` : ticketSubject.trim();
-      const { error } = await supabase.from("support_tickets").insert([{
+      const { data, error } = await supabase.from("support_tickets").insert([{
         user_id: user.id, user_name: user?.user_metadata?.full_name || "Member", user_email: user.email, role: isSeller ? "seller" : "buyer", subject: subjectLine, message: ticketMessage.trim(), status: "open",
-      }]);
+      }]).select().single();
       if (error) throw error;
+      
+      try {
+        await fetch("/api/telegram/notify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ticketId: data?.id || "N/A",
+            userName: user?.user_metadata?.full_name || "Member",
+            email: user.email || "N/A",
+            subject: subjectLine,
+            message: ticketMessage.trim()
+          })
+        });
+      } catch (err) {}
+      
       setTicketActionMsg("✅ Ticket submitted successfully! Official desk will respond shortly.");
       setTicketSubject(""); setTicketOrderId(""); setTicketMessage("");
       await loadUserTickets(user.email, user.id);
@@ -426,13 +488,11 @@ function DashboardContent() {
           </div>
         </div>
       </header>
-
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{isLocked ? "Support Desk" : "Dashboard"}</h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{isLocked ? "Communicate directly with our official support team." : "Manage your digital orders, store, and buyer security."}</p>
         </div>
-
         {isLocked && (
           <div className="max-w-3xl mx-auto bg-rose-500/10 border border-rose-500/20 rounded-3xl p-8 sm:p-10 text-center space-y-4 shadow-xl">
             <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center text-3xl mx-auto shadow-inner border border-rose-500/20">🔒</div>
@@ -441,7 +501,6 @@ function DashboardContent() {
             <p className="text-xs text-rose-700/70 dark:text-rose-300/70 max-w-md mx-auto">However, your access to our <strong className="font-bold">Support Desk</strong> remains open. Please submit a support ticket below to discuss this issue with our team and restore your account.</p>
           </div>
         )}
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           <div className="lg:col-span-8 space-y-6">
             {activeTab === "dashboard" && !isLocked && (
@@ -505,7 +564,6 @@ function DashboardContent() {
                 </div>
               </>
             )}
-
             {activeTab === "products" && isSeller && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-6 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -552,7 +610,6 @@ function DashboardContent() {
                 </div>
               </div>
             )}
-
             {activeTab === "add_product" && isSeller && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 max-w-2xl mx-auto shadow-sm dark:shadow-2xl transition-colors">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -587,7 +644,6 @@ function DashboardContent() {
                 )}
               </div>
             )}
-
             {activeTab === "finances" && isSeller && !isLocked && (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -606,7 +662,6 @@ function DashboardContent() {
                 </div>
               </div>
             )}
-
             {activeTab === "feedbacks" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3"><div><h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Feedback Records</h2><p className="text-xs text-slate-500 dark:text-slate-400">Ratings and customer reviews from verified transactions.</p></div><span className="text-xs px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-full font-bold">100% Positive</span></div>
@@ -616,7 +671,6 @@ function DashboardContent() {
                 </div>
               </div>
             )}
-
             {activeTab === "messages" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xl dark:shadow-2xl h-[520px] flex flex-col md:flex-row transition-colors">
                 <div className="w-full md:w-60 bg-slate-50 dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 p-3 space-y-2 overflow-y-auto shrink-0">
@@ -650,7 +704,6 @@ function DashboardContent() {
                 </div>
               </div>
             )}
-
             {activeTab === "transactions" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3"><h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Transaction History ({orders.length})</h2><span className="text-xs text-sky-600 dark:text-sky-400 font-mono">Total Volume: ${totalSpent.toFixed(2)} USD</span></div>
@@ -665,7 +718,6 @@ function DashboardContent() {
                 )}
               </div>
             )}
-
             {activeTab === "profile" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3"><h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Profile & Identity</h2></div>
@@ -692,28 +744,24 @@ function DashboardContent() {
                 </div>
               </div>
             )}
-
             {activeTab === "dispute" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3"><h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Dispute Center & Safety Hold</h2></div>
                 <div className="p-6 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl text-center space-y-3"><div className="text-3xl">🛡️</div><h4 className="text-xs font-bold text-slate-900 dark:text-white">No Open Disputes</h4><button onClick={() => setActiveTab("support")} className="inline-block px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs rounded-xl transition cursor-pointer shadow-md shadow-sky-500/20">Open Dispute Ticket →</button></div>
               </div>
             )}
-
             {activeTab === "security" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3"><h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Security & Authentication Settings</h2></div>
                 <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3 text-xs"><div className="flex items-center justify-between"><div><strong className="text-slate-900 dark:text-white block">Password Security</strong><span className="text-[11px] text-slate-500 dark:text-slate-400">Reset your account password</span></div><Link href="/auth" className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-lg font-bold text-[11px] transition">Update</Link></div></div>
               </div>
             )}
-
             {activeTab === "vouchers" && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
                 <div className="border-b border-slate-200 dark:border-slate-800 pb-3"><h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Discount Vouchers & Promotions</h2></div>
                 <div className="p-8 text-center text-xs text-slate-400 dark:text-slate-500">No promotional coupon codes currently applied to this account.</div>
               </div>
             )}
-
             {activeTab === "support" && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
@@ -754,7 +802,6 @@ function DashboardContent() {
               </div>
             )}
           </div>
-
           <aside className="lg:col-span-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-3 sm:p-4 space-y-1 shadow-xl dark:shadow-2xl sticky top-24 transition-colors">
             {!isLocked && (
               <>
@@ -781,6 +828,7 @@ function DashboardContent() {
     </div>
   );
 }
+
 export default function UnifiedDashboard() {
   return (
     <Suspense
