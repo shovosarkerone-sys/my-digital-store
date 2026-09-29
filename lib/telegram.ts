@@ -5,7 +5,7 @@ export async function sendTelegramAlert(message: string, userChatId?: string) {
   if (!botToken || !targetChatId) return;
 
   try {
-    await fetch(`https://api.telegram.org/bot${8857089186:AAHtHI8C7x3GUC2kT9kUpDX32g3RvZI1Owg}/sendMessage`, {
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
