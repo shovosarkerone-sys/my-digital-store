@@ -108,6 +108,12 @@ function DashboardContent() {
   const [telegramChatId, setTelegramChatId] = useState("");
   const [savingTelegram, setSavingTelegram] = useState(false);
 
+  // Category Form States (Simplified for Add-Only)
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
+  const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(null);
+  const [submittingCategory, setSubmittingCategory] = useState(false);
+
   useEffect(() => {
     async function loadUserData() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -230,9 +236,8 @@ function DashboardContent() {
     try {
       const { error } = await supabase.from("direct_messages").insert([{ sender_email: user.email, receiver_email: activeChatEmail, message: messageText }]);
       if (error) throw error;
-      
       try {
-        await fetch("/api/telegram/notify", {
+        await fetch("/api/notifications", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -244,7 +249,6 @@ function DashboardContent() {
           })
         });
       } catch (err) {}
-      
     } catch (err: any) { alert(`Could not deliver message: ${err.message}`); }
   };
 
@@ -274,9 +278,8 @@ function DashboardContent() {
       if (editingProductId) {
         const { error } = await supabase.from("products").update(payload).eq("id", editingProductId);
         if (error) throw error;
-        
         try {
-          await fetch("/api/telegram/notify", {
+          await fetch("/api/notifications", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -288,14 +291,13 @@ function DashboardContent() {
             })
           });
         } catch (err) {}
-        
       } else {
         const { data, error } = await supabase.from("products").insert([{ ...payload, delivery_type: "auto", voucher_codes: "", views: 0, sold_count: 0 }]).select().single();
         if (error) throw error;
         if (data) {
           setEditingProductId(data.id);
           try {
-            await fetch("/api/telegram/notify", {
+            await fetch("/api/notifications", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -385,7 +387,7 @@ function DashboardContent() {
     if (!error) {
       setMyProducts(myProducts.filter((p) => p.id !== id));
       try {
-        await fetch("/api/telegram/notify", {
+        await fetch("/api/notifications", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -399,6 +401,46 @@ function DashboardContent() {
       } catch (err) {}
     }
   };
+
+  // ---------------- Category Actions (Add-Only for Sellers) ----------------
+  const handleCategoryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) { setCategoryImageFile(file); setCategoryImagePreview(URL.createObjectURL(file)); }
+  };
+
+  const uploadImageToStorage = async (file: File, folder: string) => {
+    const fileExt = file.name.split(".").pop();
+    const fileName = `${folder}/${Date.now()}.${fileExt}`;
+    const { error } = await supabase.storage.from("product-images").upload(fileName, file, { cacheControl: "3600", upsert: false });
+    if (error) throw error;
+    const { data } = supabase.storage.from("product-images").getPublicUrl(fileName);
+    return data.publicUrl;
+  };
+
+  const handleCategorySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryName.trim()) return;
+    setSubmittingCategory(true);
+    try {
+      let finalCatImageUrl = null;
+      if (categoryImageFile) { finalCatImageUrl = await uploadImageToStorage(categoryImageFile, "categories"); }
+      const payload = { name: categoryName.trim(), image_url: finalCatImageUrl };
+      
+      const { error } = await supabase.from("categories").insert([payload]);
+      if (error) throw error;
+      
+      alert("Category created successfully.");
+      
+      resetCategoryForm();
+      const { data: catData } = await supabase.from("categories").select("*").order("name");
+      if (catData) setCategories(catData);
+    } catch (err: any) { alert(`Error: ${err.message}`); } finally { setSubmittingCategory(false); }
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryName(""); setCategoryImageFile(null); setCategoryImagePreview(null);
+  };
+  // --------------------------------------------------------------------------
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -417,7 +459,7 @@ function DashboardContent() {
       if (error) throw error;
       
       try {
-        await fetch("/api/telegram/notify", {
+        await fetch("/api/notifications", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -610,6 +652,46 @@ function DashboardContent() {
                 </div>
               </div>
             )}
+            
+            {/* NEW CATEGORY TAB FOR SELLERS (ADD-ONLY) */}
+            {activeTab === "categories" && isSeller && !isLocked && (
+              <div className="space-y-6">
+                <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
+                  <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white">Add New Category</h2>
+                  </div>
+                  <form onSubmit={handleCategorySubmit} className="space-y-4">
+                    <input type="text" required value={categoryName} onChange={(e) => setCategoryName(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 transition" placeholder="Category Name" />
+                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4">
+                      <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0 flex items-center justify-center">
+                        {categoryImagePreview ? <img src={categoryImagePreview} alt="Preview" className="w-full h-full object-cover" /> : <span className="text-[10px] text-slate-400 dark:text-slate-500">No Photo</span>}
+                      </div>
+                      <div className="flex-1 space-y-1">
+                        <input type="file" id="seller-cat-img" accept="image/*" onChange={handleCategoryImageChange} className="hidden" />
+                        <label htmlFor="seller-cat-img" className="inline-block px-4 py-2 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition shadow-sm">Upload Image</label>
+                      </div>
+                    </div>
+                    <button type="submit" disabled={submittingCategory} className="px-6 py-2.5 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 text-white font-bold text-xs rounded-xl cursor-pointer transition shadow-md shadow-sky-500/20">{submittingCategory ? "Processing..." : "Save Category"}</button>
+                  </form>
+                </div>
+                
+                {/* List of categories but NO edit/delete buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {categories.map((cat) => (
+                    <div key={cat.id} className="p-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-sm transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-12 h-12 bg-slate-100 dark:bg-slate-950 rounded-xl overflow-hidden shrink-0 border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                          {cat.image_url ? <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover" /> : <span className="text-xs">🎮</span>}
+                        </div>
+                        <div className="min-w-0"><h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{cat.name}</h4></div>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 rounded-md">Live</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {activeTab === "add_product" && isSeller && !isLocked && (
               <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 max-w-2xl mx-auto shadow-sm dark:shadow-2xl transition-colors">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
@@ -622,7 +704,12 @@ function DashboardContent() {
                 {productStep === 1 && (
                   <form onSubmit={handleProductStepOneSubmit} className="space-y-4">
                     <div><label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Product Title</label><input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. PUBG Mobile 60 UC Global Pin" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition" /></div>
-                    <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3"><label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Category & Product Icon</label><div className="flex items-center gap-4"><div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0 flex items-center justify-center">{activeSelectedCategory?.image_url ? <img src={activeSelectedCategory.image_url} alt={activeSelectedCategory.name} className="w-full h-full object-cover" /> : <span className="text-slate-400 dark:text-slate-600 text-xs font-mono">No Icon</span>}</div><div className="flex-1 space-y-1"><select required value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer shadow-xs"><option value="" disabled>-- Select a Category --</option>{categories.map((c) => <option key={c.id} value={c.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{c.name}</option>)}</select></div></div></div>
+                    <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">Category & Product Icon</label>
+                        <button type="button" onClick={() => { setActiveTab("categories"); }} className="text-[10px] bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 px-2 py-1 rounded-md font-bold transition">➕ Add New Category</button>
+                      </div>
+                      <div className="flex items-center gap-4"><div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shrink-0 flex items-center justify-center">{activeSelectedCategory?.image_url ? <img src={activeSelectedCategory.image_url} alt={activeSelectedCategory.name} className="w-full h-full object-cover" /> : <span className="text-slate-400 dark:text-slate-600 text-xs font-mono">No Icon</span>}</div><div className="flex-1 space-y-1"><select required value={category} onChange={(e) => setCategory(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500 cursor-pointer shadow-xs"><option value="" disabled>-- Select a Category --</option>{categories.map((c) => <option key={c.id} value={c.name} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">{c.name}</option>)}</select></div></div></div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Regular Price (USD $)</label><input type="number" step="0.01" required value={price} onChange={(e) => setPrice(e.target.value)} placeholder="9.99" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition" /></div><div><label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Discount Price (Optional)</label><input type="number" step="0.01" value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} placeholder="7.99" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition" /></div></div>
                     {discountPrice && parseFloat(discountPrice) < parseFloat(price || "0") && (<div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-3"><span className="block text-xs font-bold text-sky-600 dark:text-sky-400">Discount Timer / Duration</span><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Offer Type</label><select value={discountDurationType} onChange={(e) => setDiscountDurationType(e.target.value as any)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white shadow-xs"><option value="none">No Expiry Date</option><option value="lifetime">Lifetime Deal</option><option value="custom">Set Specific Days</option></select></div>{discountDurationType === "custom" && <div><label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">Number of Days Active</label><input type="number" min="1" max="365" value={discountDays} onChange={(e) => setDiscountDays(e.target.value)} className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white shadow-xs" /></div>}</div></div>)}
                     <div><label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 mb-1.5">Product Description</label><textarea rows={3} required value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Redemption instructions..." className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:border-sky-500 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-sky-500 transition" /></div>
@@ -812,6 +899,9 @@ function DashboardContent() {
                   <>
                     <button type="button" onClick={() => setActiveTab("finances")} className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${activeTab === "finances" ? "bg-sky-500 text-white shadow-md shadow-sky-500/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"}`}><span className="text-base">💳</span><span>Finances</span></button>
                     <button type="button" onClick={() => setActiveTab("products")} className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${activeTab === "products" ? "bg-sky-500 text-white shadow-md shadow-sky-500/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"}`}><div className="flex items-center gap-3"><span className="text-base">📦</span><span>Products</span></div>{myProducts.length > 0 && (<span className="bg-slate-100 dark:bg-slate-950 text-sky-600 dark:text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">{myProducts.length}</span>)}</button>
+                    
+                    {/* Categories tab button added for Sellers */}
+                    <button type="button" onClick={() => setActiveTab("categories")} className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${activeTab === "categories" ? "bg-sky-500 text-white shadow-md shadow-sky-500/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"}`}><div className="flex items-center gap-3"><span className="text-base">🏷️</span><span>Categories</span></div>{categories.length > 0 && (<span className="bg-slate-100 dark:bg-slate-950 text-sky-600 dark:text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">{categories.length}</span>)}</button>
                   </>
                 )}
                 
