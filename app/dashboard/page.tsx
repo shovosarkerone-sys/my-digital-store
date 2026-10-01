@@ -108,7 +108,6 @@ function DashboardContent() {
   const [telegramChatId, setTelegramChatId] = useState("");
   const [savingTelegram, setSavingTelegram] = useState(false);
 
-  // Category Form States (Simplified for Add-Only)
   const [categoryName, setCategoryName] = useState("");
   const [categoryImageFile, setCategoryImageFile] = useState<File | null>(null);
   const [categoryImagePreview, setCategoryImagePreview] = useState<string | null>(null);
@@ -402,7 +401,6 @@ function DashboardContent() {
     }
   };
 
-  // ---------------- Category Actions (Add-Only for Sellers) ----------------
   const handleCategoryImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) { setCategoryImageFile(file); setCategoryImagePreview(URL.createObjectURL(file)); }
@@ -440,7 +438,6 @@ function DashboardContent() {
   const resetCategoryForm = () => {
     setCategoryName(""); setCategoryImageFile(null); setCategoryImagePreview(null);
   };
-  // --------------------------------------------------------------------------
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -653,7 +650,6 @@ function DashboardContent() {
               </div>
             )}
             
-            {/* NEW CATEGORY TAB FOR SELLERS (ADD-ONLY) */}
             {activeTab === "categories" && isSeller && !isLocked && (
               <div className="space-y-6">
                 <div className="bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 space-y-4 shadow-sm dark:shadow-xl transition-colors">
@@ -675,7 +671,6 @@ function DashboardContent() {
                   </form>
                 </div>
                 
-                {/* List of categories but NO edit/delete buttons */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {categories.map((cat) => (
                     <div key={cat.id} className="p-4 bg-white dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 shadow-sm transition-colors">
@@ -868,8 +863,13 @@ function DashboardContent() {
                   ) : (
                     <div className="space-y-4">
                       {tickets.map((t) => (
-                        <div key={t.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2">
-                          <div className="flex items-center justify-between"><span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-xs">{t.subject}</span><span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${t.status === "resolved" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : t.status === "in_progress" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"}`}>{t.status}</span></div>
+                        <div key={t.id} className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-2 hover:border-sky-500/50 transition">
+                          <div className="flex items-center justify-between">
+                            <Link href={`/ticket/${t.id}`} className="text-xs font-black text-sky-600 dark:text-sky-400 hover:underline truncate max-w-[200px] sm:max-w-xs cursor-pointer">
+                              {t.subject}
+                            </Link>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${t.status === "resolved" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20" : t.status === "in_progress" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20" : "bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20"}`}>{t.status}</span>
+                          </div>
                           <p className="text-xs text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 whitespace-pre-wrap">{t.message}</p>
                           {t.admin_reply && (
                             <div className="p-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/40 text-xs text-sky-800 dark:text-sky-200 space-y-1">
@@ -877,9 +877,8 @@ function DashboardContent() {
                               <p>{t.admin_reply}</p>
                             </div>
                           )}
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
+                          <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-800/60">
                             <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">Ticket ID: #{t.id} • {new Date(t.created_at).toLocaleDateString()}</span>
-                            <Link href={`/ticket/${t.id}`} className="text-[10px] bg-sky-500 hover:bg-sky-600 text-white font-bold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-sm shadow-sky-500/20"><span>Open Chat Room</span><span>💬</span></Link>
                           </div>
                         </div>
                       ))}
@@ -899,8 +898,6 @@ function DashboardContent() {
                   <>
                     <button type="button" onClick={() => setActiveTab("finances")} className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${activeTab === "finances" ? "bg-sky-500 text-white shadow-md shadow-sky-500/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"}`}><span className="text-base">💳</span><span>Finances</span></button>
                     <button type="button" onClick={() => setActiveTab("products")} className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${activeTab === "products" ? "bg-sky-500 text-white shadow-md shadow-sky-500/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"}`}><div className="flex items-center gap-3"><span className="text-base">📦</span><span>Products</span></div>{myProducts.length > 0 && (<span className="bg-slate-100 dark:bg-slate-950 text-sky-600 dark:text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">{myProducts.length}</span>)}</button>
-                    
-                    {/* Categories tab button added for Sellers */}
                     <button type="button" onClick={() => setActiveTab("categories")} className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${activeTab === "categories" ? "bg-sky-500 text-white shadow-md shadow-sky-500/20" : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/80 hover:text-slate-900 dark:hover:text-white"}`}><div className="flex items-center gap-3"><span className="text-base">🏷️</span><span>Categories</span></div>{categories.length > 0 && (<span className="bg-slate-100 dark:bg-slate-950 text-sky-600 dark:text-sky-400 font-mono text-[10px] px-2 py-0.5 rounded-full border border-slate-200 dark:border-slate-800">{categories.length}</span>)}</button>
                   </>
                 )}
