@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://inskeys.com";
 
     // ২. Database এ অর্ডার সেভ করা
-    await supabase.from("orders").insert({
+    const { error: orderInsertError } = await supabase.from("orders").insert({
       user_email: buyerEmail.trim(),
       product_id: product.id,
       product_title: product.title,
@@ -44,6 +44,14 @@ export async function POST(req: Request) {
       delivery_type: product.delivery_type || "auto",
       delivery_content: product.description || "Thank you for your purchase!",
     });
+
+    if (orderInsertError) {
+      console.error("Order record creation failed:", orderInsertError);
+      return NextResponse.json(
+        { error: "We could not save your order. Please try again or contact support." },
+        { status: 500 }
+      );
+    }
 
     // ৩. Cryptomus কে যে তথ্যগুলো পাঠাবো
     const payload = {
