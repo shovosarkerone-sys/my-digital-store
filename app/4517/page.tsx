@@ -113,20 +113,30 @@ export default function SecretAdminPortal() {
     fetchBannedUsers();
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "shovo2026";
-    if (passwordInput === correctPassword) {
+    setPasswordError("");
+    try {
+      const response = await fetch("/api/admin/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: passwordInput }),
+      });
+      if (!response.ok) {
+        setPasswordError("Access Denied: Invalid Administrative Passkey.");
+        return;
+      }
       setIsAuthenticated(true);
       sessionStorage.setItem("admin_authenticated", "true");
-      setPasswordError("");
+      setPasswordInput("");
       fetchAllData();
-    } else {
-      setPasswordError("Access Denied: Invalid Administrative Passkey.");
+    } catch {
+      setPasswordError("Could not connect to the admin login service.");
     }
   };
 
   const handleLogout = () => {
+    fetch("/api/admin/session", { method: "DELETE" }).catch(() => {});
     sessionStorage.removeItem("admin_authenticated");
     setIsAuthenticated(false);
     setPasswordInput("");
