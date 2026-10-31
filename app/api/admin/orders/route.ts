@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { isValidAdminSession } from "@/lib/admin-session";
 import { createClient } from "@supabase/supabase-js";
+import { sendEmail } from "@/lib/email";
 
 function getAdminClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -92,6 +93,14 @@ export async function POST(req: Request) {
       console.error("Order completion failed after inventory allocation:", completeError);
       return NextResponse.json({ error: "Inventory was allocated but order completion failed. Contact support before retrying." }, { status: 500 });
     }
+
+    const escapeHtml = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    const manualDelivery = deliveryType === "manual";
+    const deliveryHtml = manualDelivery
+      ? `<p>Your payment is verified. The seller will fulfill <strong>${escapeHtml(order.product_title)}</strong> shortly. We will send another update when the activation details are ready.</p>`
+      : `<p>Your payment is verified. Here is your digital product key for <strong>${escapeHtml(order.product_title)}</strong>:</p><div style="padding:16px;background:#f1f5f9;border-radius:8px;font-family:monospace;word-break:break-all;color:#0f172a">${escapeHtml(deliveryContent)}</div><p>Keep this key private and do not share it.</p>`;
+    await sendEmail(order.user_email, manualDelivery ? `Order confirmed — ${order.product_title}` : `Your product key — ${order.product_title}`,
+      `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a"><h2 style="color:#0284c7">Inskeys</h2><h3>Payment confirmed</h3><p>Order reference: <strong>${escapeHtml(order.payment_id || String(order.id))}</strong></p>${deliveryHtml}<p style="color:#64748b;font-size:12px">36-Hour Buyer Protection is active. Need help? Contact contact@inskeys.com.</p></div>`);
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chat = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
