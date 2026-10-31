@@ -17,6 +17,10 @@ export default function ProductDetailPage() {
   const [buyerEmail, setBuyerEmail] = useState("");
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"cryptomus" | "binance_pay">("cryptomus");
+  const [transactionId, setTransactionId] = useState("");
+  const [binanceSubmitted, setBinanceSubmitted] = useState(false);
+  const [submittedOrderId, setSubmittedOrderId] = useState("");
 
   useEffect(() => {
     async function loadProductAndSeller() {
@@ -100,7 +104,7 @@ export default function ProductDetailPage() {
   const handleProceedPayment = async () => {
     const emailToUse = buyerEmail.trim() || currentUserEmail;
     if (!emailToUse || !emailToUse.includes("@")) {
-      setPaymentError("A valid email is required to deliver your activation key.");
+      setPaymentError("A valid email is required to deliver your product.");
       return;
     }
     setProcessingPayment(true);
@@ -117,8 +121,41 @@ export default function ProductDetailPage() {
       } else {
         setPaymentError(data.error || "Failed to initialize payment gateway.");
       }
-    } catch (err) {
+    } catch {
       setPaymentError("Gateway connection failed. Please try again.");
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  const handleBinanceSubmission = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const emailToUse = buyerEmail.trim() || currentUserEmail;
+    if (!emailToUse || !emailToUse.includes("@")) {
+      setPaymentError("Please enter a valid delivery email.");
+      return;
+    }
+    if (!transactionId.trim()) {
+      setPaymentError("Please enter your Binance Pay transaction ID.");
+      return;
+    }
+    setProcessingPayment(true);
+    setPaymentError("");
+    try {
+      const res = await fetch("/api/checkout/binance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id, buyerEmail: emailToUse, transactionId: transactionId.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPaymentError(data.error || "Could not submit your payment details.");
+        return;
+      }
+      setSubmittedOrderId(data.orderId);
+      setBinanceSubmitted(true);
+    } catch {
+      setPaymentError("Could not submit your transaction ID. Please try again.");
     } finally {
       setProcessingPayment(false);
     }
@@ -187,23 +224,53 @@ export default function ProductDetailPage() {
         </div>
       </div>
       {isPaymentModalOpen && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-6 relative overflow-hidden text-left">
-            <div className="absolute top-0 right-0 w-60 h-60 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
-            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800/80 pb-4 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" className="w-full h-full text-[#0052FF]"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-                <div><h3 className="text-base font-black text-slate-900 dark:text-white leading-tight">Cryptomus Gateway</h3><p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Secured Blockchain Payment</p></div>
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md max-h-[92vh] overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 relative text-left">
+            <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+              <div><h3 className="text-base font-black text-slate-900 dark:text-white">Choose Payment Method</h3><p className="text-[11px] text-slate-500 mt-1">Secure checkout for {product.title}</p></div>
+              <button type="button" onClick={() => { setIsPaymentModalOpen(false); setPaymentError(""); }} className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">✕</button>
+            </div>
+            {binanceSubmitted ? (
+              <div className="space-y-4 text-center py-4">
+                <div className="mx-auto w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl">✓</div>
+                <h4 className="text-lg font-black text-slate-900 dark:text-white">Payment details submitted</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-300">Your Binance Pay transaction ID has been received. Verification may take **3–30 minutes**. Your order will be processed after we verify the payment.</p>
+                <div className="rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 text-left"><p className="text-[10px] text-slate-500">Order ID</p><p className="font-mono text-xs break-all">{submittedOrderId}</p></div>
+                <button type="button" onClick={() => { setIsPaymentModalOpen(false); setBinanceSubmitted(false); setTransactionId(""); }} className="w-full rounded-xl bg-sky-600 text-white py-3 text-sm font-bold">Close</button>
               </div>
-              <button onClick={() => { setIsPaymentModalOpen(false); setPaymentError(""); }} className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center justify-center text-sm font-bold transition cursor-pointer shrink-0">✕</button>
-            </div>
-            <div className="p-4 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between relative z-10"><div className="min-w-0 pr-3 space-y-1"><span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">{product.title}</span><span className="text-xs font-bold text-slate-800 dark:text-slate-200 block">Total Payable</span></div><span className="text-xl font-black text-blue-600 dark:text-blue-400 font-mono">${finalPrice} USD</span></div>
-            <div className="space-y-4 relative z-10">
-              <div><label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Delivery Email Address <span className="text-rose-500">*</span></label><input type="email" required value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="your-email@example.com" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition shadow-inner font-mono" /><span className="block text-[10px] text-slate-500 mt-1.5">Your activation key and receipt will be dispatched to this email.</span></div>
-              <div className="pt-1"><span className="block text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-2">Accepted Networks</span><div className="flex flex-wrap items-center gap-1.5 text-[10px] font-mono font-bold text-slate-600 dark:text-slate-400"><span className="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded-lg">USDT</span><span className="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded-lg">BTC</span><span className="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded-lg">ETH</span><span className="bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 px-2 py-1 rounded-lg">TRC20</span></div></div>
-              {paymentError && <div className="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-500 dark:text-rose-400 text-xs rounded-xl font-medium">⚠️ {paymentError}</div>}
-              <div className="pt-2"><button type="button" disabled={processingPayment} onClick={handleProceedPayment} className="w-full py-3.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all duration-200 bg-[#0052FF] hover:bg-[#0043D1] disabled:opacity-50 text-white shadow-lg shadow-blue-500/20 cursor-pointer flex items-center justify-center gap-2">{processingPayment ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div><span>Connecting to Blockchain...</span></> : <span>Proceed to Cryptomus Invoice →</span>}</button><p className="text-[10px] text-center text-slate-500 mt-3 font-medium">🔒 Cryptographic 256-bit automated transaction processing</p></div>
-            </div>
+            ) : (
+              <>
+                <div className="rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between">
+                  <div><p className="text-[11px] text-slate-500">{product.title}</p><p className="text-xs font-bold mt-1">Total payable</p></div>
+                  <p className="text-xl font-black text-sky-600 dark:text-sky-400">${Number(finalPrice).toFixed(2){"}"} USD</p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => { setPaymentMethod("cryptomus"); setPaymentError(""); }} className={`rounded-xl border p-3 text-xs font-bold ${paymentMethod === "cryptomus" ? "border-sky-500 bg-sky-500/10 text-sky-600" : "border-slate-200 dark:border-slate-700"}`}>Cryptomus</button>
+                  <button type="button" onClick={() => { setPaymentMethod("binance_pay"); setPaymentError(""); }} className={`rounded-xl border p-3 text-xs font-bold ${paymentMethod === "binance_pay" ? "border-yellow-500 bg-yellow-500/10 text-yellow-700" : "border-slate-200 dark:border-slate-700"}`}>Binance Pay</button>
+                </div>
+                <div><label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Delivery Email Address *</label><input type="email" required value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="your-email@example.com" className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-sky-500" /></div>
+                {paymentMethod === "cryptomus" ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-slate-500">Pay securely using the supported crypto options on the Cryptomus invoice.</p>
+                    <button type="button" disabled={processingPayment} onClick={handleProceedPayment} className="w-full py-3.5 rounded-xl bg-[#0052FF] hover:bg-[#0043D1] disabled:opacity-50 text-white text-sm font-extrabold">{processingPayment ? "Connecting..." : "Proceed to Cryptomus Invoice →"}</button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleBinanceSubmission} className="space-y-3">
+                    <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-2">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">Pay with Binance Pay</p>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300">Send exactly <strong>${"{"}Number(finalPrice).toFixed(2){"}"} USD</strong> to the Binance Pay account below. Then enter the transaction ID from your payment receipt.</p>
+                      {process.env.NEXT_PUBLIC_BINANCE_PAY_QR_URL && <img src={process.env.NEXT_PUBLIC_BINANCE_PAY_QR_URL} alt="Binance Pay QR code" className="mx-auto max-h-40 object-contain rounded-lg" />}
+                      <div className="rounded-lg bg-white dark:bg-slate-900 p-3 text-xs"><p className="text-slate-500">Payee</p><p className="font-bold">{process.env.NEXT_PUBLIC_BINANCE_PAY_NAME || "Inskeys"}</p><p className="text-slate-500 mt-2">Binance Pay ID</p><p className="font-mono font-bold break-all">{process.env.NEXT_PUBLIC_BINANCE_PAY_ID || "Payment account not configured"}</p></div>
+                    </div>
+                    <div><label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">Binance Pay Transaction ID *</label><input required value={transactionId} onChange={(e) => setTransactionId(e.target.value)} placeholder="Enter transaction ID" className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 px-4 py-3 text-xs font-mono focus:outline-none focus:border-yellow-500" /></div>
+                    <button type="submit" disabled={processingPayment || !process.env.NEXT_PUBLIC_BINANCE_PAY_ID} className="w-full py-3.5 rounded-xl bg-[#F0B90B] hover:bg-[#D9A500] disabled:opacity-50 text-slate-950 text-sm font-extrabold">{processingPayment ? "Submitting..." : "I have paid — Submit Transaction ID"}</button>
+                    <p className="text-[10px] text-slate-500 text-center">After submission, verification can take 3–30 minutes. We will deliver after confirming the payment.</p>
+                  </form>
+                )}
+                {paymentError && <div className="rounded-xl bg-rose-500/10 border border-rose-500/20 p-3 text-xs text-rose-600">{paymentError}</div>}
+                <p className="text-[10px] text-center text-slate-500">36-Hour Buyer Protection applies after payment verification.</p>
+              </>
+            )}
           </div>
         </div>
       )}
