@@ -365,6 +365,7 @@ export default function SecretAdminPortal() {
           </div>
         </Link>
         <div className="flex items-center gap-2">
+          <Link href="/4517/orders" className="text-xs bg-sky-500/10 border border-sky-500/20 px-3.5 py-2 rounded-xl text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition">Orders Management</Link>
           <Link href="/" className="text-xs bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 rounded-xl hover:text-slate-900 dark:hover:text-white text-slate-600 dark:text-slate-400 transition">Home</Link>
           <button onClick={handleLogout} className="text-xs bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-500 dark:text-rose-400 px-3 py-2 rounded-xl transition cursor-pointer" title="Lock Portal">🔒 Lock</button>
         </div>
