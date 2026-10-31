@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 // টেলিগ্রাম বটের মাধ্যমে তাৎক্ষণিক নোটিফিকেশন পাঠানোর ফাংশন
 async function sendTelegramAlert(messageText: string) {
@@ -26,6 +26,17 @@ async function sendTelegramAlert(messageText: string) {
 
 export async function POST(req: Request) {
   try {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      console.error("SUPABASE_SERVICE_ROLE_KEY is not configured.");
+      return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
+    }
+    const supabase = createClient(
+      "https://evhwesdmwinemzwnizaf.supabase.co",
+      serviceRoleKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
     const rawBody = await req.text();
     const data = JSON.parse(rawBody);
 
