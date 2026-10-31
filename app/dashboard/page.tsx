@@ -138,8 +138,9 @@ function DashboardContent() {
       const { data: catData } = await supabase.from("categories").select("*").order("name");
       if (catData) setCategories(catData);
       if (user.email) {
-        const { data: orderData } = await supabase.from("orders").select("*").or(`user_email.eq.${user.email},customer_email.eq.${user.email}`).order("id", { ascending: false });
-        if (orderData) setOrders(orderData);
+        const { data: orderData, error: ordersError } = await supabase.from("orders").select("*").eq("user_email", user.email).order("created_at", { ascending: false });
+        if (ordersError) console.error("Transaction history load failed:", ordersError);
+        setOrders(orderData || []);
       }
       if (sData && sData.verification_status === "verified") {
         const { data: prodData } = await supabase.from("products").select("*").eq("seller_id", user.id).order("id", { ascending: false });
