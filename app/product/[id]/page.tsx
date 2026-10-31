@@ -234,7 +234,7 @@ export default function ProductDetailPage() {
               <div className="space-y-4 text-center py-4">
                 <div className="mx-auto w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center text-2xl">✓</div>
                 <h4 className="text-lg font-black text-slate-900 dark:text-white">Payment details submitted</h4>
-                <p className="text-xs text-slate-600 dark:text-slate-300">Your Binance Pay transaction ID has been received. Verification may take **3–30 minutes**. Your order will be processed after we verify the payment.</p>
+                <p className="text-xs text-slate-600 dark:text-slate-300">Your Binance Pay transaction ID has been received. Verification may take 3–30 minutes. Your order will be processed after we verify the payment.</p>
                 <div className="rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 text-left"><p className="text-[10px] text-slate-500">Order ID</p><p className="font-mono text-xs break-all">{submittedOrderId}</p></div>
                 <button type="button" onClick={() => { setIsPaymentModalOpen(false); setBinanceSubmitted(false); setTransactionId(""); }} className="w-full rounded-xl bg-sky-600 text-white py-3 text-sm font-bold">Close</button>
               </div>
@@ -242,7 +242,7 @@ export default function ProductDetailPage() {
               <>
                 <div className="rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between">
                   <div><p className="text-[11px] text-slate-500">{product.title}</p><p className="text-xs font-bold mt-1">Total payable</p></div>
-                  <p className="text-xl font-black text-sky-600 dark:text-sky-400">${Number(finalPrice).toFixed(2){"}"} USD</p>
+                  <p className="text-xl font-black text-sky-600 dark:text-sky-400">{Number(finalPrice).toFixed(2)} USD</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => { setPaymentMethod("cryptomus"); setPaymentError(""); }} className={`rounded-xl border p-3 text-xs font-bold ${paymentMethod === "cryptomus" ? "border-sky-500 bg-sky-500/10 text-sky-600" : "border-slate-200 dark:border-slate-700"}`}>Cryptomus</button>
@@ -258,7 +258,7 @@ export default function ProductDetailPage() {
                   <form onSubmit={handleBinanceSubmission} className="space-y-3">
                     <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 space-y-2">
                       <p className="text-xs font-bold text-slate-900 dark:text-white">Pay with Binance Pay</p>
-                      <p className="text-[11px] text-slate-600 dark:text-slate-300">Send exactly <strong>${"{"}Number(finalPrice).toFixed(2){"}"} USD</strong> to the Binance Pay account below. Then enter the transaction ID from your payment receipt.</p>
+                      <p className="text-[11px] text-slate-600 dark:text-slate-300">Send exactly <strong>{Number(finalPrice).toFixed(2)} USD</strong> to the Binance Pay account below. Then enter the transaction ID from your payment receipt.</p>
                       {process.env.NEXT_PUBLIC_BINANCE_PAY_QR_URL && <img src={process.env.NEXT_PUBLIC_BINANCE_PAY_QR_URL} alt="Binance Pay QR code" className="mx-auto max-h-40 object-contain rounded-lg" />}
                       <div className="rounded-lg bg-white dark:bg-slate-900 p-3 text-xs"><p className="text-slate-500">Payee</p><p className="font-bold">{process.env.NEXT_PUBLIC_BINANCE_PAY_NAME || "Inskeys"}</p><p className="text-slate-500 mt-2">Binance Pay ID</p><p className="font-mono font-bold break-all">{process.env.NEXT_PUBLIC_BINANCE_PAY_ID || "Payment account not configured"}</p></div>
                     </div>
