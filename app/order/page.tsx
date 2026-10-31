@@ -1,5 +1,5 @@
 "use client";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 type Order = { payment_id: string; product_title: string; amount: number; currency: string | null; payment_status: string; delivery_type: string | null; delivery_content: string | null; created_at: string; };
 export default function GuestOrderLookupPage() {
@@ -20,6 +20,7 @@ export default function GuestOrderLookupPage() {
     await navigator.clipboard.writeText(order.delivery_content); setCopied(true); window.setTimeout(() => setCopied(false), 1800);
   }
   const completed = order?.payment_status === "completed"; const manual = order?.delivery_type === "manual";
+  const waitingForCode = order?.delivery_content === "AUTO_DELIVERY_KEY_READY" || order?.delivery_content === "AUTO_DELIVERY_PENDING_STOCK";
   return (
     <main className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white px-4 py-12">
       <div className="max-w-xl mx-auto">
@@ -41,7 +42,7 @@ export default function GuestOrderLookupPage() {
             <div className="flex justify-between gap-3"><h2 className="font-bold">{order.product_title}</h2><span className="text-xs font-mono">{"$" + order.amount + " " + (order.currency || "USD")}</span></div>
             <p className="text-xs text-slate-500 break-all">Reference: {order.payment_id}</p>
             <p className="text-sm">Status: <strong className={completed ? "text-emerald-500" : order.payment_status === "failed" ? "text-rose-500" : "text-amber-500"}>{order.payment_status.toUpperCase()}</strong></p>
-            {completed && manual ? <p className="text-sm text-amber-600">Payment verified. Your seller is preparing the manual delivery.</p> : completed ? <div className="space-y-2"><div className="text-xs font-bold text-emerald-600">Your Digital Product Key</div><pre className="whitespace-pre-wrap break-all rounded-xl bg-slate-100 dark:bg-slate-950 p-4 text-sm font-mono">{order.delivery_content}</pre><button type="button" onClick={copyKey} className="rounded-lg bg-sky-500 text-white px-4 py-2 text-xs font-bold">{copied ? "Copied!" : "Copy Key"}</button></div> : <p className="text-sm text-slate-500">Your order is awaiting payment verification. Refresh this page later to check again.</p>}
+            {completed && manual ? <p className="text-sm text-amber-600">Payment verified. Your seller is preparing the manual delivery.</p> : completed && waitingForCode ? <p className="text-sm text-amber-600">Payment confirmed. Your digital code is awaiting stock allocation. We will email you when it is ready.</p> : completed ? <div className="space-y-2"><div className="text-xs font-bold text-emerald-600">Your Digital Product Key</div><pre className="whitespace-pre-wrap break-all rounded-xl bg-slate-100 dark:bg-slate-950 p-4 text-sm font-mono">{order.delivery_content}</pre><button type="button" onClick={copyKey} className="rounded-lg bg-sky-500 text-white px-4 py-2 text-xs font-bold">{copied ? "Copied!" : "Copy Key"}</button></div> : <p className="text-sm text-slate-500">Your order is awaiting payment verification. Refresh this page later to check again.</p>}
           </div>}
         </section>
         <Link href="/" className="block text-center text-sm text-sky-600 mt-6">← Back to Store</Link>
