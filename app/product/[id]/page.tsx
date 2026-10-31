@@ -242,7 +242,7 @@ export default function ProductDetailPage() {
               <>
                 <div className="rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 flex items-center justify-between">
                   <div><p className="text-[11px] text-slate-500">{product.title}</p><p className="text-xs font-bold mt-1">Total payable</p></div>
-                  <p className="text-xl font-black text-sky-600 dark:text-sky-400">{Number(finalPrice).toFixed(2)} USD</p>
+                  <p className="text-xl font-black text-sky-600 dark:text-sky-400">${Number(finalPrice).toFixed(2)} USD</p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => { setPaymentMethod("cryptomus"); setPaymentError(""); }} className={`rounded-xl border p-3 text-xs font-bold ${paymentMethod === "cryptomus" ? "border-sky-500 bg-sky-500/10 text-sky-600" : "border-slate-200 dark:border-slate-700"}`}>Cryptomus</button>
