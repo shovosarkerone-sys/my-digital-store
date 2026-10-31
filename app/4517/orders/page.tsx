@@ -42,18 +42,16 @@ export default function AdminOrdersPage() {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError("");
-    let secret = sessionStorage.getItem("admin_api_secret");
-    if (!secret) {
-      secret = window.prompt("Enter the Admin API Secret configured in Vercel:");
-      if (!secret) { setLoading(false); return; }
-      sessionStorage.setItem("admin_api_secret", secret);
-    }
     try {
-      const response = await fetch("/api/admin/orders", { headers: { "x-admin-secret": secret } });
+      const response = await fetch("/api/admin/orders", { credentials: "same-origin" });
       const result = await response.json();
       if (!response.ok) {
-        sessionStorage.removeItem("admin_api_secret");
-        setError(result.error || "Could not load orders. Check the Admin API Secret.");
+        if (response.status === 401) {
+          sessionStorage.removeItem("admin_authenticated");
+          setError("Admin session expired. Please sign in again from the Admin Console.");
+        } else {
+          setError(result.error || "Could not load orders.");
+        }
         setOrders([]);
       } else {
         setOrders((result.orders || []) as Order[]);
@@ -66,8 +64,6 @@ export default function AdminOrdersPage() {
   }, []);
 
   const reviewBinanceOrder = async (orderId: number, action: "approve" | "reject") => {
-    const secret = sessionStorage.getItem("admin_api_secret");
-    if (!secret) { setError("Admin API Secret is missing. Refresh the page to sign in again."); return; }
     const confirmText = action === "approve"
       ? "Confirm that you checked the Binance Pay transaction and received the exact amount?"
       : "Reject this Binance Pay order?";
@@ -76,7 +72,7 @@ export default function AdminOrdersPage() {
     try {
       const response = await fetch("/api/admin/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-admin-secret": secret },
+        headers: { "Content-Type": "application/json" }, credentials: "same-origin",
         body: JSON.stringify({ orderId, action }),
       });
       const result = await response.json();
