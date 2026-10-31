@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 
 interface Order {
   id: number;
@@ -16,6 +15,8 @@ interface Order {
   payment_status: string | null;
   payment_provider: string;
   payment_id: string;
+  transaction_id?: string | null;
+  payment_reviewed_at?: string | null;
   delivery_type: "auto" | "manual" | null;
   delivery_content: string | null;
   protection_until: string | null;
@@ -41,18 +42,53 @@ export default function AdminOrdersPage() {
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError("");
-    const { data, error: queryError } = await supabase
-      .from("orders")
-      .select("id,created_at,user_email,product_id,product_title,amount,currency,payment_status,payment_provider,payment_id,delivery_type,delivery_content,protection_until")
-      .order("created_at", { ascending: false });
-    if (queryError) {
-      setError(queryError.message);
+    let secret = sessionStorage.getItem("admin_api_secret");
+    if (!secret) {
+      secret = window.prompt("Enter the Admin API Secret configured in Vercel:");
+      if (!secret) { setLoading(false); return; }
+      sessionStorage.setItem("admin_api_secret", secret);
+    }
+    try {
+      const response = await fetch("/api/admin/orders", { headers: { "x-admin-secret": secret } });
+      const result = await response.json();
+      if (!response.ok) {
+        sessionStorage.removeItem("admin_api_secret");
+        setError(result.error || "Could not load orders. Check the Admin API Secret.");
+        setOrders([]);
+      } else {
+        setOrders((result.orders || []) as Order[]);
+      }
+    } catch {
+      setError("Could not connect to the orders service.");
       setOrders([]);
-    } else {
-      setOrders((data || []) as Order[]);
     }
     setLoading(false);
   }, []);
+
+  const reviewBinanceOrder = async (orderId: number, action: "approve" | "reject") => {
+    const secret = sessionStorage.getItem("admin_api_secret");
+    if (!secret) { setError("Admin API Secret is missing. Refresh the page to sign in again."); return; }
+    const confirmText = action === "approve"
+      ? "Confirm that you checked the Binance Pay transaction and received the exact amount?"
+      : "Reject this Binance Pay order?";
+    if (!window.confirm(confirmText)) return;
+    setError("");
+    try {
+      const response = await fetch("/api/admin/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-secret": secret },
+        body: JSON.stringify({ orderId, action }),
+      });
+      const result = await response.json();
+      if (!response.ok) {
+        setError(result.error || "Could not update this order.");
+        return;
+      }
+      await fetchOrders();
+    } catch {
+      setError("Could not connect to the verification service.");
+    }
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -154,7 +190,7 @@ export default function AdminOrdersPage() {
                           <td className="p-4 text-xs break-all">{order.user_email}</td>
                           <td className="p-4"><p className="font-semibold">{order.product_title}</p><p className="text-[11px] text-slate-500 mt-1">Product #{order.product_id ?? "—"} · {order.delivery_type || "auto"} delivery</p></td>
                           <td className="p-4 font-bold whitespace-nowrap">${Number(order.amount).toFixed(2)} {order.currency || "USD"}</td>
-                          <td className="p-4"><span className={"inline-flex px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase " + (statusStyles[status] || statusStyles.cancelled)}>{status}</span><p className="text-[11px] text-slate-500 mt-1">{order.payment_provider}</p></td>
+                          <td className="p-4"><span className={"inline-flex px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase " + (statusStyles[status] || statusStyles.cancelled)}>{status}</span><p className="text-[11px] text-slate-500 mt-1">{order.payment_provider}</p>{order.transaction_id && <p className="text-[10px] text-slate-500 mt-1 break-all">TXID: <span className="font-mono">{order.transaction_id}</span></p>}</td>
                           <td className="p-4"><button onClick={() => setExpandedId(expandedId === order.id ? null : order.id)} className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline">{expandedId === order.id ? "Hide" : "View"} details</button></td>
                         </tr>
                         {expandedId === order.id && (
@@ -163,6 +199,8 @@ export default function AdminOrdersPage() {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                 <div><p className="text-slate-500 mb-1">Payment reference</p><p className="font-mono break-all">{order.payment_id}</p></div>
                                 <div><p className="text-slate-500 mb-1">36-hour protection expires</p><p>{order.protection_until ? formatDate(order.protection_until) : "Not set yet"}</p></div>
+                                {order.transaction_id && <div className="md:col-span-2"><p className="text-slate-500 mb-1">Binance Pay Transaction ID</p><p className="font-mono break-all font-bold">{order.transaction_id}</p><p className="text-[10px] text-amber-600 mt-1">Verify this transaction in your Binance Pay account before approving.</p></div>}
+                                {order.payment_provider === "binance_pay" && order.payment_status === "pending" && <div className="md:col-span-2 flex flex-wrap gap-2"><button onClick={() => reviewBinanceOrder(order.id, "approve")} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">Verify & Approve Payment</button><button onClick={() => reviewBinanceOrder(order.id, "reject")} className="px-4 py-2 rounded-lg bg-rose-600/10 text-rose-600 border border-rose-500/20 text-xs font-bold">Reject Payment</button></div>}
                                 <div className="md:col-span-2"><p className="text-slate-500 mb-1">Delivery information</p><pre className="whitespace-pre-wrap break-words font-sans rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3">{order.delivery_content || "No delivery information recorded."}</pre></div>
                               </div>
                             </td>
@@ -176,7 +214,7 @@ export default function AdminOrdersPage() {
             </div>
           )}
         </section>
-        <p className="text-[11px] text-slate-500">Only orders recorded in the My Digital Store database are shown here. Payment status changes to Completed after the Cryptomus webhook confirms payment.</p>
+        <p className="text-[11px] text-slate-500">Only orders recorded in the My Digital Store database are shown here. Cryptomus orders complete after a valid webhook. Binance Pay orders remain Pending until you verify the transaction ID and approve them here.</p>
       </div>
     </main>
   );
