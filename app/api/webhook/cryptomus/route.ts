@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
+import { sendEmail } from "@/lib/email";
 
 // টেলিগ্রাম বটের মাধ্যমে তাৎক্ষণিক নোটিফিকেশন পাঠানোর ফাংশন
 async function sendTelegramAlert(messageText: string) {
@@ -136,6 +137,14 @@ export async function POST(req: Request) {
             protection_until: protectionExpiry,
           })
           .eq("id", order.id);
+
+        // Send the purchased key (or manual-delivery update) to the guest buyer.
+        const safe = (value: string) => value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        const deliveryHtml = isManual
+          ? `<p>Your payment for <strong>${safe(order.product_title)}</strong> is confirmed. This item requires manual delivery; the seller will send the activation details shortly.</p>`
+          : `<p>Your payment for <strong>${safe(order.product_title)}</strong> is confirmed. Your digital key is below:</p><div style="padding:16px;background:#f1f5f9;border-radius:8px;font-family:monospace;word-break:break-all;color:#0f172a">${safe(finalDeliveryContent)}</div><p>Keep this key private and do not share it.</p>`;
+        await sendEmail(order.user_email, isManual ? `Order confirmed — ${order.product_title}` : `Your product key — ${order.product_title}`,
+          `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a"><h2 style="color:#0284c7">Inskeys</h2><h3>Payment confirmed</h3><p>Order reference: <strong>${safe(order.payment_id)}</strong></p>${deliveryHtml}<p style="color:#64748b;font-size:12px">36-Hour Buyer Protection is active. Need help? Contact contact@inskeys.com.</p></div>`);
 
         // ৫. টেলিগ্রাম বটের মাধ্যমে অ্যাডমিন/সেলারকে তাৎক্ষণিক অ্যালার্ট পাঠানো
         const isManual = deliveryType === "manual";
