@@ -63,9 +63,10 @@ export default function AdminOrdersPage() {
     setLoading(false);
   }, []);
 
-  const reviewBinanceOrder = async (orderId: number, action: "approve" | "reject") => {
+  const reviewBinanceOrder = async (orderId: number, action: "approve" | "reject" | "fulfill") => {
     const confirmText = action === "approve"
       ? "Confirm that you checked the Binance Pay transaction and received the exact amount?"
+      : action === "fulfill" ? "Allocate the next available product code and email it to the buyer?"
       : "Reject this Binance Pay order?";
     if (!window.confirm(confirmText)) return;
     setError("");
@@ -197,6 +198,7 @@ export default function AdminOrdersPage() {
                                 <div><p className="text-slate-500 mb-1">36-hour protection expires</p><p>{order.protection_until ? formatDate(order.protection_until) : "Not set yet"}</p></div>
                                 {order.transaction_id && <div className="md:col-span-2"><p className="text-slate-500 mb-1">Binance Pay Transaction ID</p><p className="font-mono break-all font-bold">{order.transaction_id}</p><p className="text-[10px] text-amber-600 mt-1">Verify this transaction in your Binance Pay account before approving.</p></div>}
                                 {order.payment_provider === "binance_pay" && order.payment_status === "pending" && <div className="md:col-span-2 flex flex-wrap gap-2"><button onClick={() => reviewBinanceOrder(order.id, "approve")} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold">Verify & Approve Payment</button><button onClick={() => reviewBinanceOrder(order.id, "reject")} className="px-4 py-2 rounded-lg bg-rose-600/10 text-rose-600 border border-rose-500/20 text-xs font-bold">Reject Payment</button></div>}
+                                {order.payment_status === "completed" && (order.delivery_type || "auto") === "auto" && ["AUTO_DELIVERY_KEY_READY", "AUTO_DELIVERY_PENDING_STOCK", ""].includes(String(order.delivery_content || "")) && <div className="md:col-span-2"><button onClick={() => reviewBinanceOrder(order.id, "fulfill")} className="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold">Fulfill Delivery & Email Code</button><p className="text-[10px] text-amber-600 mt-1">Requires at least one real voucher code in product stock.</p></div>}
                                 <div className="md:col-span-2"><p className="text-slate-500 mb-1">Delivery information</p><pre className="whitespace-pre-wrap break-words font-sans rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3">{order.delivery_content || "No delivery information recorded."}</pre></div>
                               </div>
                             </td>
