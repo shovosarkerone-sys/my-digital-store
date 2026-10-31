@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isValidAdminSession } from "@/lib/admin-session";
 import { createClient } from "@supabase/supabase-js";
 
 function getAdminClient() {
@@ -10,12 +11,11 @@ function getAdminClient() {
 }
 
 function authorized(req: Request) {
-  const secret = process.env.ADMIN_API_SECRET;
-  return Boolean(secret && req.headers.get("x-admin-secret") && req.headers.get("x-admin-secret") === secret);
+  return isValidAdminSession(req);
 }
 
 export async function GET(req: Request) {
-  if (!authorized(req)) return NextResponse.json({ error: "Unauthorized. Check ADMIN_API_SECRET." }, { status: 401 });
+  if (!authorized(req)) return NextResponse.json({ error: "Unauthorized. Please sign in to the Admin Console." }, { status: 401 });
   try {
     const supabase = getAdminClient();
     const { data, error } = await supabase.from("orders").select("id,created_at,user_email,product_id,product_title,amount,currency,payment_status,payment_provider,payment_id,transaction_id,payment_reviewed_at,delivery_type,delivery_content,protection_until").order("created_at", { ascending: false });
@@ -28,7 +28,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!authorized(req)) return NextResponse.json({ error: "Unauthorized. Check ADMIN_API_SECRET." }, { status: 401 });
+  if (!authorized(req)) return NextResponse.json({ error: "Unauthorized. Please sign in to the Admin Console." }, { status: 401 });
   try {
     const { orderId, action } = await req.json();
     if (!Number.isInteger(Number(orderId)) || !["approve", "reject"].includes(action)) {
