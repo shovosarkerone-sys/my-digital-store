@@ -1,9 +1,22 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 export async function POST(req: Request) {
   try {
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!serviceRoleKey) {
+      return NextResponse.json(
+        { error: "Server configuration is incomplete. Please contact support." },
+        { status: 500 }
+      );
+    }
+    const supabase = createClient(
+      "https://evhwesdmwinemzwnizaf.supabase.co",
+      serviceRoleKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
     const { productId, buyerEmail } = await req.json();
 
     const merchantId = process.env.CRYPTOMUS_MERCHANT_ID;
@@ -107,6 +120,7 @@ export async function POST(req: Request) {
 
       return NextResponse.json({ checkoutUrl: data.result.url });
     } else {
+      await supabase.from("orders").update({ payment_status: "failed" }).eq("payment_id", orderId);
       return NextResponse.json({ error: data.message || "Payment Failed" }, { status: 500 });
     }
   } catch (err: any) {
