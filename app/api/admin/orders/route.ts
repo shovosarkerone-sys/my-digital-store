@@ -20,7 +20,7 @@ function escapeHtml(value: string) {
 }
 
 function trackingUrl(order: any) {
-  return \`https://inskeys.com/order?order_id=\${encodeURIComponent(order.payment_id)}&email=\${encodeURIComponent(order.user_email)}\`;
+  return `https://inskeys.com/order?order_id=${encodeURIComponent(order.payment_id)}&email=${encodeURIComponent(order.user_email)}`;
 }
 
 export async function GET(req: Request) {
@@ -74,8 +74,8 @@ export async function POST(req: Request) {
       if (updateError) throw updateError;
 
       const url = trackingUrl(order);
-      await sendEmail(order.user_email, \`Your product key — \${order.product_title}\`,
-        \`<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a"><h2 style="color:#0284c7">Inskeys</h2><h3>Your digital product key is ready</h3><p>Order reference: <strong>\${escapeHtml(order.payment_id)}</strong></p><pre style="padding:16px;background:#f1f5f9;border-radius:8px;font-family:monospace;white-space:pre-wrap;word-break:break-all;color:#0f172a">\${escapeHtml(deliveryContent)}</pre><p><a href="\${url}" style="display:inline-block;padding:12px 18px;background:#0284c7;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">View Order &amp; Copy Key</a></p><p style="color:#64748b;font-size:12px">36-Hour Buyer Protection is active. Contact contact@inskeys.com for help.</p></div>\`);
+      await sendEmail(order.user_email, `Your product key — ${order.product_title}`,
+        `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a"><h2 style="color:#0284c7">Inskeys</h2><h3>Your digital product key is ready</h3><p>Order reference: <strong>${escapeHtml(order.payment_id)}</strong></p><pre style="padding:16px;background:#f1f5f9;border-radius:8px;font-family:monospace;white-space:pre-wrap;word-break:break-all;color:#0f172a">${escapeHtml(deliveryContent)}</pre><p><a href="${url}" style="display:inline-block;padding:12px 18px;background:#0284c7;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">View Order &amp; Copy Key</a></p><p style="color:#64748b;font-size:12px">36-Hour Buyer Protection is active. Contact contact@inskeys.com for help.</p></div>`);
       return NextResponse.json({ success: true, status: "delivered" });
     }
 
@@ -135,17 +135,17 @@ export async function POST(req: Request) {
 
     const url = trackingUrl(order);
     const deliveryHtml = deliveryType === "manual"
-      ? \`<p>Your payment is verified. The seller will fulfill <strong>\${escapeHtml(order.product_title)}</strong> shortly.</p>\`
-      : \`<p>Your payment is verified. Your digital product key for <strong>\${escapeHtml(order.product_title)}</strong>:</p><pre style="padding:16px;background:#f1f5f9;border-radius:8px;font-family:monospace;white-space:pre-wrap;word-break:break-all;color:#0f172a">\${escapeHtml(deliveryContent)}</pre>\`;
-    await sendEmail(order.user_email, deliveryType === "manual" ? \`Order confirmed — \${order.product_title}\` : \`Your product key — \${order.product_title}\`,
-      \`<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a"><h2 style="color:#0284c7">Inskeys</h2><h3>Payment confirmed</h3><p>Order reference: <strong>\${escapeHtml(order.payment_id || String(order.id))}</strong></p>\${deliveryHtml}<p><a href="\${url}" style="display:inline-block;padding:12px 18px;background:#0284c7;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">View Order &amp; Copy Key</a></p><p style="color:#64748b;font-size:12px">36-Hour Buyer Protection is active. Need help? Contact contact@inskeys.com.</p></div>\`);
+      ? `<p>Your payment is verified. The seller will fulfill <strong>${escapeHtml(order.product_title)}</strong> shortly.</p>`
+      : `<p>Your payment is verified. Your digital product key for <strong>${escapeHtml(order.product_title)}</strong>:</p><pre style="padding:16px;background:#f1f5f9;border-radius:8px;font-family:monospace;white-space:pre-wrap;word-break:break-all;color:#0f172a">${escapeHtml(deliveryContent)}</pre>`;
+    await sendEmail(order.user_email, deliveryType === "manual" ? `Order confirmed — ${order.product_title}` : `Your product key — ${order.product_title}`,
+      `<div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;color:#0f172a"><h2 style="color:#0284c7">Inskeys</h2><h3>Payment confirmed</h3><p>Order reference: <strong>${escapeHtml(order.payment_id || String(order.id))}</strong></p>${deliveryHtml}<p><a href="${url}" style="display:inline-block;padding:12px 18px;background:#0284c7;color:#fff;text-decoration:none;border-radius:8px;font-weight:bold">View Order &amp; Copy Key</a></p><p style="color:#64748b;font-size:12px">36-Hour Buyer Protection is active. Need help? Contact contact@inskeys.com.</p></div>`);
 
     const token = process.env.TELEGRAM_BOT_TOKEN;
     const chat = process.env.TELEGRAM_ADMIN_CHAT_ID || process.env.TELEGRAM_CHAT_ID;
     if (token && chat) {
-      const message = \`✅ Binance Pay verified\\nOrder: \${order.payment_id}\\nBuyer: \${order.user_email}\\nProduct: \${order.product_title}\\nTransaction: \${order.transaction_id || "—"}\`;
+      const message = `✅ Binance Pay verified\\nOrder: ${order.payment_id}\\nBuyer: ${order.user_email}\\nProduct: ${order.product_title}\\nTransaction: ${order.transaction_id || "—"}`;
       try {
-        await fetch(\`https://api.telegram.org/bot\${token}/sendMessage\`, {
+        await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chat_id: chat, text: message }),
         });
